@@ -21,7 +21,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class Main implements ApplicationListener, NetworkConnectionListener {
 	private static final String TAG = "NXTAR_CORE_MAIN";
 	private static final String CLASS_NAME = Main.class.getSimpleName();
-	
+
 	private OrthographicCamera camera;
 	private SpriteBatch batch;
 	private Texture texture;
@@ -102,11 +102,11 @@ public class Main implements ApplicationListener, NetworkConnectionListener {
 	}
 
 	@Override
-	public synchronized void interfaceConnected(String iface) {
-		if(iface.compareTo(VideoStreamingThread.THREAD_NAME) == 0 || iface.compareTo(RobotControlThread.THREAD_NAME) == 0)
+	public synchronized void networkStreamConnected(String streamName) {
+		if(streamName.compareTo(VideoStreamingThread.THREAD_NAME) == 0 || streamName.compareTo(RobotControlThread.THREAD_NAME) == 0)
 			connections += 1;
 		if(connections >= 2){
-			Gdx.app.debug(TAG, CLASS_NAME + ".interfaceConnected() :: Stopping service broadcast.");
+			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
 			udpThread.finish();
 			mcastEnabler.disableMulticast();
 		}

@@ -42,7 +42,7 @@ public class VideoStreamingThread extends Thread {
 		try{
 			client = server.accept();
 			if(netListener != null)
-				netListener.interfaceConnected(THREAD_NAME);
+				netListener.networkStreamConnected(THREAD_NAME);
 			toaster.showShortToast("Client connected to VideoStreamingThread");
 			client.close();
 		}catch(IOException io){

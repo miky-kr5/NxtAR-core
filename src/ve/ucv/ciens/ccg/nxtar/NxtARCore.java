@@ -69,9 +69,9 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		mcastEnabler.enableMulticast();
-		udpThread = new ServiceDiscoveryThread();
-		videoThread = new VideoStreamingThread(toaster);
-		robotThread = new RobotControlThread(toaster);
+		udpThread = ServiceDiscoveryThread.getInstance();
+		videoThread = VideoStreamingThread.getInstance().setToaster(toaster);
+		robotThread = RobotControlThread.getInstance().setToaster(toaster);
 
 		udpThread.start();
 		videoThread.start();

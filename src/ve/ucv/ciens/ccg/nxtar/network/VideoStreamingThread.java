@@ -20,17 +20,28 @@ public class VideoStreamingThread extends Thread {
 	private Socket client;
 	private Toaster toaster;
 
-	public VideoStreamingThread(Toaster toaster){
+	private VideoStreamingThread(){
 		super(THREAD_NAME);
 
-		this.toaster = toaster;
 		netListener = null;
-
 		try{
 			server = new ServerSocket(ProjectConstants.SERVER_TCP_PORT_1);
 		}catch(IOException io){
 			Gdx.app.error(TAG, CLASS_NAME + ".VideoStreamingThread() :: Error creating server: " + io.getMessage(), io);
 		}
+	}
+
+	private static class SingletonHolder{
+		public static final VideoStreamingThread INSTANCE = new VideoStreamingThread();
+	}
+
+	public static VideoStreamingThread getInstance(){
+		return SingletonHolder.INSTANCE;
+	}
+
+	public VideoStreamingThread setToaster(Toaster toaster){
+		this.toaster = toaster;
+		return this;
 	}
 
 	public void addNetworkConnectionListener(NetworkConnectionListener listener){

@@ -20,10 +20,9 @@ public class RobotControlThread extends Thread {
 	private Socket client;
 	private Toaster toaster;
 
-	public RobotControlThread(Toaster toaster){
+	private RobotControlThread(){
 		super(THREAD_NAME);
 
-		this.toaster = toaster;
 		netListener = null;
 
 		try{
@@ -31,6 +30,19 @@ public class RobotControlThread extends Thread {
 		}catch(IOException io){
 			Gdx.app.error(TAG, CLASS_NAME + ".RobotControlThread() :: Error creating server: " + io.getMessage(), io);
 		}
+	}
+	
+	private static class SingletonHolder{
+		public static final RobotControlThread INSTANCE = new RobotControlThread();
+	}
+
+	public static RobotControlThread getInstance(){
+		return SingletonHolder.INSTANCE;
+	}
+
+	public RobotControlThread setToaster(Toaster toaster){
+		this.toaster = toaster;
+		return this;
 	}
 
 	public void addNetworkConnectionListener(NetworkConnectionListener listener){

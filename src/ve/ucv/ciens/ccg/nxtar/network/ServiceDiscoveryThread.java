@@ -21,7 +21,6 @@ import com.badlogic.gdx.Gdx;
  * a row, whichever happens first.</p>
  * 
  * @author miky
- * @since 27/11/2013
  */
 public class ServiceDiscoveryThread extends Thread {
 	/**
@@ -41,12 +40,24 @@ public class ServiceDiscoveryThread extends Thread {
 	 */
 	private static final int MAX_RETRIES = 5;
 
+	/**
+	 * A semaphore object used to synchronize acces to this thread finish flag.
+	 */
 	private Object semaphore;
+	/**
+	 * The finish flag.
+	 */
 	private boolean done;
+	/**
+	 * The UDP server socket used for the ad hoc service discovery protocol.
+	 */
 	private DatagramSocket udpServer;
+	/**
+	 * Holder for the multicast address used in the protocol.
+	 */
 	private InetAddress group;
 
-	public ServiceDiscoveryThread(){
+	private ServiceDiscoveryThread(){
 		// Setup this thread name.
 		super(THREAD_NAME);
 
@@ -71,6 +82,28 @@ public class ServiceDiscoveryThread extends Thread {
 		Gdx.app.debug(TAG, CLASS_NAME + ".ServiceDiscoveryThread() :: Multicast server created.");
 	}
 
+	/**
+	 * Singleton holder for this class.
+	 */
+	private static class SingletonHolder{
+		public static final ServiceDiscoveryThread INSTANCE = new ServiceDiscoveryThread();
+	}
+
+	/**
+	 * Get the singleton instance of this class.
+	 * 
+	 * @return The singleton instance.
+	 */
+	public static ServiceDiscoveryThread getInstance(){
+		return SingletonHolder.INSTANCE;
+	}
+
+	/**
+	 * This thread's run method.
+	 * 
+	 * <p>This method executes the ad hoc service discovery protocol implemented by this class, as
+	 * described in the class introduction.</p>
+	 */
 	@Override
 	public void run(){
 		int retries = 0;

@@ -6,6 +6,7 @@ import ve.ucv.ciens.ccg.nxtar.interfaces.Toaster;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
+import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
@@ -18,9 +19,9 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
-public class Main implements ApplicationListener, NetworkConnectionListener {
+public class NxtARCore implements ApplicationListener, NetworkConnectionListener {
 	private static final String TAG = "NXTAR_CORE_MAIN";
-	private static final String CLASS_NAME = Main.class.getSimpleName();
+	private static final String CLASS_NAME = NxtARCore.class.getSimpleName();
 
 	private OrthographicCamera camera;
 	private SpriteBatch batch;
@@ -34,15 +35,20 @@ public class Main implements ApplicationListener, NetworkConnectionListener {
 	private VideoStreamingThread videoThread;
 	private RobotControlThread robotThread;
 
-	public Main(Toaster toaster, MulticastEnabler mcastEnabler){
+	public NxtARCore(Application concreteApp){
 		super();
-		this.toaster = toaster;
-		this.mcastEnabler = mcastEnabler;
 		connections = 0;
+		try{
+			this.toaster = (Toaster)concreteApp;
+			this.mcastEnabler = (MulticastEnabler)concreteApp;
+		}catch(ClassCastException cc){
+			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement any of the required interfaces.");
+			System.exit(ProjectConstants.EXIT_FAILURE);
+		}
 	}
 
 	@Override
-	public void create() {		
+	public void create(){
 		float w = Gdx.graphics.getWidth();
 		float h = Gdx.graphics.getHeight();
 
@@ -79,7 +85,7 @@ public class Main implements ApplicationListener, NetworkConnectionListener {
 	}
 
 	@Override
-	public void render() {		
+	public void render(){
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 
@@ -90,19 +96,19 @@ public class Main implements ApplicationListener, NetworkConnectionListener {
 	}
 
 	@Override
-	public void resize(int width, int height) {
+	public void resize(int width, int height){
 	}
 
 	@Override
-	public void pause() {
+	public void pause(){
 	}
 
 	@Override
-	public void resume() {
+	public void resume(){
 	}
 
 	@Override
-	public synchronized void networkStreamConnected(String streamName) {
+	public synchronized void networkStreamConnected(String streamName){
 		if(streamName.compareTo(VideoStreamingThread.THREAD_NAME) == 0 || streamName.compareTo(RobotControlThread.THREAD_NAME) == 0)
 			connections += 1;
 		if(connections >= 2){

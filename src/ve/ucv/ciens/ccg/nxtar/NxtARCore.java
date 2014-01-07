@@ -20,14 +20,17 @@ import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.Toaster;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
+import ve.ucv.ciens.ccg.nxtar.network.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
+import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.g2d.Sprite;
@@ -46,6 +49,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	private MulticastEnabler mcastEnabler;
 	private int connections;
 
+	private VideoFrameMonitor frameMonitor;
 	private ServiceDiscoveryThread udpThread;
 	private VideoStreamingThread videoThread;
 	private RobotControlThread robotThread;
@@ -83,14 +87,16 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
+		frameMonitor = VideoFrameMonitor.getInstance();
 		mcastEnabler.enableMulticast();
 		udpThread = ServiceDiscoveryThread.getInstance();
 		videoThread = VideoStreamingThread.getInstance().setToaster(toaster);
-		robotThread = RobotControlThread.getInstance().setToaster(toaster);
+		//robotThread = RobotControlThread.getInstance().setToaster(toaster);
 
 		udpThread.start();
 		videoThread.start();
-		robotThread.start();
+		videoThread.startStreaming();
+		//robotThread.start();
 	}
 
 	@Override
@@ -101,13 +107,32 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 	@Override
 	public void render(){
+		byte[] frame;
+		Size dimensions;
+
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 
-		batch.setProjectionMatrix(camera.combined);
-		batch.begin();
-		sprite.draw(batch);
-		batch.end();
+		frame = frameMonitor.getCurrentFrame();
+		if(frame != null){
+			texture.dispose();
+
+			dimensions = frameMonitor.getFrameDimensions();
+			texture = new Texture(new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight()));
+			texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+
+			TextureRegion region = new TextureRegion(texture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
+
+			sprite = new Sprite(region);
+			sprite.setSize(0.9f, 0.9f * sprite.getHeight() / sprite.getWidth());
+			sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
+			sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);
+
+			batch.setProjectionMatrix(camera.combined);
+			batch.begin();{
+				sprite.draw(batch);
+			}batch.end();
+		}
 	}
 
 	@Override

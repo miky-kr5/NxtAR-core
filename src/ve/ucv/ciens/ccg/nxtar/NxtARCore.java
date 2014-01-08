@@ -107,6 +107,8 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 	@Override
 	public void render(){
+		Pixmap image;
+		Pixmap temp;
 		byte[] frame;
 		Size dimensions;
 
@@ -118,7 +120,10 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			texture.dispose();
 
 			dimensions = frameMonitor.getFrameDimensions();
-			texture = new Texture(new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight()));
+			temp = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
+			image = new Pixmap(1024, 512, temp.getFormat());
+			image.drawPixmap(temp, 0, 0);
+			texture = new Texture(image);
 			texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			TextureRegion region = new TextureRegion(texture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
@@ -132,6 +137,10 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			batch.begin();{
 				sprite.draw(batch);
 			}batch.end();
+
+			texture.dispose();
+			temp.dispose();
+			image.dispose();
 		}
 	}
 

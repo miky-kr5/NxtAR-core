@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!--
+/*
  * Copyright (C) 2013 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,8 +12,34 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
--->
-<!DOCTYPE module PUBLIC "-//Google Inc.//DTD Google Web Toolkit trunk//EN" "http://google-web-toolkit.googlecode.com/svn/trunk/distro-source/core/src/gwt-module.dtd">
-<module>
-	<source path="ve/ucv/ciens/ccg/nxtar" />
-</module>
+ */
+package ve.ucv.ciens.ccg.nxtar.states;
+
+/**
+ * Empty state.
+ * 
+ * Completely empty state for debugging purposes.
+ * 
+ * @author miky
+ */
+public class DummyState implements NxtARState{
+
+	@Override
+	public void input(){ }
+
+	@Override
+	public void update(){ }
+
+	@Override
+	public void render(){ }
+
+	@Override
+	public void pause(){ }
+
+	@Override
+	public void resume(){ }
+
+	@Override
+	public void dispose(){ }
+
+}

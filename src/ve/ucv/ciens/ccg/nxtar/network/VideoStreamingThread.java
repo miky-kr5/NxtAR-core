@@ -50,10 +50,15 @@ public class VideoStreamingThread extends Thread {
 	private ObjectInputStream reader;
 	private ObjectOutputStream writer;
 	private VideoFrameMonitor frameMonitor;
+	private long then;
+	private long now;
+	private long delta;
+	private int fps;
 
 	private VideoStreamingThread(){
 		super(THREAD_NAME);
 
+		fps = 0;
 		netListener = null;
 		toaster = null;
 		protocolStarted = false;
@@ -330,9 +335,14 @@ public class VideoStreamingThread extends Thread {
 			Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Received something unknown.");
 		}
 	}
+	
+	public int getFps(){
+		return fps;
+	}
 
 	@Override
 	public void run(){
+		int frames = 0;
 		// Listen on the server socket until a client successfully connects.
 		do{
 			try{
@@ -349,8 +359,19 @@ public class VideoStreamingThread extends Thread {
 			}
 		}while(client != null && !client.isConnected());
 
+		then = System.currentTimeMillis();
+		
 		while(!done){
 			receiveImage();
+			frames++;
+			now = System.currentTimeMillis();
+			delta = now - then;
+			if(delta >= 1000){
+				fps = frames;
+				frames = 0;
+				then = now;
+				delta = 0;
+			}
 		}
 
 		try{

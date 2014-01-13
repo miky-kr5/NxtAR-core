@@ -28,11 +28,13 @@ import ve.ucv.ciens.ccg.nxtar.utils.Size;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -47,6 +49,8 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	private Sprite sprite;
 	private Toaster toaster;
 	private MulticastEnabler mcastEnabler;
+	private FPSLogger fps;
+	private BitmapFont font;
 	private int connections;
 
 	private VideoFrameMonitor frameMonitor;
@@ -71,7 +75,10 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		float w = Gdx.graphics.getWidth();
 		float h = Gdx.graphics.getHeight();
 
-		Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		fps = new FPSLogger();
+		font = new BitmapFont();
+
+		//Gdx.app.setLogLevel(Application.LOG_NONE);
 
 		camera = new OrthographicCamera(1, h/w);
 		batch = new SpriteBatch();
@@ -103,6 +110,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	public void dispose() {
 		batch.dispose();
 		texture.dispose();
+		font.dispose();
 	}
 
 	@Override
@@ -129,18 +137,27 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			TextureRegion region = new TextureRegion(texture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
 
 			sprite = new Sprite(region);
-			sprite.setSize(0.9f, 0.9f * sprite.getHeight() / sprite.getWidth());
+			sprite.setSize(0.9f, 0.9f * sprite.getWidth() / sprite.getHeight());
 			sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
 			sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);
+			sprite.rotate90(true);
 
 			batch.setProjectionMatrix(camera.combined);
 			batch.begin();{
 				sprite.draw(batch);
+				font.setColor(0.0f, 0.0f, 0.0f, 1.0f);
+				font.setScale(100.0f);
+				font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), 10, 300);
 			}batch.end();
+
+			Gdx.app.log("Main", String.format("Network FPS: %d", videoThread.getFps()));
+			Gdx.app.log("Main", String.format("Render  FPS: %d", Gdx.graphics.getFramesPerSecond()));
 
 			texture.dispose();
 			temp.dispose();
 			image.dispose();
+
+			//fps.log();
 		}
 	}
 

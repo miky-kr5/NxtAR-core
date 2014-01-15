@@ -78,7 +78,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		fps = new FPSLogger();
 		font = new BitmapFont();
 
-		//Gdx.app.setLogLevel(Application.LOG_NONE);
+		Gdx.app.setLogLevel(Application.LOG_DEBUG);
 
 		camera = new OrthographicCamera(1, h/w);
 		batch = new SpriteBatch();

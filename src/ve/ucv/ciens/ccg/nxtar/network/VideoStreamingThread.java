@@ -349,61 +349,61 @@ public class VideoStreamingThread extends Thread {
 
 	private void receiveUdp(){
 		try{
-		int intSize;
-		byte[] size = new byte[4];
-		byte[] data;
-		DatagramPacket packet;
-		VideoFrameDataMessage dataMessage;
-		Object tmpMessage;
+			int intSize;
+			byte[] size = new byte[4];
+			byte[] data;
+			DatagramPacket packet;
+			VideoFrameDataMessage dataMessage;
+			Object tmpMessage;
 
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
-		try{
-			packet = new DatagramPacket(size, size.length);
-			socket.receive(packet);
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
-			return;
-		}
-
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Creating buffers.");
-		intSize = byteArray2Int(size);
-		data = new byte[intSize];
-
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message from socket.");
-		try{
-			packet = new DatagramPacket(data, data.length);
-			socket.receive(packet);
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving data " + io.getMessage());
-			return;
-		}
-
-		ByteArrayInputStream bais = new ByteArrayInputStream(data);
-
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Saving message in monitor.");
-		try{
-			ObjectInputStream ois = new ObjectInputStream(bais);
-			tmpMessage = ois.readObject();
-
-			if(tmpMessage instanceof VideoFrameDataMessage){
-				Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received a data message.");
-				dataMessage = (VideoFrameDataMessage) tmpMessage;
-
-				Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received frame dimensions are: " +
-						Integer.toString(dataMessage.imageWidth) + "x" + Integer.toString(dataMessage.imageHeight));
-				frameMonitor.setFrameDimensions(dataMessage.imageWidth, dataMessage.imageHeight);
-				frameMonitor.setNewFrame(dataMessage.data);
-
-			}else{
-				Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received something unknown.");
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
+			try{
+				packet = new DatagramPacket(size, size.length);
+				socket.receive(packet);
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
+				return;
 			}
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException received deserializing message " + io.getMessage());
-			return;
-		}catch(ClassNotFoundException cn){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: ClassNotFoundException received " + cn.getMessage());
-			return;
-		}
+
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Creating buffers.");
+			intSize = byteArray2Int(size);
+			data = new byte[intSize];
+
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message from socket.");
+			try{
+				packet = new DatagramPacket(data, data.length);
+				socket.receive(packet);
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving data " + io.getMessage());
+				return;
+			}
+
+			ByteArrayInputStream bais = new ByteArrayInputStream(data);
+
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Saving message in monitor.");
+			try{
+				ObjectInputStream ois = new ObjectInputStream(bais);
+				tmpMessage = ois.readObject();
+
+				if(tmpMessage instanceof VideoFrameDataMessage){
+					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received a data message.");
+					dataMessage = (VideoFrameDataMessage) tmpMessage;
+
+					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received frame dimensions are: " +
+							Integer.toString(dataMessage.imageWidth) + "x" + Integer.toString(dataMessage.imageHeight));
+					frameMonitor.setFrameDimensions(dataMessage.imageWidth, dataMessage.imageHeight);
+					frameMonitor.setNewFrame(dataMessage.data);
+
+				}else{
+					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received something unknown.");
+				}
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException received deserializing message " + io.getMessage());
+				return;
+			}catch(ClassNotFoundException cn){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: ClassNotFoundException received " + cn.getMessage());
+				return;
+			}
 		}catch(Exception e){
 			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: Exception received " + e.getMessage());
 			return;

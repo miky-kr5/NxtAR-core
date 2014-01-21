@@ -97,7 +97,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		frameMonitor = VideoFrameMonitor.getInstance();
 		mcastEnabler.enableMulticast();
 		udpThread = ServiceDiscoveryThread.getInstance();
-		videoThread = VideoStreamingThread.getInstance().setToaster(toaster);
+		videoThread = VideoStreamingThread.getInstance()/*.setToaster(toaster)*/;
 		//robotThread = RobotControlThread.getInstance().setToaster(toaster);
 
 		udpThread.start();
@@ -138,8 +138,10 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 			sprite = new Sprite(region);
 			sprite.setSize(0.9f, 0.9f * sprite.getWidth() / sprite.getHeight());
-			sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
-			sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);
+			/*sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
+			sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);*/
+			sprite.setOrigin(0, 0);
+			sprite.setPosition(-sprite.getWidth()/2, (-sprite.getHeight()/3));
 			sprite.rotate90(true);
 
 			batch.setProjectionMatrix(camera.combined);

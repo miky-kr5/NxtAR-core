@@ -24,4 +24,6 @@ public abstract class ProjectConstants {
 	public static final int EXIT_FAILURE = 1;
 
 	public static final boolean DEBUG = true;
+	
+	public static final int[] POWERS_OF_2 = {64, 128, 256, 512, 1024, 2048};
 }

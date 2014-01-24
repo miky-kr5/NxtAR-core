@@ -28,6 +28,8 @@ import ve.ucv.ciens.ccg.nxtar.utils.Size;
 import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -38,20 +40,35 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.math.Vector3;
 
-public class NxtARCore implements ApplicationListener, NetworkConnectionListener {
+public class NxtARCore implements ApplicationListener, NetworkConnectionListener, InputProcessor{
 	private static final String TAG = "NXTAR_CORE_MAIN";
 	private static final String CLASS_NAME = NxtARCore.class.getSimpleName();
 
 	private OrthographicCamera camera;
+	private OrthographicCamera pixelPerfectCamera;
 	private SpriteBatch batch;
 	private Texture texture;
+	private Texture buttonTexture;
 	private Sprite sprite;
+	private Sprite motorA;
+	private Sprite motorB;
+	private Sprite motorC;
+	private Sprite motorD;
 	private Toaster toaster;
 	private MulticastEnabler mcastEnabler;
 	private FPSLogger fps;
 	private BitmapFont font;
 	private int connections;
+	private float fontX;
+	private float fontY;
+	private Pixmap image;
+	private Vector3 win2world;
+	private Vector2 touchPountWorldCoords;
+	private boolean[] motorButtonsTouched;
+	private int[] motorButtonsPointers;
 
 	private VideoFrameMonitor frameMonitor;
 	private ServiceDiscoveryThread udpThread;
@@ -66,39 +83,53 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			this.mcastEnabler = (MulticastEnabler)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement any of the required interfaces.");
-			System.exit(ProjectConstants.EXIT_FAILURE);
+			Gdx.app.exit();
 		}
 	}
 
 	@Override
 	public void create(){
-		float w = Gdx.graphics.getWidth();
-		float h = Gdx.graphics.getHeight();
+		image = null;
+		fontX = -(Gdx.graphics.getWidth() / 2) + 10;
+		fontY = (Gdx.graphics.getHeight() / 2) - 10;
+		win2world = new Vector3(0.0f, 0.0f, 0.0f);
+		touchPountWorldCoords = new Vector2();
+		motorButtonsTouched = new boolean[4];
+		motorButtonsTouched[0] = false;
+		motorButtonsTouched[1] = false;
+		motorButtonsTouched[2] = false;
+		motorButtonsTouched[3] = false;
+
+		motorButtonsPointers = new int[4];
+		motorButtonsPointers[0] = -1;
+		motorButtonsPointers[1] = -1;
+		motorButtonsPointers[2] = -1;
+		motorButtonsPointers[3] = -1;
+
+		Gdx.input.setInputProcessor(this);
 
 		fps = new FPSLogger();
 		font = new BitmapFont();
 
-		Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
+		font.setScale(1.0f);
 
-		camera = new OrthographicCamera(1, h/w);
+		Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		//Gdx.app.setLogLevel(Application.LOG_NONE);
+
+		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		camera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
 		batch = new SpriteBatch();
 
-		texture = new Texture(Gdx.files.internal("data/libgdx.png"));
-		texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-
-		TextureRegion region = new TextureRegion(texture, 0, 0, 512, 275);
-
-		sprite = new Sprite(region);
-		sprite.setSize(0.9f, 0.9f * sprite.getHeight() / sprite.getWidth());
-		sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
-		sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);
+		if(!Ouya.runningOnOuya) setUpButtons();
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		frameMonitor = VideoFrameMonitor.getInstance();
-		mcastEnabler.enableMulticast();
 		udpThread = ServiceDiscoveryThread.getInstance();
 		videoThread = VideoStreamingThread.getInstance()/*.setToaster(toaster)*/;
 		//robotThread = RobotControlThread.getInstance().setToaster(toaster);
+
+		mcastEnabler.enableMulticast();
 
 		udpThread.start();
 		videoThread.start();
@@ -110,57 +141,73 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	public void dispose() {
 		batch.dispose();
 		texture.dispose();
+		buttonTexture.dispose();
 		font.dispose();
+		image.dispose();
+		videoThread.finish();
 	}
 
 	@Override
 	public void render(){
-		Pixmap image;
 		Pixmap temp;
 		byte[] frame;
-		Size dimensions;
+		Size dimensions = null;
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
 
 		frame = frameMonitor.getCurrentFrame();
 		if(frame != null){
-			texture.dispose();
-
 			dimensions = frameMonitor.getFrameDimensions();
 			temp = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
-			image = new Pixmap(1024, 512, temp.getFormat());
+			if(image == null){
+				try{
+					image = new Pixmap(getOptimalTextureSize(dimensions.getWidth()), getOptimalTextureSize(dimensions.getHeight()), temp.getFormat());
+				}catch(ImageTooBigException e){
+					toaster.showLongToast("Cannot display received frame.\n" + e.getMessage());
+					Gdx.app.exit();
+					return;
+				}
+			}
 			image.drawPixmap(temp, 0, 0);
+			temp.dispose();
 			texture = new Texture(image);
 			texture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			TextureRegion region = new TextureRegion(texture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
 
 			sprite = new Sprite(region);
-			sprite.setSize(0.9f, 0.9f * sprite.getWidth() / sprite.getHeight());
-			/*sprite.setOrigin(sprite.getWidth()/2, sprite.getHeight()/2);
-			sprite.setPosition(-sprite.getWidth()/2, -sprite.getHeight()/2);*/
-			sprite.setOrigin(0, 0);
-			sprite.setPosition(-sprite.getWidth()/2, (-sprite.getHeight()/3));
-			sprite.rotate90(true);
+			sprite.setOrigin(sprite.getWidth() / 2, sprite.getHeight() / 2);
+			if(!Ouya.runningOnOuya){
+				sprite.setSize(1.0f, sprite.getHeight() / sprite.getWidth() );
+				sprite.rotate90(true);
+			}else{
+				//float scaleRatioY = Gdx.graphics.getHeight() / dimensions.getHeight();
+				//sprite.scale(scaleRatioY);
+				//sprite.setSize(dimensions.getWidth() * scaleRatioY, dimensions.getHeight() * scaleRatioY);
+				sprite.setSize(1.0f, sprite.getHeight() / sprite.getWidth() );
+			}
+			sprite.translate(-sprite.getWidth() / 2, 0.5f - sprite.getHeight());
 
 			batch.setProjectionMatrix(camera.combined);
 			batch.begin();{
 				sprite.draw(batch);
-				font.setColor(0.0f, 0.0f, 0.0f, 1.0f);
-				font.setScale(100.0f);
-				font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), 10, 300);
 			}batch.end();
 
-			Gdx.app.log("Main", String.format("Network FPS: %d", videoThread.getFps()));
-			Gdx.app.log("Main", String.format("Render  FPS: %d", Gdx.graphics.getFramesPerSecond()));
-
 			texture.dispose();
-			temp.dispose();
-			image.dispose();
-
-			//fps.log();
 		}
+
+		batch.setProjectionMatrix(pixelPerfectCamera.combined);
+		batch.begin();{
+			if(!Ouya.runningOnOuya){
+				motorA.draw(batch);
+				motorB.draw(batch);
+				motorC.draw(batch);
+				motorD.draw(batch);
+			}
+			font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), fontX, fontY);
+			font.draw(batch, String.format("Network FPS: %d", videoThread.getFps()), fontX, fontY - font.getCapHeight() - 5);
+		}batch.end();
 	}
 
 	@Override
@@ -169,10 +216,14 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 	@Override
 	public void pause(){
+		if(videoThread != null)
+			videoThread.pause();
 	}
 
 	@Override
 	public void resume(){
+		if(videoThread != null)
+			videoThread.play();
 	}
 
 	@Override
@@ -185,4 +236,160 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			mcastEnabler.disableMulticast();
 		}
 	}
+
+	private int getOptimalTextureSize(int imageSideLength) throws ImageTooBigException{
+		for(int po2: ProjectConstants.POWERS_OF_2){
+			if(imageSideLength < po2) return po2;
+		}
+		throw new ImageTooBigException("No valid texture size found. Image too large.");
+	}
+
+	private void setUpButtons(){
+		buttonTexture = new Texture(Gdx.files.internal("data/gfx/gui/PBCrichton_Flat_Button.png"));
+		buttonTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+
+		TextureRegion region = new TextureRegion(buttonTexture, 0, 0, buttonTexture.getWidth(), buttonTexture.getHeight());
+
+		motorA = new Sprite(region);
+		motorA.setSize(motorA.getWidth() * 0.7f, motorA.getHeight() * 0.7f);
+
+		motorB = new Sprite(region);
+		motorB.setSize(motorB.getWidth() * 0.7f, motorB.getHeight() * 0.7f);
+
+		motorC = new Sprite(region);
+		motorC.setSize(motorC.getWidth() * 0.7f, motorC.getHeight() * 0.7f);
+
+		motorD = new Sprite(region);
+		motorD.setSize(motorD.getWidth() * 0.7f, motorD.getHeight() * 0.7f);
+
+		motorA.setPosition(-(Gdx.graphics.getWidth() / 2) + 10, -(Gdx.graphics.getHeight() / 2) + motorB.getHeight() + 20);
+		motorB.setPosition(-(Gdx.graphics.getWidth() / 2) + 20 + (motorA.getWidth() / 2), -(Gdx.graphics.getHeight() / 2) + 10);
+		motorC.setPosition((Gdx.graphics.getWidth() / 2) - (1.5f * (motorD.getWidth())) - 20, -(Gdx.graphics.getHeight() / 2) + 10);
+		motorD.setPosition((Gdx.graphics.getWidth() / 2) - motorD.getWidth() - 10, -(Gdx.graphics.getHeight() / 2) + 20 + motorC.getHeight());
+	}
+
+	private class ImageTooBigException extends Exception{
+		private static final long serialVersionUID = 9989L;
+
+		public ImageTooBigException(String msg){
+			super(msg);
+		}
+	}
+
+	@Override
+	public boolean keyDown(int keycode) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean keyUp(int keycode) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean keyTyped(char character) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+		win2world.set(screenX, screenY, 0.0f);
+		camera.unproject(win2world);
+		touchPountWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));
+
+		if(motorA.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor A button pressed");
+			motorButtonsTouched[0] = true;
+			motorButtonsPointers[0] = pointer;
+		}else if(motorB.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
+			motorButtonsTouched[1] = true;
+			motorButtonsPointers[1] = pointer;
+		}else if(motorC.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor C button pressed");
+			motorButtonsTouched[2] = true;
+			motorButtonsPointers[2] = pointer;
+		}else if(motorD.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor D button pressed");
+			motorButtonsTouched[3] = true;
+			motorButtonsPointers[3] = pointer;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+		win2world.set(screenX, screenY, 0.0f);
+		camera.unproject(win2world);
+		touchPountWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));
+
+		if(motorA.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor A button released");
+			motorButtonsPointers[0] = -1;
+			motorButtonsTouched[0] = false;
+		}else if(motorB.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor B button released");
+			motorButtonsPointers[1] = -1;
+			motorButtonsTouched[1] = false;
+		}else if(motorC.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor C button released");
+			motorButtonsPointers[2] = -1;
+			motorButtonsTouched[2] = false;
+		}else if(motorD.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor D button released");
+			motorButtonsPointers[3] = -1;
+			motorButtonsTouched[3] = false;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer) {
+		win2world.set(screenX, screenY, 0.0f);
+		camera.unproject(win2world);
+		touchPountWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+
+		/*Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d)", screenX, screenY, pointer));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));*/
+
+		if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor A button released");
+			motorButtonsPointers[0] = -1;
+			motorButtonsTouched[0] = false;
+		}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor B button released");
+			motorButtonsPointers[1] = -1;
+			motorButtonsTouched[1] = false;
+		}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor C button released");
+			motorButtonsPointers[2] = -1;
+			motorButtonsTouched[2] = false;
+		}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPountWorldCoords)){
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor D button released");
+			motorButtonsPointers[3] = -1;
+			motorButtonsTouched[3] = false;
+		}
+		return true;
+	}
+
+	@Override
+	public boolean mouseMoved(int screenX, int screenY) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean scrolled(int amount) {
+		// TODO Auto-generated method stub
+		return false;
+	};
 }

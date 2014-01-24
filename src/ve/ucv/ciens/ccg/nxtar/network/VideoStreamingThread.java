@@ -44,6 +44,7 @@ public class VideoStreamingThread extends Thread {
 	/*private boolean pauseProtocol;
 	private boolean endProtocol;*/
 	private boolean done;
+	private boolean pause;
 	private Object protocolPauseMonitor;
 	private Socket client;
 	//private ObjectInputStream reader;
@@ -53,10 +54,12 @@ public class VideoStreamingThread extends Thread {
 	private long now;
 	private long delta;
 	private int fps;
+	private Object pauseMonitor;
 
 	private VideoStreamingThread(){
 		super(THREAD_NAME);
 
+		pauseMonitor = new Object();
 		fps = 0;
 		netListener = null;
 		//toaster = null;
@@ -433,7 +436,11 @@ public class VideoStreamingThread extends Thread {
 		then = System.currentTimeMillis();
 
 		while(!done){
-			//receiveImage();
+			synchronized (pauseMonitor) {
+				while(pause){
+					try{ pauseMonitor.wait(); }catch(InterruptedException ie){ }
+				}
+			}
 			Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
 			if(netListener != null)
 				netListener.networkStreamConnected(THREAD_NAME);
@@ -458,4 +465,16 @@ public class VideoStreamingThread extends Thread {
 		Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Thread finished.");
 	}
 
+	public void pause(){
+		synchronized (pauseMonitor){
+			pause = true;
+		}
+	}
+	
+	public void play(){
+		synchronized (pauseMonitor){
+			pause = false;
+			pauseMonitor.notifyAll();
+		}
+	}
 }

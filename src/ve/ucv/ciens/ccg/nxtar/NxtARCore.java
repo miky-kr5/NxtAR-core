@@ -30,7 +30,6 @@ import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
 import com.badlogic.gdx.controllers.mappings.Ouya;
-import com.badlogic.gdx.graphics.FPSLogger;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -59,19 +58,18 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	private Sprite motorD;
 	private Toaster toaster;
 	private MulticastEnabler mcastEnabler;
-	private FPSLogger fps;
 	private BitmapFont font;
 	private int connections;
 	private float fontX;
 	private float fontY;
 	private Pixmap image;
 	private Vector3 win2world;
-	private Vector2 touchPountWorldCoords;
+	private Vector2 touchPointWorldCoords;
 	private boolean[] motorButtonsTouched;
 	private int[] motorButtonsPointers;
 
 	private VideoFrameMonitor frameMonitor;
-	private ServiceDiscoveryThread udpThread;
+	private ServiceDiscoveryThread serviceDiscoveryThread;
 	private VideoStreamingThread videoThread;
 	private RobotControlThread robotThread;
 
@@ -93,7 +91,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		fontX = -(Gdx.graphics.getWidth() / 2) + 10;
 		fontY = (Gdx.graphics.getHeight() / 2) - 10;
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
-		touchPountWorldCoords = new Vector2();
+		touchPointWorldCoords = new Vector2();
 		motorButtonsTouched = new boolean[4];
 		motorButtonsTouched[0] = false;
 		motorButtonsTouched[1] = false;
@@ -108,7 +106,6 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 		Gdx.input.setInputProcessor(this);
 
-		fps = new FPSLogger();
 		font = new BitmapFont();
 
 		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
@@ -125,13 +122,13 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		frameMonitor = VideoFrameMonitor.getInstance();
-		udpThread = ServiceDiscoveryThread.getInstance();
+		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
 		videoThread = VideoStreamingThread.getInstance()/*.setToaster(toaster)*/;
 		//robotThread = RobotControlThread.getInstance().setToaster(toaster);
 
 		mcastEnabler.enableMulticast();
 
-		udpThread.start();
+		serviceDiscoveryThread.start();
 		videoThread.start();
 		videoThread.startStreaming();
 		//robotThread.start();
@@ -207,6 +204,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			}
 			font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), fontX, fontY);
 			font.draw(batch, String.format("Network FPS: %d", videoThread.getFps()), fontX, fontY - font.getCapHeight() - 5);
+			font.draw(batch, String.format("Lost Network FPS: %d", videoThread.getLostFrames()), fontX, fontY - (2 * font.getCapHeight()) - 10);
 		}batch.end();
 	}
 
@@ -232,7 +230,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			connections += 1;
 		if(connections >= 2){
 			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
-			udpThread.finish();
+			serviceDiscoveryThread.finish();
 			mcastEnabler.disableMulticast();
 		}
 	}
@@ -298,24 +296,24 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		win2world.set(screenX, screenY, 0.0f);
 		camera.unproject(win2world);
-		touchPountWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+		touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(motorA.getBoundingRectangle().contains(touchPountWorldCoords)){
+		if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor A button pressed");
 			motorButtonsTouched[0] = true;
 			motorButtonsPointers[0] = pointer;
-		}else if(motorB.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
 			motorButtonsTouched[1] = true;
 			motorButtonsPointers[1] = pointer;
-		}else if(motorC.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor C button pressed");
 			motorButtonsTouched[2] = true;
 			motorButtonsPointers[2] = pointer;
-		}else if(motorD.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor D button pressed");
 			motorButtonsTouched[3] = true;
 			motorButtonsPointers[3] = pointer;
@@ -327,24 +325,24 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
 		win2world.set(screenX, screenY, 0.0f);
 		camera.unproject(win2world);
-		touchPountWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+		touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(motorA.getBoundingRectangle().contains(touchPountWorldCoords)){
+		if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor A button released");
 			motorButtonsPointers[0] = -1;
 			motorButtonsTouched[0] = false;
-		}else if(motorB.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor B button released");
 			motorButtonsPointers[1] = -1;
 			motorButtonsTouched[1] = false;
-		}else if(motorC.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor C button released");
 			motorButtonsPointers[2] = -1;
 			motorButtonsTouched[2] = false;
-		}else if(motorD.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor D button released");
 			motorButtonsPointers[3] = -1;
 			motorButtonsTouched[3] = false;
@@ -356,24 +354,24 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
 		win2world.set(screenX, screenY, 0.0f);
 		camera.unproject(win2world);
-		touchPountWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+		touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 		/*Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d)", screenX, screenY, pointer));
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));*/
 
-		if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPountWorldCoords)){
+		if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor A button released");
 			motorButtonsPointers[0] = -1;
 			motorButtonsTouched[0] = false;
-		}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor B button released");
 			motorButtonsPointers[1] = -1;
 			motorButtonsTouched[1] = false;
-		}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor C button released");
 			motorButtonsPointers[2] = -1;
 			motorButtonsTouched[2] = false;
-		}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPountWorldCoords)){
+		}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor D button released");
 			motorButtonsPointers[3] = -1;
 			motorButtonsTouched[3] = false;

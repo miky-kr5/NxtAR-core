@@ -54,6 +54,8 @@ public class VideoStreamingThread extends Thread {
 	private long now;
 	private long delta;
 	private int fps;
+	private int lostFramesPerSecond;
+	private int lostFrames;
 	private Object pauseMonitor;
 
 	private VideoStreamingThread(){
@@ -61,6 +63,7 @@ public class VideoStreamingThread extends Thread {
 
 		pauseMonitor = new Object();
 		fps = 0;
+		lostFramesPerSecond = 0;
 		netListener = null;
 		//toaster = null;
 		protocolStarted = false;
@@ -362,6 +365,7 @@ public class VideoStreamingThread extends Thread {
 				socket.receive(packet);
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
+				lostFramesPerSecond += 1;
 				return;
 			}
 
@@ -375,6 +379,7 @@ public class VideoStreamingThread extends Thread {
 				socket.receive(packet);
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving data " + io.getMessage());
+				lostFramesPerSecond += 1;
 				return;
 			}
 
@@ -396,16 +401,20 @@ public class VideoStreamingThread extends Thread {
 
 				}else{
 					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received something unknown.");
+					lostFramesPerSecond += 1;
 				}
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException received deserializing message " + io.getMessage());
+				lostFramesPerSecond += 1;
 				return;
 			}catch(ClassNotFoundException cn){
 				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: ClassNotFoundException received " + cn.getMessage());
+				lostFramesPerSecond += 1;
 				return;
 			}
 		}catch(Exception e){
 			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: Exception received " + e.getMessage());
+			lostFramesPerSecond += 1;
 			return;
 		}
 	}
@@ -413,10 +422,15 @@ public class VideoStreamingThread extends Thread {
 	public int getFps(){
 		return fps;
 	}
+	
+	public int getLostFrames(){
+		return lostFrames;
+	}
 
 	@Override
 	public void run(){
 		int frames = 0;
+		lostFrames = 0;
 		// Listen on the server socket until a client successfully connects.
 		/*do{
 			try{
@@ -451,6 +465,8 @@ public class VideoStreamingThread extends Thread {
 			if(delta >= 1000){
 				fps = frames;
 				frames = 0;
+				lostFrames = lostFramesPerSecond;
+				lostFramesPerSecond = 0;
 				then = now;
 				delta = 0;
 			}

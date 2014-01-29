@@ -46,6 +46,8 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	private static final String TAG = "NXTAR_CORE_MAIN";
 	private static final String CLASS_NAME = NxtARCore.class.getSimpleName();
 
+	private float overscan;
+
 	private OrthographicCamera camera;
 	private OrthographicCamera pixelPerfectCamera;
 	private SpriteBatch batch;
@@ -88,8 +90,6 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	@Override
 	public void create(){
 		image = null;
-		fontX = -(Gdx.graphics.getWidth() / 2) + 10;
-		fontY = (Gdx.graphics.getHeight() / 2) - 10;
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
 		touchPointWorldCoords = new Vector2();
 		motorButtonsTouched = new boolean[4];
@@ -109,15 +109,22 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		font = new BitmapFont();
 
 		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
-		font.setScale(1.0f);
+		if(!Ouya.runningOnOuya){
+			font.setScale(1.0f);
+		}else{
+			font.setScale(2.5f);
+		}
 
-		Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		Gdx.app.setLogLevel(Application.LOG_INFO);
 		//Gdx.app.setLogLevel(Application.LOG_NONE);
 
 		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
 		batch = new SpriteBatch();
 
+		overscan = Ouya.runningOnOuya ? 0.9f : 1.0f;
+		fontX = -((Gdx.graphics.getWidth() * overscan) / 2) + 10;
+		fontY = ((Gdx.graphics.getHeight() * overscan) / 2) - 10;
 		if(!Ouya.runningOnOuya) setUpButtons();
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
@@ -137,8 +144,10 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 	@Override
 	public void dispose() {
 		batch.dispose();
-		texture.dispose();
-		buttonTexture.dispose();
+		if(texture != null)
+			texture.dispose();
+		if(buttonTexture != null)
+			buttonTexture.dispose();
 		font.dispose();
 		image.dispose();
 		videoThread.finish();
@@ -178,15 +187,19 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			if(!Ouya.runningOnOuya){
 				sprite.setSize(1.0f, sprite.getHeight() / sprite.getWidth() );
 				sprite.rotate90(true);
+				sprite.translate(-sprite.getWidth() / 2, 0.5f - sprite.getHeight());
 			}else{
-				//float scaleRatioY = Gdx.graphics.getHeight() / dimensions.getHeight();
-				//sprite.scale(scaleRatioY);
-				//sprite.setSize(dimensions.getWidth() * scaleRatioY, dimensions.getHeight() * scaleRatioY);
-				sprite.setSize(1.0f, sprite.getHeight() / sprite.getWidth() );
+				float xSize = Gdx.graphics.getHeight() * (dimensions.getWidth() / dimensions.getHeight());
+				sprite.setSize(xSize * overscan, Gdx.graphics.getHeight() * overscan);
+				sprite.rotate90(true);
+				sprite.translate(-sprite.getWidth() / 2, -sprite.getHeight() / 2);
 			}
-			sprite.translate(-sprite.getWidth() / 2, 0.5f - sprite.getHeight());
 
-			batch.setProjectionMatrix(camera.combined);
+			if(!Ouya.runningOnOuya){
+				batch.setProjectionMatrix(camera.combined);
+			}else{
+				batch.setProjectionMatrix(pixelPerfectCamera.combined);
+			}
 			batch.begin();{
 				sprite.draw(batch);
 			}batch.end();
@@ -205,6 +218,8 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), fontX, fontY);
 			font.draw(batch, String.format("Network FPS: %d", videoThread.getFps()), fontX, fontY - font.getCapHeight() - 5);
 			font.draw(batch, String.format("Lost Network FPS: %d", videoThread.getLostFrames()), fontX, fontY - (2 * font.getCapHeight()) - 10);
+			if(dimensions != null)
+				font.draw(batch, String.format("Frame size: (%d, %d)", dimensions.getWidth(), dimensions.getHeight()), fontX, fontY - (3 * font.getCapHeight()) - 15);
 		}batch.end();
 	}
 
@@ -294,94 +309,97 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		win2world.set(screenX, screenY, 0.0f);
-		camera.unproject(win2world);
-		touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+		if(!Ouya.runningOnOuya){
+			win2world.set(screenX, screenY, 0.0f);
+			camera.unproject(win2world);
+			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
+			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor A button pressed");
-			motorButtonsTouched[0] = true;
-			motorButtonsPointers[0] = pointer;
-		}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
-			motorButtonsTouched[1] = true;
-			motorButtonsPointers[1] = pointer;
-		}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor C button pressed");
-			motorButtonsTouched[2] = true;
-			motorButtonsPointers[2] = pointer;
-		}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor D button pressed");
-			motorButtonsTouched[3] = true;
-			motorButtonsPointers[3] = pointer;
+			if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor A button pressed");
+				motorButtonsTouched[0] = true;
+				motorButtonsPointers[0] = pointer;
+			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
+				motorButtonsTouched[1] = true;
+				motorButtonsPointers[1] = pointer;
+			}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor C button pressed");
+				motorButtonsTouched[2] = true;
+				motorButtonsPointers[2] = pointer;
+			}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor D button pressed");
+				motorButtonsTouched[3] = true;
+				motorButtonsPointers[3] = pointer;
+			}
 		}
 		return true;
 	}
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-		win2world.set(screenX, screenY, 0.0f);
-		camera.unproject(win2world);
-		touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+		if(!Ouya.runningOnOuya){
+			win2world.set(screenX, screenY, 0.0f);
+			camera.unproject(win2world);
+			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
+			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor A button released");
-			motorButtonsPointers[0] = -1;
-			motorButtonsTouched[0] = false;
-		}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor B button released");
-			motorButtonsPointers[1] = -1;
-			motorButtonsTouched[1] = false;
-		}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor C button released");
-			motorButtonsPointers[2] = -1;
-			motorButtonsTouched[2] = false;
-		}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor D button released");
-			motorButtonsPointers[3] = -1;
-			motorButtonsTouched[3] = false;
+			if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor A button released");
+				motorButtonsPointers[0] = -1;
+				motorButtonsTouched[0] = false;
+			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor B button released");
+				motorButtonsPointers[1] = -1;
+				motorButtonsTouched[1] = false;
+			}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor C button released");
+				motorButtonsPointers[2] = -1;
+				motorButtonsTouched[2] = false;
+			}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor D button released");
+				motorButtonsPointers[3] = -1;
+				motorButtonsTouched[3] = false;
+			}
 		}
 		return true;
 	}
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		win2world.set(screenX, screenY, 0.0f);
-		camera.unproject(win2world);
-		touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+		if(!Ouya.runningOnOuya){
+			win2world.set(screenX, screenY, 0.0f);
+			camera.unproject(win2world);
+			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
-		/*Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d)", screenX, screenY, pointer));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPountWorldCoords.x, touchPountWorldCoords.y));*/
-
-		if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor A button released");
-			motorButtonsPointers[0] = -1;
-			motorButtonsTouched[0] = false;
-		}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor B button released");
-			motorButtonsPointers[1] = -1;
-			motorButtonsTouched[1] = false;
-		}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor C button released");
-			motorButtonsPointers[2] = -1;
-			motorButtonsTouched[2] = false;
-		}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor D button released");
-			motorButtonsPointers[3] = -1;
-			motorButtonsTouched[3] = false;
+			if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor A button released");
+				motorButtonsPointers[0] = -1;
+				motorButtonsTouched[0] = false;
+			}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor B button released");
+				motorButtonsPointers[1] = -1;
+				motorButtonsTouched[1] = false;
+			}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor C button released");
+				motorButtonsPointers[2] = -1;
+				motorButtonsTouched[2] = false;
+			}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor D button released");
+				motorButtonsPointers[3] = -1;
+				motorButtonsTouched[3] = false;
+			}
 		}
 		return true;
 	}
 
 	@Override
 	public boolean mouseMoved(int screenX, int screenY) {
-		// TODO Auto-generated method stub
+		Gdx.app.error(TAG, "MOUSE MOVED!");
 		return false;
 	}
 

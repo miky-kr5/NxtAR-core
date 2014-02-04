@@ -15,6 +15,8 @@
  */
 package ve.ucv.ciens.ccg.nxtar.utils;
 
+import com.badlogic.gdx.controllers.mappings.Ouya;
+
 public abstract class ProjectConstants {
 	public static final int SERVER_UDP_PORT = 8889;
 	public static final int SERVER_TCP_PORT_1 = 9989;
@@ -24,6 +26,12 @@ public abstract class ProjectConstants {
 	public static final int EXIT_FAILURE = 1;
 
 	public static final boolean DEBUG = true;
-	
+
 	public static final int[] POWERS_OF_2 = {64, 128, 256, 512, 1024, 2048};
+
+	public static final float OVERSCAN;
+
+	static{
+		OVERSCAN = Ouya.runningOnOuya ? 0.9f : 1.0f;
+	}
 }

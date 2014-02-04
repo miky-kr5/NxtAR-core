@@ -29,6 +29,10 @@ import com.badlogic.gdx.Application;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputProcessor;
+import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.ControllerListener;
+import com.badlogic.gdx.controllers.Controllers;
+import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
@@ -42,11 +46,9 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
-public class NxtARCore implements ApplicationListener, NetworkConnectionListener, InputProcessor{
+public class NxtARCore implements ApplicationListener, NetworkConnectionListener, InputProcessor, ControllerListener{
 	private static final String TAG = "NXTAR_CORE_MAIN";
 	private static final String CLASS_NAME = NxtARCore.class.getSimpleName();
-
-	private float overscan;
 
 	private OrthographicCamera camera;
 	private OrthographicCamera pixelPerfectCamera;
@@ -105,6 +107,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 		motorButtonsPointers[3] = -1;
 
 		Gdx.input.setInputProcessor(this);
+		Controllers.addListener(this);
 
 		font = new BitmapFont();
 
@@ -115,16 +118,15 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 			font.setScale(2.5f);
 		}
 
-		Gdx.app.setLogLevel(Application.LOG_INFO);
-		//Gdx.app.setLogLevel(Application.LOG_NONE);
+		//Gdx.app.setLogLevel(Application.LOG_INFO);
+		Gdx.app.setLogLevel(Application.LOG_NONE);
 
 		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
 		batch = new SpriteBatch();
 
-		overscan = Ouya.runningOnOuya ? 0.9f : 1.0f;
-		fontX = -((Gdx.graphics.getWidth() * overscan) / 2) + 10;
-		fontY = ((Gdx.graphics.getHeight() * overscan) / 2) - 10;
+		fontX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
+		fontY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
 		if(!Ouya.runningOnOuya) setUpButtons();
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
@@ -190,7 +192,7 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 				sprite.translate(-sprite.getWidth() / 2, 0.5f - sprite.getHeight());
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (dimensions.getWidth() / dimensions.getHeight());
-				sprite.setSize(xSize * overscan, Gdx.graphics.getHeight() * overscan);
+				sprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
 				sprite.rotate90(true);
 				sprite.translate(-sprite.getWidth() / 2, -sprite.getHeight() / 2);
 			}
@@ -405,6 +407,81 @@ public class NxtARCore implements ApplicationListener, NetworkConnectionListener
 
 	@Override
 	public boolean scrolled(int amount) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public void connected(Controller controller) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void disconnected(Controller controller) {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public boolean buttonDown(Controller controller, int buttonCode) {
+		if(buttonCode == Ouya.BUTTON_L1){
+			// Start right motor.
+		}
+		if(buttonCode == Ouya.BUTTON_L2){
+			// Start left motor.
+		}
+		if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
+			// Look left.
+		}
+		if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
+			// Look right;
+		}
+		return false;
+	}
+
+	@Override
+	public boolean buttonUp(Controller controller, int buttonCode) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean axisMoved(Controller controller, int axisCode, float value) {
+		if(axisCode == Ouya.AXIS_LEFT_TRIGGER){
+
+		}
+		if(axisCode == Ouya.AXIS_RIGHT_TRIGGER){
+			// Start 
+		}
+
+		return false;
+	}
+
+	@Override
+	public boolean povMoved(Controller controller, int povCode,
+			PovDirection value) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean xSliderMoved(Controller controller, int sliderCode,
+			boolean value) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean ySliderMoved(Controller controller, int sliderCode,
+			boolean value) {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean accelerometerMoved(Controller controller,
+			int accelerometerCode, Vector3 value) {
 		// TODO Auto-generated method stub
 		return false;
 	};

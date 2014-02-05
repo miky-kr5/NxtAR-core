@@ -18,15 +18,12 @@ package ve.ucv.ciens.ccg.nxtar.network;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.ServerSocket;
 import java.net.Socket;
 
 import ve.ucv.ciens.ccg.networkdata.VideoFrameDataMessage;
 import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
-import ve.ucv.ciens.ccg.nxtar.interfaces.Toaster;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Gdx;
@@ -36,44 +33,50 @@ public class VideoStreamingThread extends Thread {
 	private static final String TAG = "NXTAR_CORE_VIDEOTHREAD";
 	private static final String CLASS_NAME = VideoStreamingThread.class.getSimpleName();
 
-	private enum ProtocolState_t {WAIT_FOR_START, SEND_CONTINUE, RECEIVE_DATA, SEND_ACK_NEXT, SEND_ACK_WAIT, PAUSED, END_STREAM};
+	//private enum ProtocolState_t {WAIT_FOR_START, SEND_CONTINUE, RECEIVE_DATA, SEND_ACK_NEXT, SEND_ACK_WAIT, PAUSED, END_STREAM};
 
 	private NetworkConnectionListener netListener;
-	private ServerSocket server;
+	//private ServerSocket server;
 	private DatagramSocket socket;
-	private Toaster toaster;
-	private ProtocolState_t protocolState;
+	//private Toaster toaster;
+	//private ProtocolState_t protocolState;
 	private boolean protocolStarted;
-	private boolean pauseProtocol;
-	private boolean endProtocol;
+	/*private boolean pauseProtocol;
+	private boolean endProtocol;*/
 	private boolean done;
+	private boolean pause;
 	private Object protocolPauseMonitor;
 	private Socket client;
-	private ObjectInputStream reader;
-	private ObjectOutputStream writer;
+	//private ObjectInputStream reader;
+	//private ObjectOutputStream writer;
 	private VideoFrameMonitor frameMonitor;
 	private long then;
 	private long now;
 	private long delta;
 	private int fps;
+	private int lostFramesPerSecond;
+	private int lostFrames;
+	private Object pauseMonitor;
 
 	private VideoStreamingThread(){
 		super(THREAD_NAME);
 
+		pauseMonitor = new Object();
 		fps = 0;
+		lostFramesPerSecond = 0;
 		netListener = null;
-		toaster = null;
+		//toaster = null;
 		protocolStarted = false;
-		endProtocol = false;
-		pauseProtocol = false;
+		/*endProtocol = false;
+		pauseProtocol = false;*/
 		done = false;
-		protocolState = ProtocolState_t.WAIT_FOR_START;
+		//protocolState = ProtocolState_t.WAIT_FOR_START;
 		protocolPauseMonitor = new Object();
 		frameMonitor = VideoFrameMonitor.getInstance();
 
 		try{
-			server = new ServerSocket(ProjectConstants.SERVER_TCP_PORT_1);
-			socket = new DatagramSocket(ProjectConstants.SERVER_TCP_PORT_2);
+			//server = new ServerSocket(ProjectConstants.SERVER_TCP_PORT_1);
+			socket = new DatagramSocket(ProjectConstants.SERVER_TCP_PORT_1);
 		}catch(IOException io){
 			Gdx.app.error(TAG, CLASS_NAME + ".VideoStreamingThread() :: Error creating server: " + io.getMessage(), io);
 		}
@@ -87,26 +90,26 @@ public class VideoStreamingThread extends Thread {
 		return SingletonHolder.INSTANCE;
 	}
 
-	public VideoStreamingThread setToaster(Toaster toaster){
+	/*public VideoStreamingThread setToaster(Toaster toaster){
 		this.toaster = toaster;
 		return this;
-	}
+	}*/
 
 	public void addNetworkConnectionListener(NetworkConnectionListener listener){
 		netListener = listener;
 	}
 
-	private void toast(String message){
+	/*private void toast(String message){
 		if(toaster != null)
 			toaster.showShortToast(message);
-	}
+	}*/
 
 	public void startStreaming(){
 		if(!protocolStarted){
 			Gdx.app.debug(TAG, CLASS_NAME + ".startStreaming() :: Requesting protocol start.");
 			synchronized(protocolPauseMonitor){
 				protocolStarted = true;
-				protocolState = ProtocolState_t.SEND_CONTINUE;
+				//protocolState = ProtocolState_t.SEND_CONTINUE;
 				protocolPauseMonitor.notifyAll();
 			}
 		}
@@ -115,7 +118,7 @@ public class VideoStreamingThread extends Thread {
 	public void pauseStreaming(){
 		if(protocolStarted){
 			Gdx.app.debug(TAG, CLASS_NAME + ".pauseStreaming() :: Requesting protocol pause.");
-			pauseProtocol = true;
+			//pauseProtocol = true;
 		}else
 			return;
 	}
@@ -124,7 +127,7 @@ public class VideoStreamingThread extends Thread {
 		if(protocolStarted){
 			Gdx.app.debug(TAG, CLASS_NAME + ".resumeStreaming() :: Requesting protocol resume.");
 			synchronized(protocolPauseMonitor){
-				pauseProtocol = false;
+				//pauseProtocol = false;
 				protocolPauseMonitor.notifyAll();
 			}
 		}else
@@ -134,7 +137,7 @@ public class VideoStreamingThread extends Thread {
 	public void finishStreaming(){
 		if(protocolStarted){
 			Gdx.app.debug(TAG, CLASS_NAME + ".finishStreaming() :: Requesting protocol end.");
-			endProtocol = true;
+			//endProtocol = true;
 		}else
 			return;
 	}
@@ -312,7 +315,7 @@ public class VideoStreamingThread extends Thread {
 		Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Thread finished.");
 	}*/
 
-	private void receiveImage(){
+	/*private void receiveImage(){
 		Object tmpMessage;
 		VideoFrameDataMessage dataMessage;
 
@@ -337,7 +340,7 @@ public class VideoStreamingThread extends Thread {
 		}else{
 			Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Received something unknown.");
 		}
-	}
+	}*/
 
 	private int byteArray2Int(byte[] array){
 		int number = 0;
@@ -349,63 +352,69 @@ public class VideoStreamingThread extends Thread {
 
 	private void receiveUdp(){
 		try{
-		int intSize;
-		byte[] size = new byte[4];
-		byte[] data;
-		DatagramPacket packet;
-		VideoFrameDataMessage dataMessage;
-		Object tmpMessage;
+			int intSize;
+			byte[] size = new byte[4];
+			byte[] data;
+			DatagramPacket packet;
+			VideoFrameDataMessage dataMessage;
+			Object tmpMessage;
 
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
-		try{
-			packet = new DatagramPacket(size, size.length);
-			socket.receive(packet);
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
-			return;
-		}
-
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Creating buffers.");
-		intSize = byteArray2Int(size);
-		data = new byte[intSize];
-
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message from socket.");
-		try{
-			packet = new DatagramPacket(data, data.length);
-			socket.receive(packet);
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving data " + io.getMessage());
-			return;
-		}
-
-		ByteArrayInputStream bais = new ByteArrayInputStream(data);
-
-		Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Saving message in monitor.");
-		try{
-			ObjectInputStream ois = new ObjectInputStream(bais);
-			tmpMessage = ois.readObject();
-
-			if(tmpMessage instanceof VideoFrameDataMessage){
-				Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received a data message.");
-				dataMessage = (VideoFrameDataMessage) tmpMessage;
-
-				Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received frame dimensions are: " +
-						Integer.toString(dataMessage.imageWidth) + "x" + Integer.toString(dataMessage.imageHeight));
-				frameMonitor.setFrameDimensions(dataMessage.imageWidth, dataMessage.imageHeight);
-				frameMonitor.setNewFrame(dataMessage.data);
-
-			}else{
-				Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received something unknown.");
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
+			try{
+				packet = new DatagramPacket(size, size.length);
+				socket.receive(packet);
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
+				lostFramesPerSecond += 1;
+				return;
 			}
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException received deserializing message " + io.getMessage());
-			return;
-		}catch(ClassNotFoundException cn){
-			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: ClassNotFoundException received " + cn.getMessage());
-			return;
-		}
+
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Creating buffers.");
+			intSize = byteArray2Int(size);
+			data = new byte[intSize];
+
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message from socket.");
+			try{
+				packet = new DatagramPacket(data, data.length);
+				socket.receive(packet);
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving data " + io.getMessage());
+				lostFramesPerSecond += 1;
+				return;
+			}
+
+			ByteArrayInputStream bais = new ByteArrayInputStream(data);
+
+			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Saving message in monitor.");
+			try{
+				ObjectInputStream ois = new ObjectInputStream(bais);
+				tmpMessage = ois.readObject();
+
+				if(tmpMessage instanceof VideoFrameDataMessage){
+					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received a data message.");
+					dataMessage = (VideoFrameDataMessage) tmpMessage;
+
+					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received frame dimensions are: " +
+							Integer.toString(dataMessage.imageWidth) + "x" + Integer.toString(dataMessage.imageHeight));
+					frameMonitor.setFrameDimensions(dataMessage.imageWidth, dataMessage.imageHeight);
+					frameMonitor.setNewFrame(dataMessage.data);
+
+				}else{
+					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received something unknown.");
+					lostFramesPerSecond += 1;
+				}
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException received deserializing message " + io.getMessage());
+				lostFramesPerSecond += 1;
+				return;
+			}catch(ClassNotFoundException cn){
+				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: ClassNotFoundException received " + cn.getMessage());
+				lostFramesPerSecond += 1;
+				return;
+			}
 		}catch(Exception e){
 			Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: Exception received " + e.getMessage());
+			lostFramesPerSecond += 1;
 			return;
 		}
 	}
@@ -413,31 +422,42 @@ public class VideoStreamingThread extends Thread {
 	public int getFps(){
 		return fps;
 	}
+	
+	public int getLostFrames(){
+		return lostFrames;
+	}
 
 	@Override
 	public void run(){
 		int frames = 0;
+		lostFrames = 0;
 		// Listen on the server socket until a client successfully connects.
-		do{
+		/*do{
 			try{
 				Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Listening for client.");
 				client = server.accept();
 				if(netListener != null)
 					netListener.networkStreamConnected(THREAD_NAME);
-				writer = new ObjectOutputStream(client.getOutputStream());
+				//writer = new ObjectOutputStream(client.getOutputStream());
 				reader = new ObjectInputStream(client.getInputStream());
 				toast("Client connected");
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error accepting client: " + io.getMessage(), io);
 				client = null;
 			}
-		}while(client != null && !client.isConnected());
+		}while(client != null && !client.isConnected());*/
 
 		then = System.currentTimeMillis();
 
 		while(!done){
-			//receiveImage();
+			synchronized (pauseMonitor) {
+				while(pause){
+					try{ pauseMonitor.wait(); }catch(InterruptedException ie){ }
+				}
+			}
 			Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
+			if(netListener != null)
+				netListener.networkStreamConnected(THREAD_NAME);
 			receiveUdp();
 			frames++;
 			now = System.currentTimeMillis();
@@ -445,6 +465,8 @@ public class VideoStreamingThread extends Thread {
 			if(delta >= 1000){
 				fps = frames;
 				frames = 0;
+				lostFrames = lostFramesPerSecond;
+				lostFramesPerSecond = 0;
 				then = now;
 				delta = 0;
 			}
@@ -459,4 +481,16 @@ public class VideoStreamingThread extends Thread {
 		Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Thread finished.");
 	}
 
+	public void pause(){
+		synchronized (pauseMonitor){
+			pause = true;
+		}
+	}
+	
+	public void play(){
+		synchronized (pauseMonitor){
+			pause = false;
+			pauseMonitor.notifyAll();
+		}
+	}
 }

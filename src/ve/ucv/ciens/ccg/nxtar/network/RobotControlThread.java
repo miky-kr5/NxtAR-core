@@ -46,7 +46,7 @@ public class RobotControlThread extends Thread {
 			Gdx.app.error(TAG, CLASS_NAME + ".RobotControlThread() :: Error creating server: " + io.getMessage(), io);
 		}
 	}
-	
+
 	private static class SingletonHolder{
 		public static final RobotControlThread INSTANCE = new RobotControlThread();
 	}

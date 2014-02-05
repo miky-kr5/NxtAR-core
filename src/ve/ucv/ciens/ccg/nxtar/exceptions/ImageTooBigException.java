@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Miguel Angel Astor Romero
+ * Copyright (C) 2014 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.states;
+package ve.ucv.ciens.ccg.nxtar.exceptions;
 
-/**
- * Empty state.
- * 
- * Completely empty state for debugging purposes.
- * 
- * @author miky
- */
-public class DummyState implements NxtARState{
+public class ImageTooBigException extends Exception{
+	private static final long serialVersionUID = 9989L;
 
-	@Override
-	public void input(){ }
-
-	@Override
-	public void update(){ }
-
-	@Override
-	public void render(){ }
-
-	@Override
-	public void pause(){ }
-
-	@Override
-	public void resume(){ }
-
-	@Override
-	public void dispose(){ }
-
+	public ImageTooBigException(String msg){
+		super(msg);
+	}
 }

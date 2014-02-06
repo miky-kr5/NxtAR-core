@@ -26,7 +26,7 @@ public class PauseState extends BaseState {
 	public PauseState(final NxtARCore core){
 		this.core = core;
 	}
-	
+
 	@Override
 	public void render(float delta) {
 		// TODO Auto-generated method stub
@@ -69,10 +69,18 @@ public class PauseState extends BaseState {
 
 	}
 
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	@Override
+	public void onStateSet(){
+	}
+
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	  ; BEGIN INPUT PROCESSOR METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
-	
+
 	@Override
 	public boolean keyDown(int keycode) {
 		// TODO Auto-generated method stub
@@ -130,13 +138,13 @@ public class PauseState extends BaseState {
 	@Override
 	public void connected(Controller controller) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override
 	public void disconnected(Controller controller) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	@Override

@@ -17,20 +17,75 @@ package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.PovDirection;
+import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector3;
 
 public class OuyaMainMenuState extends MainMenuStateBase{
+	private OrthographicCamera pixelPerfectCamera;
 
 	public OuyaMainMenuState(final NxtARCore core){
 		this.core = core;
+		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 	}
 
 	@Override
 	public void render(float delta) {
+		Gdx.gl.glClearColor(1, 1, 1, 1);
+		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+
+		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
+		core.batch.begin();{
+			this.startButton.draw(core.batch, 1.0f);
+		}core.batch.end();
+	}
+
+	@Override
+	public void resize(int width, int height) {
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public void show() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void hide() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void pause() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void resume() {
+		// TODO Auto-generated method stub
+
+	}
+
+	@Override
+	public void dispose(){
+		super.dispose();
+	}
+
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	@Override
+	public void onStateSet(){
+		super.onStateSet();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -78,13 +133,11 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		// TODO Auto-generated method stub
 		return false;
 	}
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; END INPUT PROCESSOR METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	  ; BEGIN CONTROLLER LISTENER METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public boolean scrolled(int amount) {
 		// TODO Auto-generated method stub
@@ -148,7 +201,4 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		// TODO Auto-generated method stub
 		return false;
 	}
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; END CONTROLLER LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 }

@@ -27,6 +27,9 @@ import com.badlogic.gdx.math.Vector3;
 public abstract class BaseState implements Screen, ControllerListener, InputProcessor {
 	protected NxtARCore core;
 
+	/* STATE METHODS */
+	public abstract void onStateSet();
+	
 	/* SCREEN METHODS*/
 	@Override
 	public abstract void render(float delta);

@@ -23,9 +23,10 @@ import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
@@ -101,7 +102,7 @@ public class InGameState extends BaseState{
 		Size dimensions = null;
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
-		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		frame = frameMonitor.getCurrentFrame();
 		if(frame != null){
@@ -111,7 +112,7 @@ public class InGameState extends BaseState{
 				try{
 					videoFrame = new Pixmap(getOptimalTextureSize(dimensions.getWidth()), getOptimalTextureSize(dimensions.getHeight()), temp.getFormat());
 				}catch(ImageTooBigException e){
-					core.toaster.showLongToast("Cannot display received frame.\n" + e.getMessage());
+					core.toast("Cannot display received frame.\n" + e.getMessage(), true);
 					Gdx.app.exit();
 					return;
 				}
@@ -204,6 +205,16 @@ public class InGameState extends BaseState{
 			if(imageSideLength < po2) return po2;
 		}
 		throw new ImageTooBigException("No valid texture size found. Image too large.");
+	}
+
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	@Override
+	public void onStateSet(){
+		Controllers.addListener(this);
+		Gdx.input.setInputProcessor(this);
 	}
 
 	private void setUpButtons(){
@@ -347,13 +358,11 @@ public class InGameState extends BaseState{
 		// TODO Auto-generated method stub
 		return false;
 	}
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; END INPUT PROCESSOR METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	  ; BEGIN CONTROLLER LISTENER METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public boolean scrolled(int amount) {
 		// TODO Auto-generated method stub
@@ -433,7 +442,4 @@ public class InGameState extends BaseState{
 		// TODO Auto-generated method stub
 		return false;
 	}
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; END CONTROLLER LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 }

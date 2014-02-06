@@ -45,6 +45,7 @@ public class VideoStreamingThread extends Thread {
 	private boolean endProtocol;*/
 	private boolean done;
 	private boolean pause;
+	private boolean coreNotified;
 	private Object protocolPauseMonitor;
 	private Socket client;
 	//private ObjectInputStream reader;
@@ -70,6 +71,7 @@ public class VideoStreamingThread extends Thread {
 		/*endProtocol = false;
 		pauseProtocol = false;*/
 		done = false;
+		coreNotified = false;
 		//protocolState = ProtocolState_t.WAIT_FOR_START;
 		protocolPauseMonitor = new Object();
 		frameMonitor = VideoFrameMonitor.getInstance();
@@ -456,8 +458,10 @@ public class VideoStreamingThread extends Thread {
 				}
 			}
 			Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
-			if(netListener != null)
+			if(netListener != null && !coreNotified && frameMonitor.getCurrentFrame() != null){
+				coreNotified = true;
 				netListener.networkStreamConnected(THREAD_NAME);
+			}
 			receiveUdp();
 			frames++;
 			now = System.currentTimeMillis();

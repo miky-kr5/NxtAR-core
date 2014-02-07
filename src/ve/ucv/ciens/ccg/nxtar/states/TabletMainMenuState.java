@@ -62,6 +62,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
+			drawBackground(core.batch);
 			if(clientConnected){
 				clientConnectedLedOn.draw(core.batch);
 			}else{

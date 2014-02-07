@@ -15,15 +15,17 @@
  */
 package ve.ucv.ciens.ccg.nxtar.states;
 
+import java.util.Arrays;
+
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.exceptions.ImageTooBigException;
-import ve.ucv.ciens.ccg.nxtar.network.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
@@ -31,8 +33,10 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
+import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
@@ -40,7 +44,14 @@ public class InGameState extends BaseState{
 	private static final String TAG = "IN_GAME_STATE";
 	private static final String CLASS_NAME = InGameState.class.getSimpleName();
 
+	private static final String SHADER_PATH = "shaders/bckg/bckg";
+
 	private NxtARCore core;
+
+	private float u_scaling[];
+	protected Sprite background;
+	private Texture backgroundTexture;
+	private ShaderProgram backgroundShader;
 
 	// Cameras.
 	private OrthographicCamera camera;
@@ -67,8 +78,6 @@ public class InGameState extends BaseState{
 	private VideoFrameMonitor frameMonitor;
 
 	public InGameState(final NxtARCore core){
-		if(!Ouya.runningOnOuya) setUpButtons();
-
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 
@@ -78,6 +87,8 @@ public class InGameState extends BaseState{
 		// Set up the cameras.
 		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		camera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
+
+		if(!Ouya.runningOnOuya) setUpButtons();
 
 		// Set up input handling support fields.
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
@@ -93,19 +104,48 @@ public class InGameState extends BaseState{
 		motorButtonsPointers[1] = -1;
 		motorButtonsPointers[2] = -1;
 		motorButtonsPointers[3] = -1;
+
+		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
+		backgroundTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		backgroundTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		background = new Sprite(backgroundTexture);
+		background.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
+
+		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		if(!backgroundShader.isCompiled()){
+			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
+			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
+			backgroundShader = null;
+		}
+
+		u_scaling = new float[2];
+		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
+		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 	}
 
 	@Override
 	public void render(float delta) {
 		Pixmap temp;
 		byte[] frame;
+		byte[] prevFrame = null;
 		Size dimensions = null;
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
+		core.batch.begin();{
+			if(backgroundShader != null){
+				core.batch.setShader(backgroundShader);
+				backgroundShader.setUniform2fv("u_scaling", u_scaling, 0, 2);
+			}
+			background.draw(core.batch);
+			if(backgroundShader != null) core.batch.setShader(null);
+		}core.batch.end();
+
 		frame = frameMonitor.getCurrentFrame();
-		if(frame != null){
+		if(frame != null && !Arrays.equals(frame, prevFrame)){
 			dimensions = frameMonitor.getFrameDimensions();
 			temp = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
 			if(videoFrame == null){
@@ -158,6 +198,8 @@ public class InGameState extends BaseState{
 				motorD.draw(core.batch);
 			}
 		}core.batch.end();
+		
+		prevFrame = frame;
 	}
 
 	@Override
@@ -198,6 +240,8 @@ public class InGameState extends BaseState{
 			buttonTexture.dispose();
 		if(videoFrame != null)
 			videoFrame.dispose();
+		backgroundTexture.dispose();
+		if(backgroundShader != null) backgroundShader.dispose();
 	}
 
 	private int getOptimalTextureSize(int imageSideLength) throws ImageTooBigException{
@@ -215,12 +259,16 @@ public class InGameState extends BaseState{
 	public void onStateSet(){
 		stateActive = true;
 		Gdx.input.setInputProcessor(this);
+		Gdx.input.setCatchBackKey(true);
+		Gdx.input.setCatchMenuKey(true);
 	}
 
 	@Override
 	public void onStateUnset(){
 		stateActive = false;
 		Gdx.input.setInputProcessor(null);
+		Gdx.input.setCatchBackKey(false);
+		Gdx.input.setCatchMenuKey(false);
 	}
 
 	private void setUpButtons(){
@@ -253,7 +301,10 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean keyDown(int keycode) {
-		// TODO Auto-generated method stub
+		if(keycode == Input.Keys.BACK){
+			// TODO: Go to pause state.
+			return true;
+		}
 		return false;
 	}
 

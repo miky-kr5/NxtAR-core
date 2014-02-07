@@ -18,16 +18,21 @@ package ve.ucv.ciens.ccg.nxtar.states;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.Texture.TextureFilter;
+import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
@@ -37,15 +42,20 @@ import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 
 public abstract class MainMenuStateBase extends BaseState{
 	protected static final String TAG = "MAIN_MENU";
+	private static final String CLASS_NAME = MainMenuStateBase.class.getSimpleName();
 
-	// Client connection helper fields.
+	private static final String SHADER_PATH = "shaders/bckg/bckg";
+
+	// Helper fields.
 	protected boolean clientConnected;
+	private float u_scaling[];
 
 	// Buttons and other gui components.
 	protected TextButton startButton;
 	protected Rectangle startButtonBBox;
 	protected Sprite clientConnectedLedOn;
 	protected Sprite clientConnectedLedOff;
+	protected Sprite background;
 
 	// Graphic data for the start button.
 	private Texture startButtonEnabledTexture;
@@ -59,8 +69,12 @@ public abstract class MainMenuStateBase extends BaseState{
 	// Other graphics.
 	private Texture clientConnectedLedOffTexture;
 	private Texture clientConnectedLedOnTexture;
+	private Texture backgroundTexture;
+	private ShaderProgram backgroundShader;
 
 	public MainMenuStateBase(){
+		TextureRegion region;
+
 		// Create the start button background.
 		startButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
 		startButtonEnabled9p = new NinePatch(new TextureRegion(startButtonEnabledTexture, 0, 0, startButtonEnabledTexture.getWidth(), startButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
@@ -89,17 +103,35 @@ public abstract class MainMenuStateBase extends BaseState{
 		startButtonBBox = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
 
 		// Create the connection leds.
-		TextureRegion region;
 		clientConnectedLedOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
-		region = new TextureRegion(clientConnectedLedOnTexture, clientConnectedLedOnTexture.getWidth(), clientConnectedLedOnTexture.getHeight());
+		region = new TextureRegion(clientConnectedLedOnTexture);
 		clientConnectedLedOn = new Sprite(region);
 
 		clientConnectedLedOffTexture = new Texture("data/gfx/gui/Anonymous_Button_Red.png");
-		region = new TextureRegion(clientConnectedLedOffTexture, clientConnectedLedOffTexture.getWidth(), clientConnectedLedOffTexture.getHeight());
+		region = new TextureRegion(clientConnectedLedOffTexture);
 		clientConnectedLedOff = new Sprite(region);
 
-		clientConnected = false;
+		// Set up the background.
+		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
+		backgroundTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
+		backgroundTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		region = new TextureRegion(backgroundTexture);
+		background = new Sprite(backgroundTexture);
+		background.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
+		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		if(!backgroundShader.isCompiled()){
+			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
+			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
+			backgroundShader = null;
+		}
+
+		u_scaling = new float[2];
+		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
+		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
+
+		clientConnected = false;
 		stateActive = false;
 	}
 
@@ -127,19 +159,34 @@ public abstract class MainMenuStateBase extends BaseState{
 		startButtonPressedTexture.dispose();
 		clientConnectedLedOnTexture.dispose();
 		clientConnectedLedOffTexture.dispose();
+		backgroundTexture.dispose();
+		if(backgroundShader != null) backgroundShader.dispose();
 		font.dispose();
+	}
+
+	protected void drawBackground(SpriteBatch batch){
+		if(backgroundShader != null){
+			batch.setShader(backgroundShader);
+			backgroundShader.setUniform2fv("u_scaling", u_scaling, 0, 2);
+		}
+		background.draw(batch);
+		if(backgroundShader != null) batch.setShader(null);
 	}
 
 	@Override
 	public void onStateSet(){
 		stateActive = true;
 		Gdx.input.setInputProcessor(this);
+		Gdx.input.setCatchBackKey(true);
+		Gdx.input.setCatchMenuKey(true);
 	}
 
 	@Override
 	public void onStateUnset(){
 		stateActive = false;
 		Gdx.input.setInputProcessor(null);
+		Gdx.input.setCatchBackKey(false);
+		Gdx.input.setCatchMenuKey(false);
 	}
 
 	public void onClientConnected(){
@@ -153,6 +200,10 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	@Override
 	public boolean keyDown(int keycode){
+		if(keycode == Input.Keys.BACK){
+			// TODO: Go to pause state.
+			return true;
+		}
 		return false;
 	}
 

@@ -65,7 +65,9 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
+			core.batch.disableBlending();
 			drawBackground(core.batch);
+			core.batch.enableBlending();
 			if(clientConnected){
 				clientConnectedLedOn.draw(core.batch);
 			}else{

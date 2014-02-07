@@ -18,6 +18,7 @@ package ve.ucv.ciens.ccg.nxtar.states;
 import java.util.Arrays;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
+import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.exceptions.ImageTooBigException;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -302,7 +303,7 @@ public class InGameState extends BaseState{
 	@Override
 	public boolean keyDown(int keycode) {
 		if(keycode == Input.Keys.BACK){
-			// TODO: Go to pause state.
+			core.nextState = game_states_t.MAIN_MENU;
 			return true;
 		}
 		return false;

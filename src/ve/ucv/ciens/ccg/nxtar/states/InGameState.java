@@ -213,8 +213,14 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void onStateSet(){
-		Controllers.addListener(this);
+		stateActive = true;
 		Gdx.input.setInputProcessor(this);
+	}
+
+	@Override
+	public void onStateUnset(){
+		stateActive = false;
+		Gdx.input.setInputProcessor(null);
 	}
 
 	private void setUpButtons(){
@@ -364,6 +370,43 @@ public class InGameState extends BaseState{
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
+	public boolean buttonDown(Controller controller, int buttonCode) {
+		if(stateActive){
+			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	@Override
+	public boolean buttonUp(Controller controller, int buttonCode) {
+		if(stateActive){
+			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	@Override
+	public boolean axisMoved(Controller controller, int axisCode, float value) {
+		if(stateActive){
+			if(value >= Ouya.STICK_DEADZONE){
+				if(axisCode == Ouya.AXIS_LEFT_TRIGGER){
+					Gdx.app.log(TAG, CLASS_NAME + ".axisMoved() :: LEFT TRIGGER pressed.");
+				}
+				if(axisCode == Ouya.AXIS_RIGHT_TRIGGER){
+					Gdx.app.log(TAG, CLASS_NAME + ".axisMoved() :: RIGHT TRIGGER pressed."); 
+				}
+			}
+			return true;
+		}else{
+			return false;
+		}
+	}
+
+	@Override
 	public boolean scrolled(int amount) {
 		// TODO Auto-generated method stub
 		return false;
@@ -379,40 +422,6 @@ public class InGameState extends BaseState{
 	public void disconnected(Controller controller) {
 		// TODO Auto-generated method stub
 
-	}
-
-	@Override
-	public boolean buttonDown(Controller controller, int buttonCode) {
-		if(buttonCode == Ouya.BUTTON_L1){
-			// Start right motor.
-		}
-		if(buttonCode == Ouya.BUTTON_L2){
-			// Start left motor.
-		}
-		if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
-			// Look left.
-		}
-		if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
-			// Look right;
-		}
-		return false;
-	}
-
-	@Override
-	public boolean buttonUp(Controller controller, int buttonCode) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean axisMoved(Controller controller, int axisCode, float value) {
-		if(axisCode == Ouya.AXIS_LEFT_TRIGGER){
-
-		}
-		if(axisCode == Ouya.AXIS_RIGHT_TRIGGER){
-			// Start 
-		}
-		return false;
 	}
 
 	@Override

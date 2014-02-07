@@ -19,15 +19,13 @@ import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public class TabletMainMenuState extends MainMenuStateBase{
-	protected static final String CLASS_NAME = TabletMainMenuState.class.getSimpleName();
+	private static final String CLASS_NAME = TabletMainMenuState.class.getSimpleName();
 
 	private OrthographicCamera pixelPerfectCamera;
 
@@ -97,11 +95,6 @@ public class TabletMainMenuState extends MainMenuStateBase{
 	  ; HELPER METHODS ;
 	  ;;;;;;;;;;;;;;;;;;*/
 
-	@Override
-	public void onStateSet(){
-		super.onStateSet();
-	}
-
 	private void unprojectTouch(int screenX, int screenY){
 		win2world.set(screenX, screenY, 0.0f);
 		pixelPerfectCamera.unproject(win2world);
@@ -109,7 +102,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; INPUT PROCESSOR METHODS ;
+	  ; INPUT LISTENER METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
@@ -123,7 +116,6 @@ public class TabletMainMenuState extends MainMenuStateBase{
 			startButton.setChecked(true);
 			startButtonTouched = true;
 			startButtonTouchPointer = pointer;
-			core.nextState = game_states_t.IN_GAME;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button pressed.");
 		}
 
@@ -141,6 +133,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 			startButton.setChecked(false);
 			startButtonTouched = false;
 			startButtonTouchPointer = -1;
+			core.nextState = game_states_t.IN_GAME;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
 		}
 
@@ -159,92 +152,5 @@ public class TabletMainMenuState extends MainMenuStateBase{
 		}
 
 		return true;
-	}
-
-
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; UNUSED CONTROLLER LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
-
-	@Override
-	public boolean keyDown(int keycode){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean keyUp(int keycode){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean keyTyped(char character){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean mouseMoved(int screenX, int screenY){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean scrolled(int amount){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public void connected(Controller controller){
-		// Unused.
-	}
-
-	@Override
-	public void disconnected(Controller controller){
-		// Unused.
-	}
-
-	@Override
-	public boolean buttonDown(Controller controller, int buttonCode){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean buttonUp(Controller controller, int buttonCode){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean axisMoved(Controller controller, int axisCode, float value){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean povMoved(Controller controller, int povCode, PovDirection value){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
-		// Unused.
-		return false;
-	}
-
-	@Override
-	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
-		// Unused.
-		return false;
 	}
 }

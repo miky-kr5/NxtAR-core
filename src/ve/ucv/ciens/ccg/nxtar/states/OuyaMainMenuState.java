@@ -16,21 +16,46 @@
 package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
+import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.Controllers;
-import com.badlogic.gdx.controllers.PovDirection;
+import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL10;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 
 public class OuyaMainMenuState extends MainMenuStateBase{
+	private static final String CLASS_NAME = OuyaMainMenuState.class.getSimpleName();
+
 	private OrthographicCamera pixelPerfectCamera;
+	private Texture ouyaOButtonTexture;
+	private Sprite ouyaOButton;
+	private boolean oButtonPressed;
 
 	public OuyaMainMenuState(final NxtARCore core){
 		this.core = core;
 		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+		startButton.setPosition(-(startButton.getWidth() / 2), -(startButton.getHeight() / 2));
+		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
+
+		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (startButton.getY() * 0.5f);
+		clientConnectedLedOn.setSize(clientConnectedLedOn.getWidth() * 0.5f, clientConnectedLedOn.getHeight() * 0.5f);
+		clientConnectedLedOn.setPosition(-(clientConnectedLedOn.getWidth() / 2), ledYPos);
+
+		clientConnectedLedOff.setSize(clientConnectedLedOff.getWidth() * 0.5f, clientConnectedLedOff.getHeight() * 0.5f);
+		clientConnectedLedOff.setPosition(-(clientConnectedLedOff.getWidth() / 2), ledYPos);
+
+		ouyaOButtonTexture = new Texture("data/gfx/gui/OUYA_O.png");
+		TextureRegion region = new TextureRegion(ouyaOButtonTexture, ouyaOButtonTexture.getWidth(), ouyaOButtonTexture.getHeight());
+		ouyaOButton = new Sprite(region);
+		ouyaOButton.setSize(ouyaOButton.getWidth() * 0.6f, ouyaOButton.getHeight() * 0.6f);
+		ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY());
+
+		oButtonPressed = false;
 	}
 
 	@Override
@@ -40,7 +65,13 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
-			this.startButton.draw(core.batch, 1.0f);
+			if(clientConnected){
+				clientConnectedLedOn.draw(core.batch);
+			}else{
+				clientConnectedLedOff.draw(core.batch);
+			}
+			startButton.draw(core.batch, 1.0f);
+			ouyaOButton.draw(core.batch);
 		}core.batch.end();
 	}
 
@@ -77,61 +108,7 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	@Override
 	public void dispose(){
 		super.dispose();
-	}
-
-	/*;;;;;;;;;;;;;;;;;;
-	  ; HELPER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;*/
-
-	@Override
-	public void onStateSet(){
-		super.onStateSet();
-	}
-
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; BEGIN INPUT PROCESSOR METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
-
-	@Override
-	public boolean keyDown(int keycode) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean keyUp(int keycode) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean keyTyped(char character) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean mouseMoved(int screenX, int screenY) {
-		// TODO Auto-generated method stub
-		return false;
+		ouyaOButtonTexture.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -139,66 +116,40 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
-	public boolean scrolled(int amount) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public void connected(Controller controller) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void disconnected(Controller controller) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
 	public boolean buttonDown(Controller controller, int buttonCode) {
-		// TODO Auto-generated method stub
-		return false;
+		if(stateActive){
+			if(buttonCode == Ouya.BUTTON_O){
+				if(!clientConnected){
+					core.toast("Can't start the game. No client is connected.", true);
+				}else{
+					oButtonPressed = true;
+					startButton.setChecked(true);
+				}
+			}
+
+			return true;
+
+		}else{
+			return false;
+		}
 	}
 
 	@Override
 	public boolean buttonUp(Controller controller, int buttonCode) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+		if(stateActive){
+			if(buttonCode == Ouya.BUTTON_O){
+				if(oButtonPressed){
+					oButtonPressed = false;
+					startButton.setChecked(false);
+					core.nextState = game_states_t.IN_GAME;
+					Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
+				}
+			}
 
-	@Override
-	public boolean axisMoved(Controller controller, int axisCode, float value) {
-		// TODO Auto-generated method stub
-		return false;
-	}
+			return true;
 
-	@Override
-	public boolean povMoved(Controller controller, int povCode,
-			PovDirection value) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean xSliderMoved(Controller controller, int sliderCode,
-			boolean value) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean ySliderMoved(Controller controller, int sliderCode,
-			boolean value) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean accelerometerMoved(Controller controller,
-			int accelerometerCode, Vector3 value) {
-		// TODO Auto-generated method stub
-		return false;
+		}else{
+			return false;
+		}
 	}
 }

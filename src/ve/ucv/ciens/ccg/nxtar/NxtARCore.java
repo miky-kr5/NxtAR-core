@@ -128,51 +128,55 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
 		states[game_states_t.PAUSED.getValue()] = new PauseState(this);
 
+		for(BaseState state : states){
+			Controllers.addListener(state);
+		}
+
 		// Set up fields.
 		batch = new SpriteBatch();
 
 		if(ProjectConstants.DEBUG)
 			pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());{
-			// Set up the overlay font.
-			fontX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
-			fontY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
+				// Set up the overlay font.
+				fontX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
+				fontY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
 
-			font = new BitmapFont();
-			font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
-			if(!Ouya.runningOnOuya){
-				font.setScale(1.0f);
-			}else{
-				font.setScale(2.5f);
+				font = new BitmapFont();
+				font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
+				if(!Ouya.runningOnOuya){
+					font.setScale(1.0f);
+				}else{
+					font.setScale(2.5f);
+				}
 			}
-		}
 
-		// Start networking.
-		mcastEnabler.enableMulticast();
+			// Start networking.
+			mcastEnabler.enableMulticast();
 
-		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
-		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
-		videoThread = VideoStreamingThread.getInstance()/*.setToaster(toaster)*/;
-		//robotThread = RobotControlThread.getInstance().setToaster(toaster);
+			Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
+			serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
+			videoThread = VideoStreamingThread.getInstance()/*.setToaster(toaster)*/;
+			//robotThread = RobotControlThread.getInstance().setToaster(toaster);
 
-		serviceDiscoveryThread.start();
-		videoThread.start();
-		videoThread.startStreaming();
-		videoThread.addNetworkConnectionListener(this);
-		//robotThread.start();
+			serviceDiscoveryThread.start();
+			videoThread.start();
+			videoThread.startStreaming();
+			videoThread.addNetworkConnectionListener(this);
+			//robotThread.start();
 
-		// Set the current and next states.
-		currState = game_states_t.MAIN_MENU;
-		nextState = null;
-		this.setScreen(states[currState.getValue()]);
-		states[currState.getValue()].onStateSet();
+			// Set the current and next states.
+			currState = game_states_t.MAIN_MENU;
+			nextState = null;
+			this.setScreen(states[currState.getValue()]);
+			states[currState.getValue()].onStateSet();
 
-		// Set initial input handlers.
-		Gdx.input.setInputProcessor(states[currState.getValue()]);
-		Controllers.addListener(states[currState.getValue()]);
+			// Set initial input handlers.
+			Gdx.input.setInputProcessor(states[currState.getValue()]);
+			Controllers.addListener(states[currState.getValue()]);
 
-		// Anything else.
-		Gdx.app.setLogLevel(Application.LOG_INFO);
-		// Gdx.app.setLogLevel(Application.LOG_NONE);
+			// Anything else.
+			Gdx.app.setLogLevel(Application.LOG_INFO);
+			// Gdx.app.setLogLevel(Application.LOG_NONE);
 	}
 
 	public void render(){
@@ -180,15 +184,14 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 		// If the current state set a value for nextState then switch to that state.
 		if(nextState != null){
-			// Invalidate all input processors.
-			Gdx.input.setInputProcessor(null);
-			Controllers.removeListener(states[currState.getValue()]);
+			states[currState.getValue()].onStateUnset();
 
-			// Swap the pointers and set the new screen.
 			currState = nextState;
 			nextState = null;
-			setScreen(states[currState.getValue()]);
+
 			states[currState.getValue()].onStateSet();
+
+			setScreen(states[currState.getValue()]);
 		}
 
 		if(ProjectConstants.DEBUG){

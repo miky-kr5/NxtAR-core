@@ -31,7 +31,7 @@ public abstract class ProjectConstants {
 
 	public static final float OVERSCAN;
 
-	public static final String FONT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.,:;!¡?¿";
+	public static final String FONT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.,:;!?";
 	
 	static{
 		OVERSCAN = Ouya.runningOnOuya ? 0.9f : 1.0f;

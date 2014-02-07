@@ -17,7 +17,9 @@ package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
+import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.math.Vector3;
 
@@ -75,6 +77,10 @@ public class PauseState extends BaseState {
 
 	@Override
 	public void onStateSet(){
+	}
+
+	@Override
+	public void onStateUnset(){
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

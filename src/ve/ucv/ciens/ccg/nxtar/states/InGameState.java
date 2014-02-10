@@ -17,9 +17,11 @@ package ve.ucv.ciens.ccg.nxtar.states;
 
 import java.util.Arrays;
 
+import ve.ucv.ciens.ccg.networkdata.MotorEvent;
+import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.exceptions.ImageTooBigException;
+import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Size;
@@ -76,11 +78,14 @@ public class InGameState extends BaseState{
 	private boolean[] motorButtonsTouched;
 	private int[] motorButtonsPointers;
 
+	// Monitors.
 	private VideoFrameMonitor frameMonitor;
+	private MotorEventQueue queue;
 
 	public InGameState(final NxtARCore core){
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
+		queue = MotorEventQueue.getInstance();
 
 		// Set up rendering fields;
 		videoFrame = null;
@@ -126,8 +131,7 @@ public class InGameState extends BaseState{
 	}
 
 	@Override
-	public void render(float delta) {
-		Pixmap temp;
+	public void render(float delta){
 		byte[] frame;
 		byte[] prevFrame = null;
 		Size dimensions = null;
@@ -148,20 +152,10 @@ public class InGameState extends BaseState{
 		frame = frameMonitor.getCurrentFrame();
 		if(frame != null && !Arrays.equals(frame, prevFrame)){
 			dimensions = frameMonitor.getFrameDimensions();
-			temp = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
-			if(videoFrame == null){
-				try{
-					videoFrame = new Pixmap(getOptimalTextureSize(dimensions.getWidth()), getOptimalTextureSize(dimensions.getHeight()), temp.getFormat());
-				}catch(ImageTooBigException e){
-					core.toast("Cannot display received frame.\n" + e.getMessage(), true);
-					Gdx.app.exit();
-					return;
-				}
-			}
-			videoFrame.drawPixmap(temp, 0, 0);
-			temp.dispose();
+			videoFrame = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+			videoFrame.dispose();
 
 			TextureRegion region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
 
@@ -199,57 +193,36 @@ public class InGameState extends BaseState{
 				motorD.draw(core.batch);
 			}
 		}core.batch.end();
-		
+
 		prevFrame = frame;
 	}
 
 	@Override
-	public void resize(int width, int height) {
+	public void resize(int width, int height){
 		// TODO Auto-generated method stub
 
 	}
 
 	@Override
-	public void show() {
-		// TODO Auto-generated method stub
-
-	}
+	public void show(){ }
 
 	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-
-	}
+	public void hide(){ }
 
 	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-
-	}
+	public void pause(){ }
 
 	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-
-	}
+	public void resume(){ }
 
 	@Override
-	public void dispose() {
+	public void dispose(){
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
 		if(buttonTexture != null)
 			buttonTexture.dispose();
-		if(videoFrame != null)
-			videoFrame.dispose();
 		backgroundTexture.dispose();
 		if(backgroundShader != null) backgroundShader.dispose();
-	}
-
-	private int getOptimalTextureSize(int imageSideLength) throws ImageTooBigException{
-		for(int po2: ProjectConstants.POWERS_OF_2){
-			if(imageSideLength < po2) return po2;
-		}
-		throw new ImageTooBigException("No valid texture size found. Image too large.");
 	}
 
 	/*;;;;;;;;;;;;;;;;;;
@@ -301,28 +274,9 @@ public class InGameState extends BaseState{
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
-	public boolean keyDown(int keycode) {
-		if(keycode == Input.Keys.BACK){
-			core.nextState = game_states_t.MAIN_MENU;
-			return true;
-		}
-		return false;
-	}
+	public boolean touchDown(int screenX, int screenY, int pointer, int button){
+		MotorEvent event;
 
-	@Override
-	public boolean keyUp(int keycode) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean keyTyped(char character) {
-		// TODO Auto-generated method stub
-		return false;
-	}
-
-	@Override
-	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
 			camera.unproject(win2world);
@@ -333,27 +287,69 @@ public class InGameState extends BaseState{
 
 			if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor A button pressed");
-				motorButtonsTouched[0] = true;
-				motorButtonsPointers[0] = pointer;
+
+				// Enqueue the event corresponding to this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[1]){
+					motorButtonsTouched[0] = true;
+					motorButtonsPointers[0] = pointer;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)100);
+					queue.addEvent(event);
+				}
+
 			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
-				motorButtonsTouched[1] = true;
-				motorButtonsPointers[1] = pointer;
+
+				// Enqueue the event corresponding to this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[0]){
+					motorButtonsTouched[1] = true;
+					motorButtonsPointers[1] = pointer;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)-100);
+					queue.addEvent(event);
+				}
+
 			}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor C button pressed");
-				motorButtonsTouched[2] = true;
-				motorButtonsPointers[2] = pointer;
+
+				// Enqueue the event corresponding to this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[3]){
+					motorButtonsTouched[2] = true;
+					motorButtonsPointers[2] = pointer;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)-100);
+					queue.addEvent(event);
+				}
+
 			}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor D button pressed");
-				motorButtonsTouched[3] = true;
-				motorButtonsPointers[3] = pointer;
+
+				// Enqueue the event corresponding to this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[2]){
+					motorButtonsTouched[3] = true;
+					motorButtonsPointers[3] = pointer;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)100);
+					queue.addEvent(event);
+				}
+
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+	public boolean touchUp(int screenX, int screenY, int pointer, int button){
+		MotorEvent event;
+
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
 			camera.unproject(win2world);
@@ -364,27 +360,70 @@ public class InGameState extends BaseState{
 
 			if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor A button released");
-				motorButtonsPointers[0] = -1;
-				motorButtonsTouched[0] = false;
+
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[1]){
+					motorButtonsPointers[0] = -1;
+					motorButtonsTouched[0] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor B button released");
-				motorButtonsPointers[1] = -1;
-				motorButtonsTouched[1] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[0]){
+					motorButtonsPointers[1] = -1;
+					motorButtonsTouched[1] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor C button released");
-				motorButtonsPointers[2] = -1;
-				motorButtonsTouched[2] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[3]){
+					motorButtonsPointers[2] = -1;
+					motorButtonsTouched[2] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor D button released");
-				motorButtonsPointers[3] = -1;
-				motorButtonsTouched[3] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[2]){
+					motorButtonsPointers[3] = -1;
+					motorButtonsTouched[3] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer) {
+	public boolean touchDragged(int screenX, int screenY, int pointer){
+		MotorEvent event;
+
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
 			camera.unproject(win2world);
@@ -392,28 +431,71 @@ public class InGameState extends BaseState{
 
 			if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor A button released");
-				motorButtonsPointers[0] = -1;
-				motorButtonsTouched[0] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[1]){
+					motorButtonsPointers[0] = -1;
+					motorButtonsTouched[0] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor B button released");
-				motorButtonsPointers[1] = -1;
-				motorButtonsTouched[1] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[0]){
+					motorButtonsPointers[1] = -1;
+					motorButtonsTouched[1] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor C button released");
-				motorButtonsPointers[2] = -1;
-				motorButtonsTouched[2] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[3]){
+					motorButtonsPointers[2] = -1;
+					motorButtonsTouched[2] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor D button released");
-				motorButtonsPointers[3] = -1;
-				motorButtonsTouched[3] = false;
+
+				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+				if(!motorButtonsTouched[2]){
+					motorButtonsPointers[3] = -1;
+					motorButtonsTouched[3] = false;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte) 0);
+					queue.addEvent(event);
+				}
+
 			}
 		}
 		return true;
 	}
 
 	@Override
-	public boolean mouseMoved(int screenX, int screenY) {
-		// TODO Auto-generated method stub
+	public boolean keyDown(int keycode){
+		if(keycode == Input.Keys.BACK){
+			core.nextState = game_states_t.MAIN_MENU;
+			return true;
+		}
 		return false;
 	}
 
@@ -422,7 +504,7 @@ public class InGameState extends BaseState{
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
-	public boolean buttonDown(Controller controller, int buttonCode) {
+	public boolean buttonDown(Controller controller, int buttonCode){
 		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 			return true;
@@ -432,7 +514,7 @@ public class InGameState extends BaseState{
 	}
 
 	@Override
-	public boolean buttonUp(Controller controller, int buttonCode) {
+	public boolean buttonUp(Controller controller, int buttonCode){
 		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 			return true;
@@ -442,7 +524,7 @@ public class InGameState extends BaseState{
 	}
 
 	@Override
-	public boolean axisMoved(Controller controller, int axisCode, float value) {
+	public boolean axisMoved(Controller controller, int axisCode, float value){
 		if(stateActive){
 			if(value >= Ouya.STICK_DEADZONE){
 				if(axisCode == Ouya.AXIS_LEFT_TRIGGER){
@@ -459,47 +541,62 @@ public class InGameState extends BaseState{
 	}
 
 	@Override
-	public boolean scrolled(int amount) {
+	public void connected(Controller controller){ }
+
+	@Override
+	public void disconnected(Controller controller){ }
+
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; UNUSED LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
+	@Override
+	public boolean mouseMoved(int screenX, int screenY){
+		return false;
+	}
+
+	@Override
+	public boolean keyUp(int keycode){
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public void connected(Controller controller) {
+	public boolean keyTyped(char character){
 		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void disconnected(Controller controller) {
-		// TODO Auto-generated method stub
-
+		return false;
 	}
 
 	@Override
 	public boolean povMoved(Controller controller, int povCode,
-			PovDirection value) {
+			PovDirection value){
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean xSliderMoved(Controller controller, int sliderCode,
-			boolean value) {
+			boolean value){
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean ySliderMoved(Controller controller, int sliderCode,
-			boolean value) {
+			boolean value){
 		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean accelerometerMoved(Controller controller,
-			int accelerometerCode, Vector3 value) {
+			int accelerometerCode, Vector3 value){
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public boolean scrolled(int amount){
 		// TODO Auto-generated method stub
 		return false;
 	}

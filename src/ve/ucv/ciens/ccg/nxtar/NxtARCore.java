@@ -28,9 +28,7 @@ import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.states.PauseState;
 import ve.ucv.ciens.ccg.nxtar.states.TabletMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
-
 import aurelienribon.tweenengine.Tween;
-import aurelienribon.tweenengine.TweenEquation;
 import aurelienribon.tweenengine.TweenEquations;
 import aurelienribon.tweenengine.primitives.MutableFloat;
 
@@ -39,14 +37,11 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.mappings.Ouya;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 /**
@@ -173,14 +168,17 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
-		videoThread = VideoStreamingThread.getInstance()/*.setToaster(toaster)*/;
-		//robotThread = RobotControlThread.getInstance().setToaster(toaster);
+		videoThread = VideoStreamingThread.getInstance();
+		robotThread = RobotControlThread.getInstance();
 
 		serviceDiscoveryThread.start();
+
 		videoThread.start();
 		videoThread.startStreaming();
 		videoThread.addNetworkConnectionListener(this);
-		//robotThread.start();
+
+		robotThread.addNetworkConnectionListener(this);
+		robotThread.start();
 
 		// Set the current and next states.
 		currState = game_states_t.MAIN_MENU;
@@ -206,11 +204,9 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		Controllers.addListener(states[currState.getValue()]);
 
 		// Anything else.
-		Gdx.app.setLogLevel(Application.LOG_INFO);
-		//Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		//Gdx.app.setLogLevel(Application.LOG_INFO);
+		Gdx.app.setLogLevel(Application.LOG_DEBUG);
 		//Gdx.app.setLogLevel(Application.LOG_NONE);
-
-		//batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 	}
 
 	public void render(){
@@ -287,9 +283,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	public void dispose(){
 		// Finish network threads.
 		videoThread.finish();
-		fadeTexture.dispose();
+		robotThread.finish();
 
 		// Dispose graphic objects.
+		fadeTexture.dispose();
 		batch.dispose();
 		if(ProjectConstants.DEBUG){
 			font.dispose();
@@ -303,9 +300,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 	@Override
 	public synchronized void networkStreamConnected(String streamName){
-		if(streamName.equals(VideoStreamingThread.THREAD_NAME) || streamName.equals(RobotControlThread.THREAD_NAME))
-			connections += 1;
-		if(connections >= 1){
+		//if(streamName.equals(VideoStreamingThread.THREAD_NAME) || streamName.equals(RobotControlThread.THREAD_NAME))
+		Gdx.app.log(TAG, CLASS_NAME + ".networkStreamConnected() :: Stream " + streamName + " connected.");
+		connections += 1;
+		if(connections >= 2){
 			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
 			serviceDiscoveryThread.finish();
 			mcastEnabler.disableMulticast();

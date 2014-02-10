@@ -29,7 +29,7 @@ import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Gdx;
 
-public class VideoStreamingThread extends Thread {
+public class VideoStreamingThread extends Thread{
 	public static final String THREAD_NAME = "VideoStreamingThread";
 	private static final String TAG = "NXTAR_CORE_VIDEOTHREAD";
 	private static final String CLASS_NAME = VideoStreamingThread.class.getSimpleName();
@@ -65,7 +65,7 @@ public class VideoStreamingThread extends Thread {
 		frameMonitor = VideoFrameMonitor.getInstance();
 
 		try{
-			socket = new DatagramSocket(ProjectConstants.SERVER_TCP_PORT_1);
+			socket = new DatagramSocket(ProjectConstants.VIDEO_STREAMING_PORT);
 		}catch(IOException io){
 			Gdx.app.error(TAG, CLASS_NAME + ".VideoStreamingThread() :: Error creating server: " + io.getMessage(), io);
 		}

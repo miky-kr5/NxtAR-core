@@ -31,7 +31,7 @@ import com.badlogic.gdx.Gdx;
  * <p> This thread performs an ad hoc service discovery protocol. A multicast datagram packet is sent every
  * 250 miliseconds carrying the string "NxtAR server is here!" on the multicast address defined 
  * in {@link ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants#MULTICAST_ADDRESS}. The port defined in
- * {@link ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants#SERVER_UDP_PORT} is used for the transmissions. The server stops
+ * {@link ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants#SERVICE_DISCOVERY_PORT} is used for the transmissions. The server stops
  * when another thread calls the {@link #finish()} method or the server fails to transmit {@link #MAX_RETRIES} packets in
  * a row, whichever happens first.</p>
  * 
@@ -89,7 +89,7 @@ public class ServiceDiscoveryThread extends Thread {
 		// Create a UDP socket at the port defined in ProjectConstants.SERVER_UDP_PORT.
 		Gdx.app.debug(TAG, CLASS_NAME + ".ServiceDiscoveryThread() :: Creating multicast server.");
 		try{
-			udpServer = new DatagramSocket(ProjectConstants.SERVER_UDP_PORT);
+			udpServer = new DatagramSocket(ProjectConstants.SERVICE_DISCOVERY_PORT);
 		}catch(IOException io){
 			Gdx.app.error(TAG, CLASS_NAME + ".ServiceDiscoveryThread() :: Error creating UDP socket: " + io.getMessage());
 			udpServer = null;
@@ -150,10 +150,11 @@ public class ServiceDiscoveryThread extends Thread {
 					break;
 				}
 				// Send the packet and reset the retry counter.
-				DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, ProjectConstants.SERVER_UDP_PORT);
+				DatagramPacket packet = new DatagramPacket(buffer, buffer.length, group, ProjectConstants.SERVICE_DISCOVERY_PORT);
 				udpServer.send(packet);
 				retries = 0;
 				try{ sleep(250L); }catch(InterruptedException ie){ }
+
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error sending packet: " + io.getMessage());
 				retries += 1;

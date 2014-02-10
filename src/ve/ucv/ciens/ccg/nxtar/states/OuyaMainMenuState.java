@@ -22,7 +22,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL10;
-import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -30,14 +29,12 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 public class OuyaMainMenuState extends MainMenuStateBase{
 	private static final String CLASS_NAME = OuyaMainMenuState.class.getSimpleName();
 
-	private OrthographicCamera pixelPerfectCamera;
 	private Texture ouyaOButtonTexture;
 	private Sprite ouyaOButton;
 	private boolean oButtonPressed;
 
 	public OuyaMainMenuState(final NxtARCore core){
 		this.core = core;
-		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		startButton.setPosition(-(startButton.getWidth() / 2), -(startButton.getHeight() / 2));
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
@@ -53,7 +50,7 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		TextureRegion region = new TextureRegion(ouyaOButtonTexture, ouyaOButtonTexture.getWidth(), ouyaOButtonTexture.getHeight());
 		ouyaOButton = new Sprite(region);
 		ouyaOButton.setSize(ouyaOButton.getWidth() * 0.6f, ouyaOButton.getHeight() * 0.6f);
-		ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY());
+		ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY() + (ouyaOButton.getHeight() / 2));
 
 		oButtonPressed = false;
 	}
@@ -76,36 +73,6 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 			startButton.draw(core.batch, 1.0f);
 			ouyaOButton.draw(core.batch);
 		}core.batch.end();
-	}
-
-	@Override
-	public void resize(int width, int height) {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void show() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void hide() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void pause() {
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void resume() {
-		// TODO Auto-generated method stub
-
 	}
 
 	@Override

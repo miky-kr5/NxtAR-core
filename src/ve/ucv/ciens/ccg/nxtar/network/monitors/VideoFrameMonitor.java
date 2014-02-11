@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.network;
+package ve.ucv.ciens.ccg.nxtar.network.monitors;
 
 import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
@@ -63,9 +63,9 @@ public class VideoFrameMonitor{
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".setNewFrame() :: Loading new frame in frameA.");
 		frameA = frame;
+		temp = frameA;
 		synchronized(frameMonitor){
 			Gdx.app.debug(TAG, CLASS_NAME + ".setNewFrame() :: Swapping frameA and frameB.");
-			temp = frameA;
 			frameA = frameB;
 			frameB = temp;
 			Gdx.app.debug(TAG, CLASS_NAME + ".setNewFrame() :: Swapping done.");

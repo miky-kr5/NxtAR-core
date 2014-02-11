@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Miguel Angel Astor Romero
+ * Copyright (C) 2014 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.systems;
+package ve.ucv.ciens.ccg.nxtar.network;
 
-import ve.ucv.ciens.ccg.nxtar.components.VideoFrame;
+public class SensorReportThread extends Thread {
 
-import com.artemis.Aspect;
-import com.artemis.Entity;
-import com.artemis.systems.EntityProcessingSystem;
+	private SensorReportThread(){
 
-public class RenderSystem extends EntityProcessingSystem {
+	}
 
-	@SuppressWarnings("unchecked")
-	public RenderSystem(Aspect aspect) {
-		super(Aspect.getAspectForAll(VideoFrame.class));
+	private static class SingletonHolder{
+		public final static SensorReportThread INSTANCE = new SensorReportThread();
+	}
+
+	public static SensorReportThread getInstance(){
+		return SingletonHolder.INSTANCE;
 	}
 
 	@Override
-	protected void process(Entity arg0) {
-		
-	}
+	public void run(){
 
+	}
 }

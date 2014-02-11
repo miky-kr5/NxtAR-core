@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Miguel Angel Astor Romero
+ * Copyright (C) 2014 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,33 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.states;
+package ve.ucv.ciens.ccg.networkdata;
 
-/**
- * Empty state.
- * 
- * Completely empty state for debugging purposes.
- * 
- * @author miky
- */
-public class DummyState implements NxtARState{
+import java.io.Serializable;
 
-	@Override
-	public void input(){ }
+public class MotorEventACK implements Serializable {
+	private static final long serialVersionUID = 9989L;
 
-	@Override
-	public void update(){ }
+	private boolean clientQueueIsFull;
 
-	@Override
-	public void render(){ }
+	public MotorEventACK(boolean isQueueFull){
+		this.clientQueueIsFull = isQueueFull;
+	}
 
-	@Override
-	public void pause(){ }
-
-	@Override
-	public void resume(){ }
-
-	@Override
-	public void dispose(){ }
-
+	public boolean isClientQueueFull(){
+		return this.clientQueueIsFull;
+	}
 }

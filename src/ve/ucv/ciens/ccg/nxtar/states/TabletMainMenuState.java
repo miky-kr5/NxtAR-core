@@ -16,36 +16,15 @@
 package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
-import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL10;
-import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.math.Vector2;
-import com.badlogic.gdx.math.Vector3;
 
 public class TabletMainMenuState extends MainMenuStateBase{
-	private static final String CLASS_NAME = TabletMainMenuState.class.getSimpleName();
-
-	private OrthographicCamera pixelPerfectCamera;
-
-	// Button touch helper fields.
-	private Vector3 win2world;
-	private Vector2 touchPointWorldCoords;
-	private boolean startButtonTouched;
-	private int startButtonTouchPointer;
-
 	public TabletMainMenuState(final NxtARCore core){
 		this.core = core;
-		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		startButton.setPosition(-(startButton.getWidth() / 2), -(startButton.getHeight() / 2));
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
-
-		win2world = new Vector3(0.0f, 0.0f, 0.0f);
-		touchPointWorldCoords = new Vector2();
-
-		startButtonTouched = false;
-		startButtonTouchPointer = -1;
 
 		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (startButton.getY() * 0.5f);
 		clientConnectedLedOn.setSize(clientConnectedLedOn.getWidth() * 0.5f, clientConnectedLedOn.getHeight() * 0.5f);
@@ -62,7 +41,10 @@ public class TabletMainMenuState extends MainMenuStateBase{
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
+			core.batch.disableBlending();
 			drawBackground(core.batch);
+			core.batch.enableBlending();
+
 			if(clientConnected){
 				clientConnectedLedOn.draw(core.batch);
 			}else{
@@ -70,88 +52,5 @@ public class TabletMainMenuState extends MainMenuStateBase{
 			}
 			startButton.draw(core.batch, 1.0f);
 		}core.batch.end();
-	}
-
-	@Override
-	public void resize(int width, int height){ }
-
-	@Override
-	public void show(){ }
-
-	@Override
-	public void hide(){ }
-
-	@Override
-	public void pause(){ }
-
-	@Override
-	public void resume(){ }
-
-	@Override
-	public void dispose(){
-		super.dispose();
-	}
-
-	/*;;;;;;;;;;;;;;;;;;
-	  ; HELPER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;*/
-
-	private void unprojectTouch(int screenX, int screenY){
-		win2world.set(screenX, screenY, 0.0f);
-		pixelPerfectCamera.unproject(win2world);
-		touchPointWorldCoords.set(win2world.x, win2world.y);
-	}
-
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; INPUT LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
-
-	@Override
-	public boolean touchDown(int screenX, int screenY, int pointer, int button){
-		unprojectTouch(screenX, screenY);
-
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
-
-		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
-			startButton.setChecked(true);
-			startButtonTouched = true;
-			startButtonTouchPointer = pointer;
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button pressed.");
-		}
-
-		return true;
-	}
-
-	@Override
-	public boolean touchUp(int screenX, int screenY, int pointer, int button){
-		unprojectTouch(screenX, screenY);
-
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
-		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
-
-		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
-			startButton.setChecked(false);
-			startButtonTouched = false;
-			startButtonTouchPointer = -1;
-			core.nextState = game_states_t.IN_GAME;
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
-		}
-
-		return true;
-	}
-
-	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer){
-		unprojectTouch(screenX, screenY);
-
-		if(!startButton.isDisabled() && startButtonTouched && pointer == startButtonTouchPointer && !startButtonBBox.contains(touchPointWorldCoords)){
-			startButtonTouchPointer = -1;
-			startButtonTouched = false;
-			startButton.setChecked(false);
-			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Start button released.");
-		}
-
-		return true;
 	}
 }

@@ -15,6 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.states;
 
+import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Gdx;
@@ -23,6 +24,7 @@ import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
@@ -34,6 +36,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
@@ -49,6 +52,7 @@ public abstract class MainMenuStateBase extends BaseState{
 	// Helper fields.
 	protected boolean clientConnected;
 	private float u_scaling[];
+	protected OrthographicCamera pixelPerfectCamera;
 
 	// Buttons and other gui components.
 	protected TextButton startButton;
@@ -72,8 +76,16 @@ public abstract class MainMenuStateBase extends BaseState{
 	private Texture backgroundTexture;
 	private ShaderProgram backgroundShader;
 
+	// Button touch helper fields.
+	private Vector3 win2world;
+	protected Vector2 touchPointWorldCoords;
+	protected boolean startButtonTouched;
+	protected int startButtonTouchPointer;
+
 	public MainMenuStateBase(){
 		TextureRegion region;
+
+		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		// Create the start button background.
 		startButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
@@ -131,6 +143,12 @@ public abstract class MainMenuStateBase extends BaseState{
 		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
+
+		win2world = new Vector3(0.0f, 0.0f, 0.0f);
+		touchPointWorldCoords = new Vector2();
+		startButtonTouched = false;
+		startButtonTouchPointer = -1;
+
 		clientConnected = false;
 		stateActive = false;
 	}
@@ -139,18 +157,18 @@ public abstract class MainMenuStateBase extends BaseState{
 	public abstract void render(float delta);
 
 	@Override
-	public abstract void resize(int width, int height);
+	public void resize(int width, int height){ }
 
 	@Override
-	public abstract void show();
+	public void show(){ }
 	@Override
-	public abstract void hide();
+	public void hide(){ }
 
 	@Override
-	public abstract void pause();
+	public void pause(){ }
 
 	@Override
-	public abstract void resume();
+	public void resume(){ }
 
 	@Override
 	public void dispose(){
@@ -194,18 +212,81 @@ public abstract class MainMenuStateBase extends BaseState{
 		startButton.setDisabled(false);
 	}
 
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; INPUT LISTENER METHOD STUBS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	protected void unprojectTouch(int screenX, int screenY){
+		win2world.set(screenX, screenY, 0.0f);
+		pixelPerfectCamera.unproject(win2world);
+		touchPointWorldCoords.set(win2world.x, win2world.y);
+	}
+
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
+	@Override
+	public boolean touchDown(int screenX, int screenY, int pointer, int button){
+		unprojectTouch(screenX, screenY);
+
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
+
+		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
+			startButton.setChecked(true);
+			startButtonTouched = true;
+			startButtonTouchPointer = pointer;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button pressed.");
+		}
+
+		return true;
+	}
+
+	@Override
+	public boolean touchUp(int screenX, int screenY, int pointer, int button){
+		unprojectTouch(screenX, screenY);
+
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
+
+		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
+			startButton.setChecked(false);
+			startButtonTouched = false;
+			startButtonTouchPointer = -1;
+			core.nextState = game_states_t.IN_GAME;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
+		}
+
+		return true;
+	}
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer){
+		unprojectTouch(screenX, screenY);
+
+		if(!startButton.isDisabled() && startButtonTouched && pointer == startButtonTouchPointer && !startButtonBBox.contains(touchPointWorldCoords)){
+			startButtonTouchPointer = -1;
+			startButtonTouched = false;
+			startButton.setChecked(false);
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Start button released.");
+		}
+
+		return true;
+	}
 
 	@Override
 	public boolean keyDown(int keycode){
 		if(keycode == Input.Keys.BACK){
-			// TODO: Go to pause state.
+			// Ignore.
 			return true;
 		}
 		return false;
 	}
+
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT LISTENER METHOD STUBS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public boolean keyUp(int keycode){
@@ -214,21 +295,6 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	@Override
 	public boolean keyTyped(char character){
-		return false;
-	}
-
-	@Override
-	public boolean touchDown(int screenX, int screenY, int pointer, int button){
-		return false;
-	}
-
-	@Override
-	public boolean touchUp(int screenX, int screenY, int pointer, int button){
-		return false;
-	}
-
-	@Override
-	public boolean touchDragged(int screenX, int screenY, int pointer){
 		return false;
 	}
 

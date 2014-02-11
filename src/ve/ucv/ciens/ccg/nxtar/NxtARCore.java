@@ -204,8 +204,8 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		Controllers.addListener(states[currState.getValue()]);
 
 		// Anything else.
-		//Gdx.app.setLogLevel(Application.LOG_INFO);
-		Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		Gdx.app.setLogLevel(Application.LOG_INFO);
+		//Gdx.app.setLogLevel(Application.LOG_DEBUG);
 		//Gdx.app.setLogLevel(Application.LOG_NONE);
 	}
 

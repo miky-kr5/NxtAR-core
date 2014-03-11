@@ -21,6 +21,7 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -152,9 +153,11 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void render(float delta){
+		int fW, fH;
 		byte[] frame;
 		byte[] prevFrame = null;
 		Size dimensions = null;
+		CVData data;
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -170,9 +173,20 @@ public class InGameState extends BaseState{
 		}core.batch.end();
 
 		frame = frameMonitor.getCurrentFrame();
-		if(frame != null && !Arrays.equals(frame, prevFrame)){
+		fW = frameMonitor.getFrameDimensions().getWidth();
+		fH = frameMonitor.getFrameDimensions().getHeight();
+
+		data = core.cvProc.processFrame(frame, fW, fH);
+
+		if(data != null){
+			for(int i = 0; i < data.markerCodes.length; i++){
+				Gdx.app.log(TAG, CLASS_NAME + String.format(".render(): Marker code[%d] = %d", i, data.markerCodes[i]));
+			}
+		}
+
+		if(data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
 			dimensions = frameMonitor.getFrameDimensions();
-			videoFrame = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
+			videoFrame = new Pixmap(data.outFrame, 0, dimensions.getWidth() * dimensions.getHeight());
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();

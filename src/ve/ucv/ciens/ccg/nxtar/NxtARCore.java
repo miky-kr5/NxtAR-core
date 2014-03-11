@@ -15,6 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar;
 
+import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor;
 import ve.ucv.ciens.ccg.nxtar.interfaces.MulticastEnabler;
 import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.Toaster;
@@ -90,6 +91,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 	// Assorted fields.
 	public SpriteBatch batch;
+	public CVProcessor cvProc;
 	private Toaster toaster;
 
 	// Networking related fields.
@@ -128,6 +130,13 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			this.mcastEnabler = (MulticastEnabler)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.error(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement MulticastEnabler. Quitting.");
+			Gdx.app.exit();
+		}
+
+		try{
+			this.cvProc = (CVProcessor)concreteApp;
+		}catch(ClassCastException cc){
+			Gdx.app.error(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the CVProcessor interface. Quitting.");
 			Gdx.app.exit();
 		}
 	}

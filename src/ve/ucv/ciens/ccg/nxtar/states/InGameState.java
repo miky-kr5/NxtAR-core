@@ -341,7 +341,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[0] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_C);
+				event.setMotor(motor_t.MOTOR_A);
 				event.setPower((byte)100);
 				queue.addEvent(event);
 
@@ -353,7 +353,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[1] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_C);
+				event.setMotor(motor_t.MOTOR_A);
 				event.setPower((byte)-100);
 				queue.addEvent(event);
 
@@ -364,7 +364,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[2] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_A);
+				event.setMotor(motor_t.MOTOR_C);
 				event.setPower((byte)-100);
 				queue.addEvent(event);
 
@@ -375,7 +375,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[3] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_A);
+				event.setMotor(motor_t.MOTOR_C);
 				event.setPower((byte)100);
 				queue.addEvent(event);
 
@@ -427,7 +427,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[1]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -441,7 +441,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -455,7 +455,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[3]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -469,7 +469,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[2]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -525,7 +525,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[1]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -539,7 +539,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -553,7 +553,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[3]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -567,7 +567,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[2]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -631,7 +631,7 @@ public class InGameState extends BaseState{
 
 				if(!motorGamepadButtonPressed[1]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_B);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)100);
 					queue.addEvent(event);
 				}
@@ -641,7 +641,7 @@ public class InGameState extends BaseState{
 
 				if(!motorGamepadButtonPressed[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_B);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)-100);
 					queue.addEvent(event);
 				}
@@ -666,7 +666,7 @@ public class InGameState extends BaseState{
 
 				if(!motorGamepadButtonPressed[1]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_B);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
@@ -676,7 +676,7 @@ public class InGameState extends BaseState{
 
 				if(!motorGamepadButtonPressed[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_B);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
@@ -691,59 +691,7 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
-		MotorEvent event;
-
-		if(stateActive && Ouya.runningOnOuya){
-			if(Math.abs(value) >= Ouya.STICK_DEADZONE * 3.0f){
-
-				if(axisCode == Ouya.AXIS_LEFT_Y){
-					Gdx.app.log(TAG, CLASS_NAME + ".axisMoved() :: LEFT Y moved: "+ Float.toString(value));
-
-					axisStopSent[0] = false;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte)(100.0f * -value));
-					queue.addEvent(event);
-
-				}else if(axisCode == Ouya.AXIS_RIGHT_Y){
-					Gdx.app.log(TAG, CLASS_NAME + ".axisMoved() :: RIGHT Y moved: "+ Float.toString(value));
-
-					axisStopSent[1] = false;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte)(100.0f * -value));
-					queue.addEvent(event);
-
-				}
-
-			}else{
-
-				if(axisCode == Ouya.AXIS_LEFT_Y && !axisStopSent[0]){
-
-					axisStopSent[0] = true;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte)0);
-					queue.addEvent(event);
-
-				}else if(axisCode == Ouya.AXIS_RIGHT_Y && !axisStopSent[1]){
-
-					axisStopSent[1] = true;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte)0);
-					queue.addEvent(event);
-
-				}
-			}
-			return true;
-		}else{
-			return false;
-		}
+		return false;
 	}
 
 	@Override
@@ -763,47 +711,36 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean keyUp(int keycode){
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean keyTyped(char character){
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean povMoved(Controller controller, int povCode,
-			PovDirection value){
-		// TODO Auto-generated method stub
+	public boolean povMoved(Controller controller, int povCode, PovDirection value){
 		return false;
 	}
 
 	@Override
-	public boolean xSliderMoved(Controller controller, int sliderCode,
-			boolean value){
-		// TODO Auto-generated method stub
+	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
 		return false;
 	}
 
 	@Override
-	public boolean ySliderMoved(Controller controller, int sliderCode,
-			boolean value){
-		// TODO Auto-generated method stub
+	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
 		return false;
 	}
 
 	@Override
-	public boolean accelerometerMoved(Controller controller,
-			int accelerometerCode, Vector3 value){
-		// TODO Auto-generated method stub
+	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
 		return false;
 	}
 
 	@Override
 	public boolean scrolled(int amount){
-		// TODO Auto-generated method stub
 		return false;
 	}
 }

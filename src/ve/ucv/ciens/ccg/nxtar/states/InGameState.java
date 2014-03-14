@@ -122,9 +122,13 @@ public class InGameState extends BaseState{
 		motorButtonsPointers[4] = -1;
 		motorButtonsPointers[5] = -1;
 
-		motorGamepadButtonPressed = new boolean[2];
+		motorGamepadButtonPressed = new boolean[6];
 		motorGamepadButtonPressed[0] = false;
 		motorGamepadButtonPressed[1] = false;
+		motorGamepadButtonPressed[2] = false;
+		motorGamepadButtonPressed[3] = false;
+		motorGamepadButtonPressed[4] = false;
+		motorGamepadButtonPressed[5] = false;
 
 		axisStopSent = new boolean[4];
 		axisStopSent[0] = true;
@@ -623,26 +627,64 @@ public class InGameState extends BaseState{
 	public boolean buttonDown(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive && Ouya.runningOnOuya){
+		if(stateActive /*&& Ouya.runningOnOuya*/){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
 				motorGamepadButtonPressed[0] = true;
 
-				if(!motorGamepadButtonPressed[1]){
+				if(!motorGamepadButtonPressed[4]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte)100);
+					event.setPower((byte)-100);
 					queue.addEvent(event);
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_R1){
 				motorGamepadButtonPressed[1] = true;
 
-				if(!motorGamepadButtonPressed[0]){
+				if(!motorGamepadButtonPressed[5]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)-100);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
+				motorGamepadButtonPressed[2] = false;
+
+				if(!motorGamepadButtonPressed[3]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_B);
+					event.setPower((byte)-40);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
+				motorGamepadButtonPressed[3] = false;
+
+				if(!motorGamepadButtonPressed[2]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_B);
+					event.setPower((byte)40);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode ==  Ouya.BUTTON_L2){
+				motorGamepadButtonPressed[4] = false;
+
+				if(!motorGamepadButtonPressed[0]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)100);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode ==  Ouya.BUTTON_R2){
+				motorGamepadButtonPressed[5] = false;
+
+				if(!motorGamepadButtonPressed[1]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)100);
 					queue.addEvent(event);
 				}
 
@@ -658,29 +700,66 @@ public class InGameState extends BaseState{
 	public boolean buttonUp(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive && Ouya.runningOnOuya){
+		if(stateActive /*&& Ouya.runningOnOuya*/){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
-			if(buttonCode ==  Ouya.BUTTON_L1){
+			if(buttonCode == Ouya.BUTTON_L1){
 				motorGamepadButtonPressed[0] = false;
 
-				if(!motorGamepadButtonPressed[1]){
+				if(!motorGamepadButtonPressed[4]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
 
-			}else if(buttonCode ==  Ouya.BUTTON_R1){
+			}else if(buttonCode == Ouya.BUTTON_R1){
 				motorGamepadButtonPressed[1] = false;
 
-				if(!motorGamepadButtonPressed[0]){
+				if(!motorGamepadButtonPressed[5]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
 
+			}else if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
+				motorGamepadButtonPressed[2] = false;
+
+				if(!motorGamepadButtonPressed[3]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_B);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
+				motorGamepadButtonPressed[3] = false;
+
+				if(!motorGamepadButtonPressed[2]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_B);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode ==  Ouya.BUTTON_L2){
+				motorGamepadButtonPressed[4] = false;
+
+				if(!motorGamepadButtonPressed[0]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode ==  Ouya.BUTTON_R2){
+				motorGamepadButtonPressed[5] = false;
+
+				if(!motorGamepadButtonPressed[1]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
 			}
 
 			return true;

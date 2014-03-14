@@ -21,6 +21,7 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -121,9 +122,13 @@ public class InGameState extends BaseState{
 		motorButtonsPointers[4] = -1;
 		motorButtonsPointers[5] = -1;
 
-		motorGamepadButtonPressed = new boolean[2];
+		motorGamepadButtonPressed = new boolean[6];
 		motorGamepadButtonPressed[0] = false;
 		motorGamepadButtonPressed[1] = false;
+		motorGamepadButtonPressed[2] = false;
+		motorGamepadButtonPressed[3] = false;
+		motorGamepadButtonPressed[4] = false;
+		motorGamepadButtonPressed[5] = false;
 
 		axisStopSent = new boolean[4];
 		axisStopSent[0] = true;
@@ -152,9 +157,11 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void render(float delta){
+		int fW, fH;
 		byte[] frame;
 		byte[] prevFrame = null;
 		Size dimensions = null;
+		CVData data;
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -170,9 +177,20 @@ public class InGameState extends BaseState{
 		}core.batch.end();
 
 		frame = frameMonitor.getCurrentFrame();
-		if(frame != null && !Arrays.equals(frame, prevFrame)){
+		fW = frameMonitor.getFrameDimensions().getWidth();
+		fH = frameMonitor.getFrameDimensions().getHeight();
+
+		data = core.cvProc.processFrame(frame, fW, fH);
+
+		if(data != null){
+			for(int i = 0; i < data.markerCodes.length; i++){
+				Gdx.app.log(TAG, CLASS_NAME + String.format(".render(): Marker code[%d] = %d", i, data.markerCodes[i]));
+			}
+		}
+
+		if(data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
 			dimensions = frameMonitor.getFrameDimensions();
-			videoFrame = new Pixmap(frame, 0, dimensions.getWidth() * dimensions.getHeight());
+			videoFrame = new Pixmap(data.outFrame, 0, dimensions.getWidth() * dimensions.getHeight());
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();
@@ -327,7 +345,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[0] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_C);
+				event.setMotor(motor_t.MOTOR_A);
 				event.setPower((byte)100);
 				queue.addEvent(event);
 
@@ -339,7 +357,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[1] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_C);
+				event.setMotor(motor_t.MOTOR_A);
 				event.setPower((byte)-100);
 				queue.addEvent(event);
 
@@ -350,7 +368,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[2] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_A);
+				event.setMotor(motor_t.MOTOR_C);
 				event.setPower((byte)-100);
 				queue.addEvent(event);
 
@@ -361,7 +379,7 @@ public class InGameState extends BaseState{
 				motorButtonsPointers[3] = pointer;
 
 				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_A);
+				event.setMotor(motor_t.MOTOR_C);
 				event.setPower((byte)100);
 				queue.addEvent(event);
 
@@ -413,7 +431,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[1]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -427,7 +445,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -441,7 +459,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[3]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -455,7 +473,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[2]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -511,7 +529,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[1]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -525,7 +543,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -539,7 +557,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[3]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -553,7 +571,7 @@ public class InGameState extends BaseState{
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
 				if(!motorButtonsTouched[2]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
+					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
@@ -609,26 +627,64 @@ public class InGameState extends BaseState{
 	public boolean buttonDown(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive && Ouya.runningOnOuya){
+		if(stateActive /*&& Ouya.runningOnOuya*/){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
 				motorGamepadButtonPressed[0] = true;
 
-				if(!motorGamepadButtonPressed[1]){
+				if(!motorGamepadButtonPressed[4]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_B);
-					event.setPower((byte)100);
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)-100);
 					queue.addEvent(event);
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_R1){
 				motorGamepadButtonPressed[1] = true;
 
-				if(!motorGamepadButtonPressed[0]){
+				if(!motorGamepadButtonPressed[5]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)-100);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
+				motorGamepadButtonPressed[2] = false;
+
+				if(!motorGamepadButtonPressed[3]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
-					event.setPower((byte)-100);
+					event.setPower((byte)-40);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
+				motorGamepadButtonPressed[3] = false;
+
+				if(!motorGamepadButtonPressed[2]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_B);
+					event.setPower((byte)40);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode ==  Ouya.BUTTON_L2){
+				motorGamepadButtonPressed[4] = false;
+
+				if(!motorGamepadButtonPressed[0]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)100);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode ==  Ouya.BUTTON_R2){
+				motorGamepadButtonPressed[5] = false;
+
+				if(!motorGamepadButtonPressed[1]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)100);
 					queue.addEvent(event);
 				}
 
@@ -644,29 +700,66 @@ public class InGameState extends BaseState{
 	public boolean buttonUp(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive && Ouya.runningOnOuya){
+		if(stateActive /*&& Ouya.runningOnOuya*/){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
-			if(buttonCode ==  Ouya.BUTTON_L1){
+			if(buttonCode == Ouya.BUTTON_L1){
 				motorGamepadButtonPressed[0] = false;
 
-				if(!motorGamepadButtonPressed[1]){
+				if(!motorGamepadButtonPressed[4]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode == Ouya.BUTTON_R1){
+				motorGamepadButtonPressed[1] = false;
+
+				if(!motorGamepadButtonPressed[5]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
+
+			}else if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
+				motorGamepadButtonPressed[2] = false;
+
+				if(!motorGamepadButtonPressed[3]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
+			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
+				motorGamepadButtonPressed[3] = false;
 
-			}else if(buttonCode ==  Ouya.BUTTON_R1){
-				motorGamepadButtonPressed[1] = false;
+				if(!motorGamepadButtonPressed[2]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_B);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
+			}else if(buttonCode ==  Ouya.BUTTON_L2){
+				motorGamepadButtonPressed[4] = false;
 
 				if(!motorGamepadButtonPressed[0]){
 					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_B);
+					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
 
+			}else if(buttonCode ==  Ouya.BUTTON_R2){
+				motorGamepadButtonPressed[5] = false;
+
+				if(!motorGamepadButtonPressed[1]){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)0);
+					queue.addEvent(event);
+				}
 			}
 
 			return true;
@@ -677,59 +770,7 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
-		MotorEvent event;
-
-		if(stateActive && Ouya.runningOnOuya){
-			if(Math.abs(value) >= Ouya.STICK_DEADZONE * 3.0f){
-
-				if(axisCode == Ouya.AXIS_LEFT_Y){
-					Gdx.app.log(TAG, CLASS_NAME + ".axisMoved() :: LEFT Y moved: "+ Float.toString(value));
-
-					axisStopSent[0] = false;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte)(100.0f * -value));
-					queue.addEvent(event);
-
-				}else if(axisCode == Ouya.AXIS_RIGHT_Y){
-					Gdx.app.log(TAG, CLASS_NAME + ".axisMoved() :: RIGHT Y moved: "+ Float.toString(value));
-
-					axisStopSent[1] = false;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte)(100.0f * -value));
-					queue.addEvent(event);
-
-				}
-
-			}else{
-
-				if(axisCode == Ouya.AXIS_LEFT_Y && !axisStopSent[0]){
-
-					axisStopSent[0] = true;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte)0);
-					queue.addEvent(event);
-
-				}else if(axisCode == Ouya.AXIS_RIGHT_Y && !axisStopSent[1]){
-
-					axisStopSent[1] = true;
-
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte)0);
-					queue.addEvent(event);
-
-				}
-			}
-			return true;
-		}else{
-			return false;
-		}
+		return false;
 	}
 
 	@Override
@@ -749,47 +790,36 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean keyUp(int keycode){
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean keyTyped(char character){
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
-	public boolean povMoved(Controller controller, int povCode,
-			PovDirection value){
-		// TODO Auto-generated method stub
+	public boolean povMoved(Controller controller, int povCode, PovDirection value){
 		return false;
 	}
 
 	@Override
-	public boolean xSliderMoved(Controller controller, int sliderCode,
-			boolean value){
-		// TODO Auto-generated method stub
+	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
 		return false;
 	}
 
 	@Override
-	public boolean ySliderMoved(Controller controller, int sliderCode,
-			boolean value){
-		// TODO Auto-generated method stub
+	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
 		return false;
 	}
 
 	@Override
-	public boolean accelerometerMoved(Controller controller,
-			int accelerometerCode, Vector3 value){
-		// TODO Auto-generated method stub
+	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
 		return false;
 	}
 
 	@Override
 	public boolean scrolled(int amount){
-		// TODO Auto-generated method stub
 		return false;
 	}
 }

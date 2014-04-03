@@ -15,10 +15,44 @@
  */
 package ve.ucv.ciens.ccg.nxtar.network;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ServerSocket;
+import java.net.Socket;
+
+import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
+import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
+
+import com.badlogic.gdx.Gdx;
+
 public class SensorReportThread extends Thread {
+	public static final String THREAD_NAME = "SensorReportThread";
+	private static final String TAG = "NXTAR_CORE_ROBOTTHREAD";
+	private static final String CLASS_NAME = SensorReportThread.class.getSimpleName();
+
+	private NetworkConnectionListener netListener;
+	private ServerSocket server;
+	private Socket client;
+	private Object pauseMonitor;
+	private boolean paused;
+	private boolean done;
+	private InputStream reader;
+	private Byte lightReading;
 
 	private SensorReportThread(){
+		paused = false;
+		done = false;
+		netListener = null;
+		pauseMonitor = null;
+		client = null;
+		lightReading = -1;
 
+		try{
+			server = new ServerSocket(ProjectConstants.SENSOR_REPORT_PORT);
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".RobotControlThread() :: Error creating server: " + io.getMessage(), io);
+			server = null;
+		}
 	}
 
 	private static class SingletonHolder{
@@ -29,8 +63,64 @@ public class SensorReportThread extends Thread {
 		return SingletonHolder.INSTANCE;
 	}
 
+	public void addNetworkConnectionListener(NetworkConnectionListener listener){
+		netListener = listener;
+	}
+
+	public void pauseThread(){
+		synchronized(pauseMonitor){
+			paused = true;
+		}
+	}
+
+	public void resumeThread(){
+		synchronized(pauseMonitor){
+			paused = false;
+		}
+	}
+
+	public void finish(){
+		done = true;
+	}
+
+	public byte getLightSensorReading(){
+		byte data;
+
+		synchronized(lightReading){
+			data = lightReading.byteValue();
+		}
+
+		return data;
+	}
+
 	@Override
 	public void run(){
+		byte[] reading = new byte[1];
 
+		try{
+			client = server.accept();
+			client.setTcpNoDelay(true);
+			if(netListener != null) netListener.networkStreamConnected(THREAD_NAME);
+			reader = client.getInputStream();
+
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error accepting client: " + io.getMessage(), io);
+			return;
+		}
+
+		while(!paused){
+			if(done) break;
+
+			try{
+				reader.read(reading);
+			}catch(IOException io){
+				Gdx.app.error(TAG, CLASS_NAME + ".run() :: IOException during sensor read: " + io.getMessage(), io);
+				break;
+			}
+
+			synchronized (lightReading) {
+				lightReading = reading[0];
+			}
+		}
 	}
 }

@@ -75,6 +75,7 @@ public class InGameState extends BaseState{
 	private Sprite motorD;
 	private Sprite headA;
 	private Sprite headB;
+	private Sprite headC;
 
 	// Button touch helper fields.
 	private Vector3 win2world;
@@ -82,7 +83,6 @@ public class InGameState extends BaseState{
 	private boolean[] motorButtonsTouched;
 	private int[] motorButtonsPointers;
 	private boolean[] motorGamepadButtonPressed;
-	private boolean[] axisStopSent;
 
 	// Monitors.
 	private VideoFrameMonitor frameMonitor;
@@ -106,35 +106,32 @@ public class InGameState extends BaseState{
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
 		touchPointWorldCoords = new Vector2();
 
-		motorButtonsTouched = new boolean[6];
+		motorButtonsTouched = new boolean[7];
 		motorButtonsTouched[0] = false;
 		motorButtonsTouched[1] = false;
 		motorButtonsTouched[2] = false;
 		motorButtonsTouched[3] = false;
 		motorButtonsTouched[4] = false;
 		motorButtonsTouched[5] = false;
+		motorButtonsTouched[6] = false;
 
-		motorButtonsPointers = new int[6];
+		motorButtonsPointers = new int[7];
 		motorButtonsPointers[0] = -1;
 		motorButtonsPointers[1] = -1;
 		motorButtonsPointers[2] = -1;
 		motorButtonsPointers[3] = -1;
 		motorButtonsPointers[4] = -1;
 		motorButtonsPointers[5] = -1;
+		motorButtonsPointers[6] = -1;
 
-		motorGamepadButtonPressed = new boolean[6];
+		motorGamepadButtonPressed = new boolean[7];
 		motorGamepadButtonPressed[0] = false;
 		motorGamepadButtonPressed[1] = false;
 		motorGamepadButtonPressed[2] = false;
 		motorGamepadButtonPressed[3] = false;
 		motorGamepadButtonPressed[4] = false;
 		motorGamepadButtonPressed[5] = false;
-
-		axisStopSent = new boolean[4];
-		axisStopSent[0] = true;
-		axisStopSent[1] = true;
-		axisStopSent[2] = true;
-		axisStopSent[3] = true;
+		motorGamepadButtonPressed[6] = false;
 
 		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
 		backgroundTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
@@ -231,6 +228,7 @@ public class InGameState extends BaseState{
 				motorD.draw(core.batch);
 				headA.draw(core.batch);
 				headB.draw(core.batch);
+				headC.draw(core.batch);
 			}
 		}core.batch.end();
 
@@ -320,6 +318,10 @@ public class InGameState extends BaseState{
 
 		headA.setPosition(-headA.getWidth() - 10, motorA.getY() + (headA.getHeight() / 2));
 		headB.setPosition(10, motorA.getY() + (headA.getHeight() / 2));
+
+		headC = new Sprite(buttonTexture2);
+		headC.setSize(headC.getWidth() * 0.3f, headC.getHeight() * 0.6f);
+		headC.setPosition(-(headC.getWidth() / 2), headA.getY() - headA.getHeight() - 10);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -351,7 +353,6 @@ public class InGameState extends BaseState{
 
 			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
-
 
 				motorButtonsTouched[1] = true;
 				motorButtonsPointers[1] = pointer;
@@ -405,6 +406,18 @@ public class InGameState extends BaseState{
 				event.setPower((byte)40);
 				queue.addEvent(event);
 
+			}else if(headC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Head C button pressed");
+
+				if(!motorButtonsTouched[4] && !motorButtonsTouched[5]){
+					motorButtonsTouched[6] = true;
+					motorButtonsPointers[6] = pointer;
+
+					event = new MotorEvent();
+					event.setMotor(motor_t.RECENTER);
+					event.setPower((byte)0x00);
+					queue.addEvent(event);
+				}
 			}
 		}
 		return true;
@@ -506,6 +519,11 @@ public class InGameState extends BaseState{
 					queue.addEvent(event);
 				}
 
+			}else if(headC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Head C button released");
+
+				motorButtonsPointers[6] = -1;
+				motorButtonsTouched[6] = false;
 			}
 		}
 		return true;
@@ -576,8 +594,8 @@ public class InGameState extends BaseState{
 					queue.addEvent(event);
 				}
 
-			}else if(pointer == motorButtonsPointers[4] && headA.getBoundingRectangle().contains(touchPointWorldCoords)){
-				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Head A button released");
+			}else if(pointer == motorButtonsPointers[4] && !headA.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Head A button released");
 
 				motorButtonsPointers[4] = -1;
 				motorButtonsTouched[4] = false;
@@ -590,8 +608,8 @@ public class InGameState extends BaseState{
 					queue.addEvent(event);
 				}
 
-			}else if(pointer == motorButtonsPointers[5] && headB.getBoundingRectangle().contains(touchPointWorldCoords)){
-				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Head B button released");
+			}else if(pointer == motorButtonsPointers[5] && !headB.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Head B button released");
 
 				motorButtonsPointers[5] = -1;
 				motorButtonsTouched[5] = false;
@@ -604,6 +622,11 @@ public class InGameState extends BaseState{
 					queue.addEvent(event);
 				}
 
+			}else if(pointer == motorButtonsPointers[6] && !headC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Head C button released");
+
+				motorButtonsPointers[6] = -1;
+				motorButtonsTouched[6] = false;
 			}
 		}
 		return true;
@@ -659,6 +682,7 @@ public class InGameState extends BaseState{
 					event.setPower((byte)-40);
 					queue.addEvent(event);
 				}
+
 			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
 				motorGamepadButtonPressed[3] = false;
 
@@ -668,6 +692,7 @@ public class InGameState extends BaseState{
 					event.setPower((byte)40);
 					queue.addEvent(event);
 				}
+
 			}else if(buttonCode ==  Ouya.BUTTON_L2){
 				motorGamepadButtonPressed[4] = false;
 
@@ -688,6 +713,13 @@ public class InGameState extends BaseState{
 					queue.addEvent(event);
 				}
 
+			}else if(buttonCode == Ouya.BUTTON_Y){
+				motorGamepadButtonPressed[6] = true;
+
+				event = new MotorEvent();
+				event.setMotor(motor_t.RECENTER);
+				event.setPower((byte)0x00);
+				queue.addEvent(event);
 			}
 
 			return true;
@@ -760,6 +792,9 @@ public class InGameState extends BaseState{
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
+
+			}else if(buttonCode == Ouya.BUTTON_Y){
+				motorGamepadButtonPressed[6] = false;
 			}
 
 			return true;

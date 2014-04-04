@@ -20,6 +20,7 @@ import ve.ucv.ciens.ccg.nxtar.interfaces.MulticastEnabler;
 import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.Toaster;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
+import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
 import ve.ucv.ciens.ccg.nxtar.states.BaseState;
@@ -76,10 +77,12 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			return this.value;
 		}
 	};
+
 	/**
 	 * The current application state.
 	 */
 	private game_states_t currState;
+
 	/**
 	 * <p>The state to change to.</p>
 	 * <p> Usually null. A state change is scheduled by setting this field to a {@link game_states_t} value.</p>
@@ -100,6 +103,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	private ServiceDiscoveryThread serviceDiscoveryThread;
 	private VideoStreamingThread videoThread;
 	private RobotControlThread robotThread;
+	private SensorReportThread sensorThread;
 
 	// Overlays.
 	private OrthographicCamera pixelPerfectCamera;
@@ -144,8 +148,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	public void create(){
 		// Create the state objects.
 		states = new BaseState[3];
-		if(Ouya.runningOnOuya)states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
-		else states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
+		if(Ouya.runningOnOuya)
+			states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
+		else
+			states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
 		states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
 		states[game_states_t.PAUSED.getValue()] = new PauseState(this);
 
@@ -179,6 +185,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
 		videoThread = VideoStreamingThread.getInstance();
 		robotThread = RobotControlThread.getInstance();
+		sensorThread = SensorReportThread.getInstance();
 
 		serviceDiscoveryThread.start();
 
@@ -188,6 +195,9 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 		robotThread.addNetworkConnectionListener(this);
 		robotThread.start();
+
+		sensorThread.addNetworkConnectionListener(this);
+		sensorThread.start();
 
 		// Set the current and next states.
 		currState = game_states_t.MAIN_MENU;
@@ -275,6 +285,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 				font.draw(batch, String.format("Render FPS:        %d", Gdx.graphics.getFramesPerSecond()), fontX, fontY);
 				font.draw(batch, String.format("Total  stream FPS: %d", videoThread.getFps()), fontX, fontY - font.getCapHeight() - 5);
 				font.draw(batch, String.format("Lost   stream FPS: %d", videoThread.getLostFrames()), fontX, fontY - (2 * font.getCapHeight()) - 10);
+				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), fontX, fontY - (3 * font.getCapHeight()) - 15);
 			}batch.end();
 		}
 	}
@@ -309,10 +320,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 	@Override
 	public synchronized void networkStreamConnected(String streamName){
-		//if(streamName.equals(VideoStreamingThread.THREAD_NAME) || streamName.equals(RobotControlThread.THREAD_NAME))
 		Gdx.app.log(TAG, CLASS_NAME + ".networkStreamConnected() :: Stream " + streamName + " connected.");
 		connections += 1;
-		if(connections >= 2){
+
+		if(connections >= 3){
 			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
 			serviceDiscoveryThread.finish();
 			mcastEnabler.disableMulticast();

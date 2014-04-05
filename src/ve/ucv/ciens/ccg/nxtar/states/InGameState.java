@@ -162,6 +162,7 @@ public class InGameState extends BaseState{
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
+		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame buffer cleared.");
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
@@ -172,18 +173,20 @@ public class InGameState extends BaseState{
 			background.draw(core.batch);
 			if(backgroundShader != null) core.batch.setShader(null);
 		}core.batch.end();
+		Gdx.app.log(TAG, CLASS_NAME + ".render(): Background drawn.");
 
 		frame = frameMonitor.getCurrentFrame();
 		fW = frameMonitor.getFrameDimensions().getWidth();
 		fH = frameMonitor.getFrameDimensions().getHeight();
 
 		data = core.cvProc.processFrame(frame, fW, fH);
+		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame processed.");
 
-		if(data != null){
+		/*if(data != null){
 			for(int i = 0; i < data.markerCodes.length; i++){
 				Gdx.app.log(TAG, CLASS_NAME + String.format(".render(): Marker code[%d] = %d", i, data.markerCodes[i]));
 			}
-		}
+		}*/
 
 		if(data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
 			dimensions = frameMonitor.getFrameDimensions();
@@ -191,6 +194,7 @@ public class InGameState extends BaseState{
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();
+			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture created.");
 
 			TextureRegion region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
 
@@ -206,6 +210,7 @@ public class InGameState extends BaseState{
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
 			}
+			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture resized and positioned.");
 
 			if(!Ouya.runningOnOuya){
 				core.batch.setProjectionMatrix(camera.combined);
@@ -215,13 +220,15 @@ public class InGameState extends BaseState{
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
 			}core.batch.end();
+			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture drawn.");
 
 			videoFrameTexture.dispose();
+			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture released.");
 		}
 
-		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
-		core.batch.begin();{
-			if(!Ouya.runningOnOuya){
+		if(!Ouya.runningOnOuya){
+			core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
+			core.batch.begin();{
 				motorA.draw(core.batch);
 				motorB.draw(core.batch);
 				motorC.draw(core.batch);
@@ -229,10 +236,11 @@ public class InGameState extends BaseState{
 				headA.draw(core.batch);
 				headB.draw(core.batch);
 				headC.draw(core.batch);
-			}
-		}core.batch.end();
+			}core.batch.end();
+		}
 
 		prevFrame = frame;
+		Gdx.app.log(TAG, CLASS_NAME + ".render(): Render complete.");
 	}
 
 	@Override

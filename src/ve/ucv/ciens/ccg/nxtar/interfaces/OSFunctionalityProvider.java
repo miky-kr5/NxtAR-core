@@ -15,7 +15,9 @@
  */
 package ve.ucv.ciens.ccg.nxtar.interfaces;
 
-public interface MulticastEnabler {
+public interface OSFunctionalityProvider{
+	public void showShortToast(String msg);
+	public void showLongToast(String msg);
 	public void enableMulticast();
 	public void disableMulticast();
 }

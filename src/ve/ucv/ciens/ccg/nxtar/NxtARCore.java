@@ -18,7 +18,7 @@ package ve.ucv.ciens.ccg.nxtar;
 import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor;
 import ve.ucv.ciens.ccg.nxtar.interfaces.MulticastEnabler;
 import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
-import ve.ucv.ciens.ccg.nxtar.interfaces.Toaster;
+import ve.ucv.ciens.ccg.nxtar.interfaces.OSFunctionalityProvider;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
@@ -95,7 +95,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	// Assorted fields.
 	public SpriteBatch batch;
 	public CVProcessor cvProc;
-	private Toaster toaster;
+	private OSFunctionalityProvider toaster;
 
 	// Networking related fields.
 	private int connections;
@@ -124,7 +124,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		super();
 		connections = 0;
 		try{
-			this.toaster = (Toaster)concreteApp;
+			this.toaster = (OSFunctionalityProvider)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the Toaster interface. Toasting disabled.");
 			this.toaster = null;

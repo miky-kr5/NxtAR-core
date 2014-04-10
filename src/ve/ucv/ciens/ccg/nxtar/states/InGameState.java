@@ -179,7 +179,7 @@ public class InGameState extends BaseState{
 		fW = frameMonitor.getFrameDimensions().getWidth();
 		fH = frameMonitor.getFrameDimensions().getHeight();
 
-		data = core.cvProc.processFrame(frame, fW, fH);
+		data = core.cvProc.findMarkersInFrame(frame, fW, fH);
 		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame processed.");
 
 		/*if(data != null){

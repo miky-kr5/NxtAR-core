@@ -22,5 +22,5 @@ public interface CVProcessor {
 		// TODO: Add marker location data.
 	}
 
-	public CVData processFrame(byte[] frame, int w, int h);
+	public CVData findMarkersInFrame(byte[] frame, int w, int h);
 }

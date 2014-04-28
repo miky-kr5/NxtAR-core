@@ -16,7 +16,6 @@
 package ve.ucv.ciens.ccg.nxtar;
 
 import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor;
-import ve.ucv.ciens.ccg.nxtar.interfaces.MulticastEnabler;
 import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.OSFunctionalityProvider;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
@@ -95,11 +94,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	// Assorted fields.
 	public SpriteBatch batch;
 	public CVProcessor cvProc;
-	private OSFunctionalityProvider toaster;
+	private OSFunctionalityProvider osFunction;
 
 	// Networking related fields.
 	private int connections;
-	private MulticastEnabler mcastEnabler;
 	private ServiceDiscoveryThread serviceDiscoveryThread;
 	private VideoStreamingThread videoThread;
 	private RobotControlThread robotThread;
@@ -124,17 +122,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		super();
 		connections = 0;
 		try{
-			this.toaster = (OSFunctionalityProvider)concreteApp;
+			this.osFunction = (OSFunctionalityProvider)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the Toaster interface. Toasting disabled.");
-			this.toaster = null;
-		}
-
-		try{
-			this.mcastEnabler = (MulticastEnabler)concreteApp;
-		}catch(ClassCastException cc){
-			Gdx.app.error(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement MulticastEnabler. Quitting.");
-			Gdx.app.exit();
+			this.osFunction = null;
 		}
 
 		try{
@@ -179,7 +170,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		}
 
 		// Start networking.
-		mcastEnabler.enableMulticast();
+		osFunction.enableMulticast();
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
@@ -326,16 +317,16 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		if(connections >= 3){
 			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
 			serviceDiscoveryThread.finish();
-			mcastEnabler.disableMulticast();
-			toaster.showShortToast("Client connected");
+			osFunction.disableMulticast();
+			osFunction.showShortToast("Client connected");
 			((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onClientConnected();
 		}
 	}
 
 	public void toast(String msg, boolean longToast){
-		if(toaster != null){
-			if(longToast) toaster.showLongToast(msg);
-			else toaster.showShortToast(msg);
+		if(osFunction != null){
+			if(longToast) osFunction.showLongToast(msg);
+			else osFunction.showShortToast(msg);
 		}
 	}
 }

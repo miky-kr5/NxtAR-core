@@ -38,6 +38,7 @@ public abstract class ProjectConstants{
 	public static final String FONT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
 	public static final int CALIBRATION_PATTERN_POINTS = 54;
+	public static final int CALIBRATION_SAMPLES = 10;
 
 	static{
 		OVERSCAN = Ouya.runningOnOuya ? 0.9f : 1.0f;

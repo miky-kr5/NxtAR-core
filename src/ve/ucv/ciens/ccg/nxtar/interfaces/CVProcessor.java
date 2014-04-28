@@ -23,4 +23,6 @@ public interface CVProcessor {
 	}
 
 	public CVData findMarkersInFrame(byte[] frame, int w, int h);
+
+	public void calibrateCamera();
 }

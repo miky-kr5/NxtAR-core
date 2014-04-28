@@ -31,7 +31,7 @@ public abstract class BaseState implements Screen, ControllerListener, InputProc
 	/* STATE METHODS */
 	public abstract void onStateSet();
 	public abstract void onStateUnset();
-	
+
 	/* SCREEN METHODS*/
 	@Override
 	public abstract void render(float delta);
@@ -50,39 +50,83 @@ public abstract class BaseState implements Screen, ControllerListener, InputProc
 
 	/* INPUT PROCESSOR METHODS. */
 	@Override
-	public abstract boolean keyDown(int keycode);
+	public boolean keyDown(int keycode){
+		return false;
+	};
+
 	@Override
-	public abstract boolean keyUp(int keycode);
+	public boolean keyUp(int keycode){
+		return false;
+	};
+
 	@Override
-	public abstract boolean keyTyped(char character);
+	public boolean keyTyped(char character){
+		return false;
+	};
+
 	@Override
-	public abstract boolean touchDown(int screenX, int screenY, int pointer, int button);
+	public boolean touchDown(int screenX, int screenY, int pointer, int button){
+		return false;
+	};
+
 	@Override
-	public abstract boolean touchUp(int screenX, int screenY, int pointer, int button);
+	public boolean touchUp(int screenX, int screenY, int pointer, int button){
+		return false;
+	};
+
 	@Override
-	public abstract boolean touchDragged(int screenX, int screenY, int pointer);
+	public boolean touchDragged(int screenX, int screenY, int pointer){
+		return false;
+	};
+
 	@Override
-	public abstract boolean mouseMoved(int screenX, int screenY);
+	public boolean mouseMoved(int screenX, int screenY){
+		return false;
+	};
+
 	@Override
-	public abstract boolean scrolled(int amount);
+	public boolean scrolled(int amount){
+		return false;
+	};
 
 	/* CONTROLLER LISTENER METHODS. */
 	@Override
-	public abstract void connected(Controller controller);
+	public void connected(Controller controller){ };
+
 	@Override
-	public abstract void disconnected(Controller controller);
+	public void disconnected(Controller controller){ };
+
 	@Override
-	public abstract boolean buttonDown(Controller controller, int buttonCode);
+	public boolean buttonDown(Controller controller, int buttonCode){
+		return false;
+	};
+
 	@Override
-	public abstract boolean buttonUp(Controller controller, int buttonCode);
+	public boolean buttonUp(Controller controller, int buttonCode){
+		return false;
+	};
 	@Override
-	public abstract boolean axisMoved(Controller controller, int axisCode, float value);
+	public boolean axisMoved(Controller controller, int axisCode, float value){
+		return false;
+	};
+
 	@Override
-	public abstract boolean povMoved(Controller controller, int povCode, PovDirection value);
+	public boolean povMoved(Controller controller, int povCode, PovDirection value){
+		return false;
+	};
+
 	@Override
-	public abstract boolean xSliderMoved(Controller controller, int sliderCode, boolean value);
+	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
+		return false;
+	};
+
 	@Override
-	public abstract boolean ySliderMoved(Controller controller, int sliderCode, boolean value);
+	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
+		return false;
+	};
+
 	@Override
-	public abstract boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value);
+	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
+		return false;
+	};
 }

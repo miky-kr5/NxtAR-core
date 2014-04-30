@@ -21,7 +21,7 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVData;
+import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVMarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -153,11 +153,10 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void render(float delta){
-		int fW, fH;
 		byte[] frame;
 		byte[] prevFrame = null;
 		Size dimensions = null;
-		CVData data;
+		CVMarkerData data;
 
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
@@ -175,10 +174,8 @@ public class InGameState extends BaseState{
 		Gdx.app.log(TAG, CLASS_NAME + ".render(): Background drawn.");
 
 		frame = frameMonitor.getCurrentFrame();
-		fW = frameMonitor.getFrameDimensions().getWidth();
-		fH = frameMonitor.getFrameDimensions().getHeight();
 
-		data = core.cvProc.findMarkersInFrame(frame, fW, fH);
+		data = core.cvProc.findMarkersInFrame(frame);
 		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame processed.");
 
 		/*if(data != null){
@@ -243,10 +240,7 @@ public class InGameState extends BaseState{
 	}
 
 	@Override
-	public void resize(int width, int height){
-		// TODO Auto-generated method stub
-
-	}
+	public void resize(int width, int height){ }
 
 	@Override
 	public void show(){ }

@@ -16,13 +16,19 @@
 package ve.ucv.ciens.ccg.nxtar.interfaces;
 
 public interface CVProcessor {
-	public class CVData{
+	public class CVMarkerData{
 		public byte[] outFrame;
 		public int[] markerCodes;
 		// TODO: Add marker location data.
 	}
 
-	public CVData findMarkersInFrame(byte[] frame, int w, int h);
-
-	public void calibrateCamera();
+	public class CVCalibrationData{
+		public byte[] outFrame;
+		public float[] calibrationPoints;
+	}
+	
+	public CVMarkerData findMarkersInFrame(byte[] frame);
+	public CVCalibrationData findCalibrationPattern(byte[] frame);
+	public void calibrateCamera(float[][] calibrationSamples, byte[] frame);
+	public byte[] undistortFrame(byte[] frame);
 }

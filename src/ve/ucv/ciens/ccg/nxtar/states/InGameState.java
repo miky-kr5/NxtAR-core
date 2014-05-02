@@ -76,8 +76,6 @@ public class InGameState extends BaseState{
 	private Sprite headC;
 
 	// Button touch helper fields.
-	private Vector3 win2world;
-	private Vector2 touchPointWorldCoords;
 	private boolean[] motorButtonsTouched;
 	private int[] motorButtonsPointers;
 	private boolean[] motorGamepadButtonPressed;
@@ -173,6 +171,10 @@ public class InGameState extends BaseState{
 		Gdx.app.log(TAG, CLASS_NAME + ".render(): Background drawn.");
 
 		frame = frameMonitor.getCurrentFrame();
+
+		if(core.cvProc.cameraIsCalibrated()){
+			frame = core.cvProc.undistortFrame(frame);
+		}
 
 		data = core.cvProc.findMarkersInFrame(frame);
 		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame processed.");

@@ -22,11 +22,16 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.PovDirection;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public abstract class BaseState implements Screen, ControllerListener, InputProcessor {
 	protected NxtARCore core;
 	protected boolean stateActive;
+	protected OrthographicCamera pixelPerfectCamera;
+	protected Vector3 win2world;
+	protected Vector2 touchPointWorldCoords;
 
 	/* STATE METHODS */
 	public abstract void onStateSet();
@@ -35,18 +40,32 @@ public abstract class BaseState implements Screen, ControllerListener, InputProc
 	/* SCREEN METHODS*/
 	@Override
 	public abstract void render(float delta);
+
 	@Override
 	public abstract void resize(int width, int height);
+
 	@Override
 	public abstract void show();
+
 	@Override
 	public abstract void hide();
+
 	@Override
 	public abstract void pause();
+
 	@Override
 	public abstract void resume();
+
 	@Override
 	public abstract void dispose();
+
+	/* HELPER METHODS */
+
+	protected final void unprojectTouch(int screenX, int screenY){
+		win2world.set(screenX, screenY, 0.0f);
+		pixelPerfectCamera.unproject(win2world);
+		touchPointWorldCoords.set(win2world.x, win2world.y);
+	}
 
 	/* INPUT PROCESSOR METHODS. */
 	@Override

@@ -49,7 +49,6 @@ public abstract class MainMenuStateBase extends BaseState{
 	// Helper fields.
 	protected boolean clientConnected;
 	private float u_scaling[];
-	protected OrthographicCamera pixelPerfectCamera;
 
 	// Buttons and other gui components.
 	protected TextButton startButton;
@@ -65,9 +64,9 @@ public abstract class MainMenuStateBase extends BaseState{
 	protected Sprite background;
 
 	// Graphic data for the start button.
-	private Texture startButtonEnabledTexture;
-	private Texture startButtonDisabledTexture;
-	private Texture startButtonPressedTexture;
+	private Texture menuButtonEnabledTexture;
+	private Texture menuButtonDisabledTexture;
+	private Texture menuButtonPressedTexture;
 	private NinePatch menuButtonEnabled9p;
 	private NinePatch menuButtonDisabled9p;
 	private NinePatch menuButtonPressed9p;
@@ -82,8 +81,6 @@ public abstract class MainMenuStateBase extends BaseState{
 	private ShaderProgram backgroundShader;
 
 	// Button touch helper fields.
-	private Vector3 win2world;
-	protected Vector2 touchPointWorldCoords;
 	protected boolean startButtonTouched;
 	protected int startButtonTouchPointer;
 	protected boolean calibrationButtonTouched;
@@ -92,21 +89,22 @@ public abstract class MainMenuStateBase extends BaseState{
 	public MainMenuStateBase(){
 		TextureRegion region;
 		TextButtonStyle tbs;
+		FreeTypeFontGenerator generator;
 
 		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		// Create the start button background.
-		startButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
-		menuButtonEnabled9p = new NinePatch(new TextureRegion(startButtonEnabledTexture, 0, 0, startButtonEnabledTexture.getWidth(), startButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
+		menuButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
+		menuButtonEnabled9p = new NinePatch(new TextureRegion(menuButtonEnabledTexture, 0, 0, menuButtonEnabledTexture.getWidth(), menuButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
 
-		startButtonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
-		menuButtonDisabled9p = new NinePatch(new TextureRegion(startButtonDisabledTexture, 0, 0, startButtonDisabledTexture.getWidth(), startButtonDisabledTexture.getHeight()), 49, 49, 45, 45);
+		menuButtonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
+		menuButtonDisabled9p = new NinePatch(new TextureRegion(menuButtonDisabledTexture, 0, 0, menuButtonDisabledTexture.getWidth(), menuButtonDisabledTexture.getHeight()), 49, 49, 45, 45);
 
-		startButtonPressedTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
-		menuButtonPressed9p = new NinePatch(new TextureRegion(startButtonPressedTexture, 0, 0, startButtonPressedTexture.getWidth(), startButtonPressedTexture.getHeight()), 49, 49, 45, 45);
+		menuButtonPressedTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
+		menuButtonPressed9p = new NinePatch(new TextureRegion(menuButtonPressedTexture, 0, 0, menuButtonPressedTexture.getWidth(), menuButtonPressedTexture.getHeight()), 49, 49, 45, 45);
 
 		// Create the start button font.
-		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
+		generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
 		font = generator.generateFont(ProjectConstants.MENU_BUTTON_FONT_SIZE, ProjectConstants.FONT_CHARS, false);
 		generator.dispose();
 
@@ -197,9 +195,9 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	@Override
 	public void dispose(){
-		startButtonEnabledTexture.dispose();
-		startButtonDisabledTexture.dispose();
-		startButtonPressedTexture.dispose();
+		menuButtonEnabledTexture.dispose();
+		menuButtonDisabledTexture.dispose();
+		menuButtonPressedTexture.dispose();
 		clientConnectedLedOnTexture.dispose();
 		clientConnectedLedOffTexture.dispose();
 		cameraCalibratedLedOnTexture.dispose();
@@ -238,16 +236,6 @@ public abstract class MainMenuStateBase extends BaseState{
 		clientConnected = true;
 		startButton.setDisabled(false);
 		calibrationButton.setDisabled(false);
-	}
-
-	/*;;;;;;;;;;;;;;;;;;
-	  ; HELPER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;*/
-
-	protected void unprojectTouch(int screenX, int screenY){
-		win2world.set(screenX, screenY, 0.0f);
-		pixelPerfectCamera.unproject(win2world);
-		touchPointWorldCoords.set(win2world.x, win2world.y);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;

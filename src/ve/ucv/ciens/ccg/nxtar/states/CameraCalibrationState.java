@@ -28,20 +28,28 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 
 public class CameraCalibrationState extends BaseState{
-	private static final String TAG = "IN_GAME_STATE";
+	private static final String TAG = "CAMERA_CALIBRATION_STATE";
 	private static final String CLASS_NAME = CameraCalibrationState.class.getSimpleName();
 	private static final String SHADER_PATH = "shaders/bckg/bckg";
 
@@ -54,26 +62,38 @@ public class CameraCalibrationState extends BaseState{
 
 	// Cameras.
 	private OrthographicCamera camera;
-	private OrthographicCamera pixelPerfectCamera;
 
 	// Video stream graphics.
 	private Texture videoFrameTexture;
 	private Sprite renderableVideoFrame;
 	private Pixmap videoFrame;
 
+	// Gui components.
+	private TextButton takeSampleButton;
+	private Rectangle takeSampleButtonBBox;
+	private Texture buttonEnabledTexture;
+	private Texture buttonDisabledTexture;
+	private Texture buttonPressedTexture;
+	private NinePatch buttonEnabled9p;
+	private NinePatch buttonDisabled9p;
+	private NinePatch buttonPressed9p;
+	private BitmapFont font;
+
 	// Button touch helper fields.
-	private Vector3 win2world;
-	private Vector2 touchPointWorldCoords;
-	private boolean[] motorButtonsTouched;
-	private int[] motorButtonsPointers;
-	private boolean[] motorGamepadButtonPressed;
+	private boolean takeSampleButtonTouched;
+	private int takeSampleButtonPointer;
 
 	// Monitors.
 	private VideoFrameMonitor frameMonitor;
 
 	private float[][] calibrationSamples;
+	private boolean takeSample;
+	private int lastSampleTaken;
 
 	public CameraCalibrationState(final NxtARCore core){
+		TextButtonStyle tbs;
+		FreeTypeFontGenerator generator;
+
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 
@@ -92,7 +112,7 @@ public class CameraCalibrationState extends BaseState{
 		// Load the background shader.
 		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
 		if(!backgroundShader.isCompiled()){
-			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
+			Gdx.app.error(TAG, CLASS_NAME + ".CameraCalibrationState() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
 			backgroundShader = null;
 		}
@@ -101,6 +121,42 @@ public class CameraCalibrationState extends BaseState{
 		u_scaling = new float[2];
 		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
+
+		// Set up the sampling button.
+		// Create the font.
+		generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
+		font = generator.generateFont(ProjectConstants.MENU_BUTTON_FONT_SIZE, ProjectConstants.FONT_CHARS, false);
+		generator.dispose();
+
+		// Load the textures.
+		buttonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
+		buttonEnabled9p = new NinePatch(new TextureRegion(buttonEnabledTexture, 0, 0, buttonEnabledTexture.getWidth(), buttonEnabledTexture.getHeight()), 49, 49, 45, 45);
+		buttonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
+		buttonDisabled9p = new NinePatch(new TextureRegion(buttonDisabledTexture, 0, 0, buttonDisabledTexture.getWidth(), buttonDisabledTexture.getHeight()), 49, 49, 45, 45);
+		buttonPressedTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
+		buttonPressed9p = new NinePatch(new TextureRegion(buttonPressedTexture, 0, 0, buttonPressedTexture.getWidth(), buttonPressedTexture.getHeight()), 49, 49, 45, 45);
+
+		// Create the button style.
+		tbs = new TextButtonStyle();
+		tbs.font = font;
+		tbs.up = new NinePatchDrawable(buttonEnabled9p);
+		tbs.checked = new NinePatchDrawable(buttonPressed9p);
+		tbs.disabled = new NinePatchDrawable(buttonDisabled9p);
+		tbs.disabledFontColor = new Color(0, 0, 0, 1);
+
+		// Create the button itself.
+		takeSampleButton = new TextButton("Take calibration sample", tbs);
+		takeSampleButton.setText("Take calibration sample");
+		takeSampleButton.setDisabled(true);
+		takeSampleButtonBBox = new Rectangle(0, 0, takeSampleButton.getWidth(), takeSampleButton.getHeight());
+		takeSampleButton.setPosition(-(takeSampleButton.getWidth() / 2), -(Gdx.graphics.getHeight()/2) - 1 + (takeSampleButton.getHeight() / 2));
+		takeSampleButtonBBox.setPosition(takeSampleButton.getX(), takeSampleButton.getY());
+
+		// Set up the touch collision detection variables.
+		win2world = new Vector3(0.0f, 0.0f, 0.0f);
+		touchPointWorldCoords = new Vector2();
+		takeSampleButtonTouched = false;
+		takeSampleButtonPointer = -1;
 
 		// Initialize the calibration samples vector.
 		calibrationSamples = new float[ProjectConstants.CALIBRATION_SAMPLES][];
@@ -114,6 +170,9 @@ public class CameraCalibrationState extends BaseState{
 		Gdx.input.setInputProcessor(this);
 		Gdx.input.setCatchBackKey(true);
 		Gdx.input.setCatchMenuKey(true);
+
+		takeSample = false;
+		lastSampleTaken = 0;
 
 		for(int i = 0; i < calibrationSamples.length; i++){
 			for(int j = 0; j < calibrationSamples[i].length; j++){
@@ -134,7 +193,6 @@ public class CameraCalibrationState extends BaseState{
 		// Clear the screen.
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame buffer cleared.");
 
 		// Render the background.
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
@@ -146,11 +204,41 @@ public class CameraCalibrationState extends BaseState{
 			background.draw(core.batch);
 			if(backgroundShader != null) core.batch.setShader(null);
 		}core.batch.end();
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Background drawn.");
 
 		// Fetch the current video frame and find the calibration pattern in it.
 		frame = frameMonitor.getCurrentFrame();
+
+		if(core.cvProc.cameraIsCalibrated()){
+			frame = core.cvProc.undistortFrame(frame);
+		}
+
 		CVCalibrationData data = core.cvProc.findCalibrationPattern(frame);
+
+		if(data.calibrationPoints != null && !core.cvProc.cameraIsCalibrated()){
+			takeSampleButton.setDisabled(false);
+		}else{
+			takeSampleButton.setDisabled(true);
+		}
+
+		if(takeSample && !core.cvProc.cameraIsCalibrated() && data.calibrationPoints != null){
+			takeSample = false;
+			Gdx.app.log(TAG, CLASS_NAME + ".render(): Sample taken.");
+
+			for(int i = 0; i < data.calibrationPoints.length; i += 2){
+				Gdx.app.log(TAG, CLASS_NAME + ".render(): Value " + Integer.toString(i) + " = (" + Float.toString(data.calibrationPoints[i]) + ", " + Float.toString(data.calibrationPoints[i + 1]) + ")");
+				calibrationSamples[lastSampleTaken][i] = data.calibrationPoints[i];
+				calibrationSamples[lastSampleTaken][i + 1] = data.calibrationPoints[i + 1];
+			}
+
+			lastSampleTaken++;
+
+			if(lastSampleTaken == ProjectConstants.CALIBRATION_SAMPLES){
+				Gdx.app.log(TAG, CLASS_NAME + "render(): Last sample taken.");
+
+				core.toast("Calibrating camera", false);
+				core.cvProc.calibrateCamera(calibrationSamples, frame);
+			}
+		}
 
 		if(frame != null && data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
 			// If the received frame is valid and is different from the previous frame.
@@ -160,7 +248,6 @@ public class CameraCalibrationState extends BaseState{
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture created.");
 
 			// Set up the frame texture as a rendereable sprite.
 			TextureRegion region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
@@ -176,7 +263,6 @@ public class CameraCalibrationState extends BaseState{
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
 			}
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture resized and positioned.");
 
 			// Render the frame.
 			if(!Ouya.runningOnOuya){
@@ -187,25 +273,22 @@ public class CameraCalibrationState extends BaseState{
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
 			}core.batch.end();
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture drawn.");
 
 			// Clear texture memory.
 			videoFrameTexture.dispose();
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture released.");
 		}
 
 		// Render the user interface.
 		if(!Ouya.runningOnOuya){
 			core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			core.batch.begin();{
+				takeSampleButton.draw(core.batch, 1.0f);
 			}core.batch.end();
 		}else{
 		}
 
-		// Save this frame as previous to avoid processing the same frame twice
-		// when network latency is high.
+		// Save this frame as previous to avoid processing the same frame twice when network latency is high.
 		prevFrame = frame;
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Render complete.");
 	}
 
 	@Override
@@ -231,6 +314,10 @@ public class CameraCalibrationState extends BaseState{
 		if(backgroundShader != null) backgroundShader.dispose();
 	}
 
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public boolean keyDown(int keycode){
 		if(keycode == Input.Keys.BACK){
@@ -242,17 +329,51 @@ public class CameraCalibrationState extends BaseState{
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){
-		return false;
+		unprojectTouch(screenX, screenY);
+
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
+
+		if(!takeSampleButton.isDisabled() && takeSampleButtonBBox.contains(touchPointWorldCoords) && !takeSampleButtonTouched){
+			takeSampleButton.setChecked(true);
+			takeSampleButtonTouched = true;
+			takeSampleButtonPointer = pointer;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Sample button pressed.");
+		}
+
+		return true;
 	}
 
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button){
-		return false;
+		unprojectTouch(screenX, screenY);
+
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
+		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
+
+		if(!takeSampleButton.isDisabled() && takeSampleButtonBBox.contains(touchPointWorldCoords) && takeSampleButtonTouched){
+			takeSampleButton.setChecked(false);
+			takeSampleButtonTouched = false;
+			takeSampleButtonPointer = -1;
+			takeSample = true;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Sample button released.");
+		}
+
+		return true;
 	}
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer){
-		return false;
+		unprojectTouch(screenX, screenY);
+
+		if(!takeSampleButton.isDisabled() && takeSampleButtonTouched && pointer == takeSampleButtonPointer && !takeSampleButtonBBox.contains(touchPointWorldCoords)){
+			takeSampleButtonPointer = -1;
+			takeSampleButtonTouched = false;
+			takeSampleButton.setChecked(false);
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Sample button released.");
+		}
+
+		return true;
 	}
 
 	@Override

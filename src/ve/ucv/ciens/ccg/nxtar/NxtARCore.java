@@ -23,6 +23,7 @@ import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
 import ve.ucv.ciens.ccg.nxtar.states.BaseState;
+import ve.ucv.ciens.ccg.nxtar.states.CameraCalibrationState;
 import ve.ucv.ciens.ccg.nxtar.states.InGameState;
 import ve.ucv.ciens.ccg.nxtar.states.MainMenuStateBase;
 import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
@@ -64,7 +65,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	 * Valid game states.
 	 */
 	public enum game_states_t {
-		MAIN_MENU(0), IN_GAME(1), PAUSED(2);
+		MAIN_MENU(0), IN_GAME(1), PAUSED(2), CALIBRATION(3);
 
 		private int value;
 
@@ -74,6 +75,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 		public int getValue(){
 			return this.value;
+		}
+
+		public static int getNumStates(){
+			return 4;
 		}
 	};
 
@@ -138,13 +143,14 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 	public void create(){
 		// Create the state objects.
-		states = new BaseState[3];
+		states = new BaseState[game_states_t.getNumStates()];
 		if(Ouya.runningOnOuya)
 			states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
 		else
 			states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
 		states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
 		states[game_states_t.PAUSED.getValue()] = new PauseState(this);
+		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
 
 		for(BaseState state : states){
 			Controllers.addListener(state);
@@ -213,10 +219,12 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		Gdx.input.setInputProcessor(states[currState.getValue()]);
 		Controllers.addListener(states[currState.getValue()]);
 
-		// Anything else.
-		//Gdx.app.setLogLevel(Application.LOG_INFO);
-		//Gdx.app.setLogLevel(Application.LOG_DEBUG);
-		Gdx.app.setLogLevel(Application.LOG_NONE);
+		// Set log level
+		if(ProjectConstants.DEBUG){
+			Gdx.app.setLogLevel(Application.LOG_DEBUG);
+		}else{
+			Gdx.app.setLogLevel(Application.LOG_NONE);
+		}
 	}
 
 	public void render(){

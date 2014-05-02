@@ -34,6 +34,7 @@ public abstract class ProjectConstants{
 	public static final int[] POWERS_OF_2 = {64, 128, 256, 512, 1024, 2048};
 
 	public static final float OVERSCAN;
+	public static final int MENU_BUTTON_FONT_SIZE;
 
 	public static final String FONT_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
@@ -42,5 +43,6 @@ public abstract class ProjectConstants{
 
 	static{
 		OVERSCAN = Ouya.runningOnOuya ? 0.9f : 1.0f;
+		MENU_BUTTON_FONT_SIZE = Ouya.runningOnOuya ? 60 : 40;
 	}
 }

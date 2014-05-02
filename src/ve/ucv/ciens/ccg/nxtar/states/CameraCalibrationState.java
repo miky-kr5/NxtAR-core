@@ -18,12 +18,14 @@ package ve.ucv.ciens.ccg.nxtar.states;
 import java.util.Arrays;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
+import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVCalibrationData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
@@ -109,6 +111,10 @@ public class CameraCalibrationState extends BaseState{
 
 	@Override
 	public void onStateSet(){
+		Gdx.input.setInputProcessor(this);
+		Gdx.input.setCatchBackKey(true);
+		Gdx.input.setCatchMenuKey(true);
+
 		for(int i = 0; i < calibrationSamples.length; i++){
 			for(int j = 0; j < calibrationSamples[i].length; j++){
 				calibrationSamples[i][j] = 0.0f;
@@ -145,7 +151,7 @@ public class CameraCalibrationState extends BaseState{
 		// Fetch the current video frame and find the calibration pattern in it.
 		frame = frameMonitor.getCurrentFrame();
 		CVCalibrationData data = core.cvProc.findCalibrationPattern(frame);
-		
+
 		if(frame != null && data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
 			// If the received frame is valid and is different from the previous frame.
 			// Make a texture from the frame.
@@ -218,7 +224,21 @@ public class CameraCalibrationState extends BaseState{
 	public void resume(){ }
 
 	@Override
-	public void dispose(){ }
+	public void dispose(){
+		if(videoFrameTexture != null)
+			videoFrameTexture.dispose();
+		backgroundTexture.dispose();
+		if(backgroundShader != null) backgroundShader.dispose();
+	}
+
+	@Override
+	public boolean keyDown(int keycode){
+		if(keycode == Input.Keys.BACK){
+			core.nextState = game_states_t.MAIN_MENU;
+			return true;
+		}
+		return false;
+	}
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){

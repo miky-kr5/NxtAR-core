@@ -46,7 +46,6 @@ import com.badlogic.gdx.math.Vector3;
 public class InGameState extends BaseState{
 	private static final String TAG = "IN_GAME_STATE";
 	private static final String CLASS_NAME = InGameState.class.getSimpleName();
-
 	private static final String SHADER_PATH = "shaders/bckg/bckg";
 
 	private NxtARCore core;

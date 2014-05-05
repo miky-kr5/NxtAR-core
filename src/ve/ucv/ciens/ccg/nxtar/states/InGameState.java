@@ -33,12 +33,15 @@ import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
@@ -50,14 +53,20 @@ public class InGameState extends BaseState{
 
 	private NxtARCore core;
 
+	// Background related fields.
 	private float u_scaling[];
 	protected Sprite background;
 	private Texture backgroundTexture;
 	private ShaderProgram backgroundShader;
 
+	// 3D rendering fields.
+	private FrameBuffer frameBuffer;
+	private Sprite frameBufferSprite;
+
 	// Cameras.
 	private OrthographicCamera camera;
 	private OrthographicCamera pixelPerfectCamera;
+	private PerspectiveCamera camera3D;
 
 	// Video stream graphics.
 	private Texture videoFrameTexture;
@@ -148,6 +157,11 @@ public class InGameState extends BaseState{
 		u_scaling = new float[2];
 		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
+
+		// Set up the 3D rendering.
+		frameBuffer = null;
+		camera3D = null;
+		frameBufferSprite = new Sprite();
 	}
 
 	@Override
@@ -176,6 +190,17 @@ public class InGameState extends BaseState{
 		// Fetch the current video frame.
 		frame = frameMonitor.getCurrentFrame();
 
+		if(camera3D == null && frameBuffer == null){
+			int w, h;
+
+			w = (int)((float)frameMonitor.getFrameDimensions().getWidth() * ProjectConstants.OVERSCAN);
+			h = (int)((float)frameMonitor.getFrameDimensions().getHeight() * ProjectConstants.OVERSCAN);
+
+			frameBuffer = new FrameBuffer(Format.RGB565, w, h, true);
+
+			camera3D = new PerspectiveCamera(60, w, h);
+		}
+
 		// Apply the undistortion method if the camera has been calibrated already.
 		if(core.cvProc.cameraIsCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
@@ -198,16 +223,36 @@ public class InGameState extends BaseState{
 			renderableVideoFrame = new Sprite(region);
 			renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
 
-			// Set the position and orientation of the renderable video frame.
+			// TODO: Render the 3D scene here.
+			frameBuffer.begin();{
+				Gdx.gl.glClearColor(1, 1, 1, 0);
+				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+				// TODO: Call 3D scene renderer.
+
+			}frameBuffer.end();
+
+			// Set the renderable 3D sprite.
+			frameBufferSprite.setTexture(frameBuffer.getColorBufferTexture());
+
+			// Set the position and orientation of the renderable video frame and the frame buffer.
 			if(!Ouya.runningOnOuya){
 				renderableVideoFrame.setSize(1.0f, renderableVideoFrame.getHeight() / renderableVideoFrame.getWidth() );
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, 0.5f - renderableVideoFrame.getHeight());
+
+				frameBufferSprite.setSize(1.0f, frameBufferSprite.getHeight() / frameBufferSprite.getWidth() );
+				frameBufferSprite.rotate90(true);
+				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (dimensions.getWidth() / dimensions.getHeight());
 				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
+
+				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+				frameBufferSprite.rotate90(true);
+				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
 			}
 
 			// Set the correct camera for the device.
@@ -216,10 +261,11 @@ public class InGameState extends BaseState{
 			}else{
 				core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			}
-			
-			// Render the video frame.
+
+			// Render the video frame and the frame buffer.
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
+				frameBufferSprite.draw(core.batch, 1.0f);
 			}core.batch.end();
 
 			// Clear the video frame from memory.
@@ -263,12 +309,20 @@ public class InGameState extends BaseState{
 	public void dispose(){
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
+
 		if(buttonTexture != null)
 			buttonTexture.dispose();
+
 		if(buttonTexture2 != null)
 			buttonTexture2.dispose();
+
 		backgroundTexture.dispose();
-		if(backgroundShader != null) backgroundShader.dispose();
+
+		if(backgroundShader != null)
+			backgroundShader.dispose();
+
+		if(frameBuffer != null)
+			frameBuffer.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;

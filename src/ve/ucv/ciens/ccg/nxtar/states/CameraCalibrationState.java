@@ -205,33 +205,41 @@ public class CameraCalibrationState extends BaseState{
 			if(backgroundShader != null) core.batch.setShader(null);
 		}core.batch.end();
 
-		// Fetch the current video frame and find the calibration pattern in it.
+		// Fetch the current video frame.
 		frame = frameMonitor.getCurrentFrame();
 
+		// Apply the undistortion method if the camera has been calibrated already.
 		if(core.cvProc.cameraIsCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
 		}
 
+		// Find the calibration points in the video frame.
 		CVCalibrationData data = core.cvProc.findCalibrationPattern(frame);
 
+		// Disable the sampling button if the calibration pattern was not found.
 		if(data.calibrationPoints != null && !core.cvProc.cameraIsCalibrated()){
 			takeSampleButton.setDisabled(false);
 		}else{
 			takeSampleButton.setDisabled(true);
 		}
 
+		// If the user requested a sample be taken.
 		if(takeSample && !core.cvProc.cameraIsCalibrated() && data.calibrationPoints != null){
+			// Disable sample taking.
 			takeSample = false;
 			Gdx.app.log(TAG, CLASS_NAME + ".render(): Sample taken.");
 
+			// Save the calibration points to the samples array.
 			for(int i = 0; i < data.calibrationPoints.length; i += 2){
 				Gdx.app.log(TAG, CLASS_NAME + ".render(): Value " + Integer.toString(i) + " = (" + Float.toString(data.calibrationPoints[i]) + ", " + Float.toString(data.calibrationPoints[i + 1]) + ")");
 				calibrationSamples[lastSampleTaken][i] = data.calibrationPoints[i];
 				calibrationSamples[lastSampleTaken][i + 1] = data.calibrationPoints[i + 1];
 			}
 
+			// Move to the next sample.
 			lastSampleTaken++;
 
+			// If enough samples has been taken then calibrate the camera.
 			if(lastSampleTaken == ProjectConstants.CALIBRATION_SAMPLES){
 				Gdx.app.log(TAG, CLASS_NAME + "render(): Last sample taken.");
 
@@ -285,6 +293,7 @@ public class CameraCalibrationState extends BaseState{
 				takeSampleButton.draw(core.batch, 1.0f);
 			}core.batch.end();
 		}else{
+			// TODO: Render OUYA gui.
 		}
 
 		// Save this frame as previous to avoid processing the same frame twice when network latency is high.

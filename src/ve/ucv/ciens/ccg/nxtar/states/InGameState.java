@@ -129,6 +129,7 @@ public class InGameState extends BaseState{
 		motorGamepadButtonPressed[5] = false;
 		motorGamepadButtonPressed[6] = false;
 
+		// Set up the background.
 		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
 		backgroundTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		backgroundTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -136,6 +137,7 @@ public class InGameState extends BaseState{
 		background.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
+		// Set up the shader.
 		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
@@ -154,11 +156,13 @@ public class InGameState extends BaseState{
 		byte[] prevFrame = null;
 		Size dimensions = null;
 		CVMarkerData data;
+		TextureRegion region;
 
+		// Clear the screen.
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame buffer cleared.");
 
+		// Render the background.
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
 			if(backgroundShader != null){
@@ -168,35 +172,33 @@ public class InGameState extends BaseState{
 			background.draw(core.batch);
 			if(backgroundShader != null) core.batch.setShader(null);
 		}core.batch.end();
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Background drawn.");
 
+		// Fetch the current video frame.
 		frame = frameMonitor.getCurrentFrame();
 
+		// Apply the undistortion method if the camera has been calibrated already.
 		if(core.cvProc.cameraIsCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
 		}
 
+		// Attempt to find the markers in the current video frame.
 		data = core.cvProc.findMarkersInFrame(frame);
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Frame processed.");
 
-		/*if(data != null){
-			for(int i = 0; i < data.markerCodes.length; i++){
-				Gdx.app.log(TAG, CLASS_NAME + String.format(".render(): Marker code[%d] = %d", i, data.markerCodes[i]));
-			}
-		}*/
-
+		// If a valid frame was fetched.
 		if(data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
+			// Decode the video frame.
 			dimensions = frameMonitor.getFrameDimensions();
 			videoFrame = new Pixmap(data.outFrame, 0, dimensions.getWidth() * dimensions.getHeight());
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture created.");
 
-			TextureRegion region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
-
+			// Convert the decoded frame into a renderable texture.
+			region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
 			renderableVideoFrame = new Sprite(region);
 			renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
+
+			// Set the position and orientation of the renderable video frame.
 			if(!Ouya.runningOnOuya){
 				renderableVideoFrame.setSize(1.0f, renderableVideoFrame.getHeight() / renderableVideoFrame.getWidth() );
 				renderableVideoFrame.rotate90(true);
@@ -207,22 +209,24 @@ public class InGameState extends BaseState{
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
 			}
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture resized and positioned.");
 
+			// Set the correct camera for the device.
 			if(!Ouya.runningOnOuya){
 				core.batch.setProjectionMatrix(camera.combined);
 			}else{
 				core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			}
+			
+			// Render the video frame.
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
 			}core.batch.end();
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture drawn.");
 
+			// Clear the video frame from memory.
 			videoFrameTexture.dispose();
-			Gdx.app.log(TAG, CLASS_NAME + ".render(): Texture released.");
 		}
 
+		// Render the interface buttons.
 		if(!Ouya.runningOnOuya){
 			core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			core.batch.begin();{
@@ -236,8 +240,8 @@ public class InGameState extends BaseState{
 			}core.batch.end();
 		}
 
+		// Save this frame as previous to avoid processing the same frame twice when network latency is high.
 		prevFrame = frame;
-		Gdx.app.log(TAG, CLASS_NAME + ".render(): Render complete.");
 	}
 
 	@Override

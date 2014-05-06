@@ -110,7 +110,7 @@ public class CameraCalibrationState extends BaseState{
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
 		// Load the background shader.
-		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + "_vert.glsl"), Gdx.files.internal(SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".CameraCalibrationState() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
@@ -186,6 +186,7 @@ public class CameraCalibrationState extends BaseState{
 
 	@Override
 	public void render(float delta){
+		String msg;
 		byte[] frame;
 		byte[] prevFrame = null;
 		Size dimensions = null;
@@ -238,6 +239,10 @@ public class CameraCalibrationState extends BaseState{
 
 			// Move to the next sample.
 			lastSampleTaken++;
+
+			msg = Integer.toString(lastSampleTaken) + " samples taken. ";
+			msg += Integer.toString(ProjectConstants.CALIBRATION_SAMPLES - lastSampleTaken) + " samples left.";
+			core.toast(msg, false);
 
 			// If enough samples has been taken then calibrate the camera.
 			if(lastSampleTaken == ProjectConstants.CALIBRATION_SAMPLES){
@@ -387,16 +392,22 @@ public class CameraCalibrationState extends BaseState{
 
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){
+		// TODO: Handle OUYA controls.
+
 		return false;
 	}
 
 	@Override
 	public boolean buttonUp(Controller controller, int buttonCode){
+		// TODO: Handle OUYA controls.
+
 		return false;
 	}
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
+		// TODO: Handle OUYA controls.
+
 		return false;
 	}
 }

@@ -153,7 +153,7 @@ public abstract class MainMenuStateBase extends BaseState{
 		background.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
-		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + "_vert.glsl"), Gdx.files.internal(SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());

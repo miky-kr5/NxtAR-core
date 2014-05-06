@@ -39,6 +39,8 @@ public class TabletMainMenuState extends MainMenuStateBase{
 
 		clientConnectedLedOff.setSize(clientConnectedLedOff.getWidth() * 0.5f, clientConnectedLedOff.getHeight() * 0.5f);
 		clientConnectedLedOff.setPosition(-(clientConnectedLedOff.getWidth() / 2), ledYPos);
+
+		// TODO: Set calibration led attributes.
 	}
 
 	@Override
@@ -58,6 +60,8 @@ public class TabletMainMenuState extends MainMenuStateBase{
 			}else{
 				clientConnectedLedOff.draw(core.batch);
 			}
+
+			// TODO: Render calibration led.
 
 			startButton.draw(core.batch, 1.0f);
 			calibrationButton.draw(core.batch, 1.0f);

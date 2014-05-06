@@ -52,6 +52,8 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		clientConnectedLedOff.setSize(clientConnectedLedOff.getWidth() * 0.5f, clientConnectedLedOff.getHeight() * 0.5f);
 		clientConnectedLedOff.setPosition(-(clientConnectedLedOff.getWidth() / 2), ledYPos);
 
+		// TODO: Set calibration led attributes.
+
 		ouyaOButtonTexture = new Texture("data/gfx/gui/OUYA_O.png");
 		TextureRegion region = new TextureRegion(ouyaOButtonTexture, ouyaOButtonTexture.getWidth(), ouyaOButtonTexture.getHeight());
 		ouyaOButton = new Sprite(region);
@@ -78,6 +80,8 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 				clientConnectedLedOff.draw(core.batch);
 			}
 
+			// TODO: Render calibration leds.
+
 			startButton.draw(core.batch, 1.0f);
 			calibrationButton.draw(core.batch, 1.0f);
 
@@ -102,7 +106,9 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
-	public boolean buttonDown(Controller controller, int buttonCode) {
+	public boolean buttonDown(Controller controller, int buttonCode){
+		// TODO: Test this.
+
 		if(stateActive){
 			if(buttonCode == Ouya.BUTTON_O){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): O button pressed.");
@@ -137,7 +143,9 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	}
 
 	@Override
-	public boolean buttonUp(Controller controller, int buttonCode) {
+	public boolean buttonUp(Controller controller, int buttonCode){
+		// TODO: Test this.
+
 		if(stateActive){
 			if(buttonCode == Ouya.BUTTON_O){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): O button released.");

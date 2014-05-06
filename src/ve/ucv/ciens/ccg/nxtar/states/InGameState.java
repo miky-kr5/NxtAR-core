@@ -32,6 +32,7 @@ import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -39,8 +40,12 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.VertexAttribute;
+import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
+import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
@@ -83,6 +88,10 @@ public class InGameState extends BaseState{
 	private Sprite headA;
 	private Sprite headB;
 	private Sprite headC;
+
+	private MeshBuilder builder;
+	private Mesh mesh;
+	private ShaderProgram meshShader;
 
 	// Button touch helper fields.
 	private boolean[] motorButtonsTouched;
@@ -147,7 +156,7 @@ public class InGameState extends BaseState{
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
 		// Set up the shader.
-		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + "_vert.glsl"), Gdx.files.internal(SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
@@ -161,7 +170,15 @@ public class InGameState extends BaseState{
 		// Set up the 3D rendering.
 		frameBuffer = null;
 		camera3D = null;
-		frameBufferSprite = new Sprite();
+		frameBufferSprite = null;
+
+		builder = new MeshBuilder();
+		builder.begin(new VertexAttributes(VertexAttribute.Position(), VertexAttribute.Color(), VertexAttribute.Normal()), GL20.GL_TRIANGLES);{
+			builder.capsule(0.5f, 1.0f, 10);
+		}mesh = builder.end();
+
+		meshShader = new ShaderProgram(DefaultShader.getDefaultVertexShader(), DefaultShader.getDefaultFragmentShader());
+		ShaderProgram.pedantic = false;
 	}
 
 	@Override
@@ -193,12 +210,18 @@ public class InGameState extends BaseState{
 		if(camera3D == null && frameBuffer == null){
 			int w, h;
 
-			w = (int)((float)frameMonitor.getFrameDimensions().getWidth() * ProjectConstants.OVERSCAN);
-			h = (int)((float)frameMonitor.getFrameDimensions().getHeight() * ProjectConstants.OVERSCAN);
+			w = frameMonitor.getFrameDimensions().getWidth();
+			h = frameMonitor.getFrameDimensions().getHeight();
 
-			frameBuffer = new FrameBuffer(Format.RGB565, w, h, true);
+			frameBuffer = new FrameBuffer(Format.RGBA4444, w, h, true);
+			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			camera3D = new PerspectiveCamera(60, w, h);
+			camera3D.position.x = 0.0f;
+			camera3D.position.y = 0.0f;
+			camera3D.position.z = (float)Math.sqrt(2);
+			camera3D.lookAt(0.0f, 0.0f, -1.0f);
+			camera3D.update();
 		}
 
 		// Apply the undistortion method if the camera has been calibrated already.
@@ -220,20 +243,34 @@ public class InGameState extends BaseState{
 
 			// Convert the decoded frame into a renderable texture.
 			region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
-			renderableVideoFrame = new Sprite(region);
+			if(renderableVideoFrame == null)
+				renderableVideoFrame = new Sprite(region);
+			else
+				renderableVideoFrame.setRegion(region);
 			renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
+			renderableVideoFrame.setPosition(0, 0);
 
-			// TODO: Render the 3D scene here.
 			frameBuffer.begin();{
 				Gdx.gl.glClearColor(1, 1, 1, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-				// TODO: Call 3D scene renderer.
+				// TODO: Render something.
+				meshShader.begin();{
+					meshShader.setUniformMatrix("u_projViewTrans", camera3D.combined);
+					meshShader.setUniform4fv("u_diffuseColor", new float[] {0.0f, 0.0f, 0.0f, 1.0f}, 0, 4);
+					mesh.render(meshShader, GL20.GL_TRIANGLES);
+				}meshShader.end();
 
 			}frameBuffer.end();
 
-			// Set the renderable 3D sprite.
-			frameBufferSprite.setTexture(frameBuffer.getColorBufferTexture());
+			// Set the frame buffer object texture to a renderable sprite.
+			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
+			if(frameBufferSprite == null)
+				frameBufferSprite = new Sprite(region);
+			else
+				frameBufferSprite.setRegion(region);
+			frameBufferSprite.setOrigin(frameBufferSprite.getWidth() / 2, frameBufferSprite.getHeight() / 2);
+			frameBufferSprite.setPosition(0, 0);
 
 			// Set the position and orientation of the renderable video frame and the frame buffer.
 			if(!Ouya.runningOnOuya){
@@ -263,9 +300,11 @@ public class InGameState extends BaseState{
 			}
 
 			// Render the video frame and the frame buffer.
+			core.batch.enableBlending();
+			core.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
-				frameBufferSprite.draw(core.batch, 1.0f);
+				frameBufferSprite.draw(core.batch);
 			}core.batch.end();
 
 			// Clear the video frame from memory.
@@ -323,6 +362,12 @@ public class InGameState extends BaseState{
 
 		if(frameBuffer != null)
 			frameBuffer.dispose();
+
+		if(meshShader != null)
+			meshShader.dispose();
+
+		if(mesh != null)
+			mesh.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;

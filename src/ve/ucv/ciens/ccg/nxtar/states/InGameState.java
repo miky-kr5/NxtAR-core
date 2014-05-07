@@ -42,9 +42,9 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
+import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.shaders.DefaultShader;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
@@ -54,7 +54,7 @@ import com.badlogic.gdx.math.Vector3;
 public class InGameState extends BaseState{
 	private static final String TAG = "IN_GAME_STATE";
 	private static final String CLASS_NAME = InGameState.class.getSimpleName();
-	private static final String SHADER_PATH = "shaders/bckg/bckg";
+	private static final String BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
 
 	private NxtARCore core;
 
@@ -156,7 +156,7 @@ public class InGameState extends BaseState{
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
 		// Set up the shader.
-		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + "_vert.glsl"), Gdx.files.internal(SHADER_PATH + "_frag.glsl"));
+		backgroundShader = new ShaderProgram(Gdx.files.internal(BACKGROUND_SHADER_PATH + "_vert.glsl"), Gdx.files.internal(BACKGROUND_SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
@@ -173,11 +173,16 @@ public class InGameState extends BaseState{
 		frameBufferSprite = null;
 
 		builder = new MeshBuilder();
-		builder.begin(new VertexAttributes(VertexAttribute.Position(), VertexAttribute.Color(), VertexAttribute.Normal()), GL20.GL_TRIANGLES);{
-			builder.capsule(0.5f, 1.0f, 10);
+		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
+			builder.setColor(1.0f, 1.0f, 0.0f, 1.0f);
+			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
 		}mesh = builder.end();
 
-		meshShader = new ShaderProgram(DefaultShader.getDefaultVertexShader(), DefaultShader.getDefaultFragmentShader());
+		meshShader = new ShaderProgram(Gdx.files.internal("shaders/singleDiffuseLight/singleDiffuseLight_vert.glsl"), Gdx.files.internal("shaders/singleDiffuseLight/singleDiffuseLight_frag.glsl"));
+		if(!meshShader.isCompiled()){
+			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + meshShader.getLog());
+			Gdx.app.exit();
+		}
 		ShaderProgram.pedantic = false;
 	}
 
@@ -216,11 +221,11 @@ public class InGameState extends BaseState{
 			frameBuffer = new FrameBuffer(Format.RGBA4444, w, h, true);
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
-			camera3D = new PerspectiveCamera(60, w, h);
-			camera3D.position.x = 0.0f;
-			camera3D.position.y = 0.0f;
-			camera3D.position.z = (float)Math.sqrt(2);
-			camera3D.lookAt(0.0f, 0.0f, -1.0f);
+			camera3D = new PerspectiveCamera(67, w, h);
+			camera3D.translate(0.0f, 0.0f, 3.0f);
+			camera3D.near = 0.01f;
+			camera3D.far = 100.0f;
+			camera3D.lookAt(0.0f, 0.0f, 0.0f);
 			camera3D.update();
 		}
 
@@ -251,16 +256,17 @@ public class InGameState extends BaseState{
 			renderableVideoFrame.setPosition(0, 0);
 
 			frameBuffer.begin();{
+				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 				Gdx.gl.glClearColor(1, 1, 1, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
 				// TODO: Render something.
 				meshShader.begin();{
-					meshShader.setUniformMatrix("u_projViewTrans", camera3D.combined);
-					meshShader.setUniform4fv("u_diffuseColor", new float[] {0.0f, 0.0f, 0.0f, 1.0f}, 0, 4);
+					meshShader.setUniformMatrix("u_projTrans", camera3D.combined);
 					mesh.render(meshShader, GL20.GL_TRIANGLES);
 				}meshShader.end();
 
+				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 			}frameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.

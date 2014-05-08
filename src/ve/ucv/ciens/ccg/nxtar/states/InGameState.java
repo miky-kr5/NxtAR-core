@@ -48,6 +48,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
@@ -67,6 +68,7 @@ public class InGameState extends BaseState{
 	// 3D rendering fields.
 	private FrameBuffer frameBuffer;
 	private Sprite frameBufferSprite;
+	private Matrix4 normalMatrix;
 
 	// Cameras.
 	private OrthographicCamera camera;
@@ -173,7 +175,7 @@ public class InGameState extends BaseState{
 		frameBufferSprite = null;
 
 		builder = new MeshBuilder();
-		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
+		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
 			builder.setColor(1.0f, 1.0f, 0.0f, 1.0f);
 			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
 		}mesh = builder.end();
@@ -184,6 +186,8 @@ public class InGameState extends BaseState{
 			Gdx.app.exit();
 		}
 		ShaderProgram.pedantic = false;
+
+		normalMatrix = new Matrix4();
 	}
 
 	@Override
@@ -222,7 +226,7 @@ public class InGameState extends BaseState{
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			camera3D = new PerspectiveCamera(67, w, h);
-			camera3D.translate(0.0f, 0.0f, 3.0f);
+			camera3D.translate(0.0f, 0.0f, 2.0f);
 			camera3D.near = 0.01f;
 			camera3D.far = 100.0f;
 			camera3D.lookAt(0.0f, 0.0f, 0.0f);
@@ -262,7 +266,14 @@ public class InGameState extends BaseState{
 
 				// TODO: Render something.
 				meshShader.begin();{
+					normalMatrix.set(camera3D.combined);
 					meshShader.setUniformMatrix("u_projTrans", camera3D.combined);
+					meshShader.setUniformMatrix("u_normalMat", normalMatrix.tra().inv());
+					meshShader.setUniform4fv("u_lightPos", new float[] {2.0f, 2.0f, 4.0f, 0.0f}, 0, 4);
+					meshShader.setUniform4fv("u_lightDiffuse", new float[] {0.0f, 0.5f, 1.0f, 1.0f}, 0, 4);
+					meshShader.setUniform4fv("u_ambient", new float[] {0.0f, 0.1f, 0.2f, 1.0f}, 0, 4);
+					meshShader.setUniform1fv("u_shiny", new float[] {2.0f}, 0, 1);
+					meshShader.setUniformf("u_cameraPos", camera3D.position);
 					mesh.render(meshShader, GL20.GL_TRIANGLES);
 				}meshShader.end();
 
@@ -271,6 +282,7 @@ public class InGameState extends BaseState{
 
 			// Set the frame buffer object texture to a renderable sprite.
 			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
+			region.flip(true, true);
 			if(frameBufferSprite == null)
 				frameBufferSprite = new Sprite(region);
 			else

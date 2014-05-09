@@ -26,40 +26,48 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
-public abstract class BaseState implements Screen, ControllerListener, InputProcessor {
+public abstract class BaseState implements Screen, ControllerListener, InputProcessor{
 	protected NxtARCore core;
 	protected boolean stateActive;
 	protected OrthographicCamera pixelPerfectCamera;
 	protected Vector3 win2world;
 	protected Vector2 touchPointWorldCoords;
 
-	/* STATE METHODS */
+	/*;;;;;;;;;;;;;;;;;
+	  ; STATE METHODS ;
+	  ;;;;;;;;;;;;;;;;;*/
+
 	public abstract void onStateSet();
 	public abstract void onStateUnset();
 
-	/* SCREEN METHODS*/
+	/*;;;;;;;;;;;;;;;;;;
+	  ; SCREEN METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public abstract void render(float delta);
 
 	@Override
-	public abstract void resize(int width, int height);
-
-	@Override
-	public abstract void show();
-
-	@Override
-	public abstract void hide();
-
-	@Override
-	public abstract void pause();
-
-	@Override
-	public abstract void resume();
-
-	@Override
 	public abstract void dispose();
 
-	/* HELPER METHODS */
+	@Override
+	public void resize(int width, int height){ }
+
+	@Override
+	public void show(){ }
+
+	@Override
+	public void hide(){ }
+
+	@Override
+	public void pause(){ }
+
+	@Override
+	public void resume(){ }
+
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
 
 	protected final void unprojectTouch(int screenX, int screenY){
 		win2world.set(screenX, screenY, 0.0f);
@@ -67,7 +75,10 @@ public abstract class BaseState implements Screen, ControllerListener, InputProc
 		touchPointWorldCoords.set(win2world.x, win2world.y);
 	}
 
-	/* INPUT PROCESSOR METHODS. */
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT PROCESSOR METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public boolean keyDown(int keycode){
 		return false;
@@ -108,7 +119,10 @@ public abstract class BaseState implements Screen, ControllerListener, InputProc
 		return false;
 	};
 
-	/* CONTROLLER LISTENER METHODS. */
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; CONTROLLER LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public void connected(Controller controller){ };
 

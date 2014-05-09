@@ -16,7 +16,7 @@
 package ve.ucv.ciens.ccg.nxtar;
 
 import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor;
-import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.OSFunctionalityProvider;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
@@ -57,10 +57,16 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
  *     <li> Starting and destroying the networking threads.</li>
  *     <li> Rendering debug information.</li>
  * </ul>
- * @author Miguel Angel Astor Romero
  */
-public class NxtARCore extends Game implements NetworkConnectionListener{
+public class NxtARCore extends Game implements ApplicationEventsListener{
+	/**
+	 * Tag used for logging.
+	 */
 	private static final String TAG = "NXTAR_CORE_MAIN";
+
+	/**
+	 * Class name used for logging.
+	 */
 	private static final String CLASS_NAME = NxtARCore.class.getSimpleName();
 
 	/**
@@ -96,30 +102,98 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	public game_states_t nextState;
 
 	// Screens.
+	/**
+	 * <p>The application states.</p>
+	 */
 	private BaseState[] states;
 
 	// Assorted fields.
+	/**
+	 * <p>Global sprite batch used for rendering trough the application.</p>
+	 */
 	public SpriteBatch batch;
+
+	/**
+	 * <p>The OpenCV wrapper.</p>
+	 */
 	public CVProcessor cvProc;
+
+	/**
+	 * <p>Wrapper around the Operating System methods.</p>
+	 */
 	private OSFunctionalityProvider osFunction;
 
 	// Networking related fields.
+	/**
+	 * <p>The number of connections successfully established with the NxtAR-cam application.</p>
+	 */
 	private int connections;
+
+	/**
+	 * <p>Worker thread used to broadcast this server over the network.</p>
+	 */
 	private ServiceDiscoveryThread serviceDiscoveryThread;
+
+	/**
+	 * <p>Worker thread used to receive video frames over UDP.<p>
+	 */
 	private VideoStreamingThread videoThread;
+
+	/**
+	 * <p>Worker thread used to send control commands to the NxtAR-cam application.
+	 */
 	private RobotControlThread robotThread;
+
+	/**
+	 * <p>Worker thread used to receive sensor data from the NxtAR-cam application.</p>
+	 */
 	private SensorReportThread sensorThread;
 
 	// Overlays.
+	/**
+	 * <p>Camera used to render the debugging overlay.</p>
+	 */
 	private OrthographicCamera pixelPerfectCamera;
-	private float fontX;
-	private float fontY;
+
+	/**
+	 * <p>The base x coordinate for rendering the debugging overlay.</p>
+	 */
+	private float overlayX;
+
+	/**
+	 * <p>The base y coordinate for rendering the debugging overlay.</p>
+	 */
+	private float overlayY;
+
+	/**
+	 * <p>The font used to render the debugging overlay.</p>
+	 */
 	private BitmapFont font;
 
+	// Fade in/out effect fields.
+	/**
+	 * <p>The graphic used to render the fading effect.</p>
+	 */
 	private Texture fadeTexture;
+
+	/**
+	 * <p>The interpolation value for the fading effect.</p>
+	 */
 	private MutableFloat alpha;
+
+	/**
+	 * <p>The fade out interpolator.</p>
+	 */
 	private Tween fadeOut;
+
+	/**
+	 * <p>The fade in interpolator.</p>
+	 */
 	private Tween fadeIn;
+
+	/**
+	 * <p>Flag used to indicate if a fading effect is active.</p>
+	 */
 	private boolean fading;
 
 	/**
@@ -127,7 +201,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 	 */
 	public NxtARCore(Application concreteApp){
 		super();
+
 		connections = 0;
+
+		// Check if the concrete application implements all required interfaces.
 		try{
 			this.osFunction = (OSFunctionalityProvider)concreteApp;
 		}catch(ClassCastException cc){
@@ -143,6 +220,14 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		}
 	}
 
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; GAME SUPERCLASS METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
+	/**
+	 * <p>Initialize the member fields and launch the networking threads. Also creates and
+	 * sets the application states.</p>
+	 */
 	public void create(){
 		// Create the state objects.
 		states = new BaseState[game_states_t.getNumStates()];
@@ -154,6 +239,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		states[game_states_t.PAUSED.getValue()] = new PauseState(this);
 		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
 
+		// Register controller listeners.
 		for(BaseState state : states){
 			Controllers.addListener(state);
 		}
@@ -169,8 +255,8 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 
 		// Set up the overlay font.
 		if(ProjectConstants.DEBUG){
-			fontX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
-			fontY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
+			overlayX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
+			overlayY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
 
 			font = new BitmapFont();
 			font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
@@ -190,6 +276,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		robotThread = RobotControlThread.getInstance();
 		sensorThread = SensorReportThread.getInstance();
 
+		// Launch networking threads.
 		serviceDiscoveryThread.start();
 
 		videoThread.start();
@@ -208,7 +295,7 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		this.setScreen(states[currState.getValue()]);
 		states[currState.getValue()].onStateSet();
 
-		// Prepare the fadeToBlack sprite;
+		// Prepare the fading effect.
 		Pixmap pixmap = new Pixmap(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), Format.RGBA4444);
 		pixmap.setColor(0, 0, 0, 1);
 		pixmap.fill();
@@ -233,6 +320,10 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		}
 	}
 
+	/**
+	 * <p>Update and render the currently enabled application state. This method
+	 * also handles state switching, rendering state transitions and global overlays.</p>
+	 */
 	public void render(){
 		super.render();
 
@@ -241,21 +332,23 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			states[currState.getValue()].onStateUnset();
 
 			if(!fadeOut.isStarted()){
-				Gdx.app.log(TAG, CLASS_NAME + ".onRender() :: Starting fade out.");
+				// Start the fade out effect.
 				fadeOut.start();
 				fading = true;
 			}else{
-				Gdx.app.log(TAG, CLASS_NAME + ".onRender() :: Updating fade out.");
+				// Update the fade out effect.
 				fadeOut.update(Gdx.graphics.getDeltaTime());
 
+				// When the fade out effect finishes, change to the requested state
+				// and launh the fade in effect.
 				if(fadeOut.isFinished()){
+					// Change to the requested state.
 					currState = nextState;
 					nextState = null;
-
 					states[currState.getValue()].onStateSet();
-
 					setScreen(states[currState.getValue()]);
 
+					// Reset the fade out effect and launch the fade in.
 					Gdx.app.log(TAG, CLASS_NAME + ".onRender() :: Freeing fade out.");
 					fadeOut.free();
 					fadeOut = Tween.to(alpha, 0, 0.5f).target(1.0f).ease(TweenEquations.easeInQuint);
@@ -264,16 +357,20 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			}
 		}
 
+		// If there is a fade in effect in progress.
 		if(fadeIn.isStarted()){
 			if(!fadeIn.isFinished()){
+				// Update it until finished.
 				fadeIn.update(Gdx.graphics.getDeltaTime());
 			}else{
+				// Stop and reset it when done.
 				fading = false;
 				fadeIn.free();
 				fadeIn = Tween.to(alpha, 0, 0.5f).target(0.0f).ease(TweenEquations.easeInQuint);
 			}
 		}
 
+		// Render the fading sprite with alpha blending.
 		if(fading){
 			batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			batch.begin();{
@@ -283,28 +380,44 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			}batch.end();
 		}
 
+		// Render the debug overlay.
 		if(ProjectConstants.DEBUG){
 			batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			batch.begin();{
 				// Draw the FPS overlay.
-				font.draw(batch, String.format("Render FPS:        %d", Gdx.graphics.getFramesPerSecond()), fontX, fontY);
-				font.draw(batch, String.format("Total  stream FPS: %d", videoThread.getFps()), fontX, fontY - font.getCapHeight() - 5);
-				font.draw(batch, String.format("Lost   stream FPS: %d", videoThread.getLostFrames()), fontX, fontY - (2 * font.getCapHeight()) - 10);
-				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), fontX, fontY - (3 * font.getCapHeight()) - 15);
+				font.draw(batch, String.format("Render FPS:        %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
+				font.draw(batch, String.format("Total  stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
+				font.draw(batch, String.format("Lost   stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
+				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
 			}batch.end();
 		}
 	}
 
+	/**
+	 * <p>Pause a currently running thread. Pausing an already paused thread is a
+	 * no op.</p>
+	 */
 	public void pause(){
 		if(videoThread != null)
 			videoThread.pause();
+		// TODO: Ignore pausing paused threads.
+		// TODO: Pause the other threads.
 	}
 
+	/**
+	 * <p>Resume a currently paused thread. Resuming an already resumed thread is a
+	 * no op.</p>
+	 */
 	public void resume(){
 		if(videoThread != null)
 			videoThread.play();
+		// TODO: Ignore resuming resumed threads.
+		// TODO: Resume the other threads.
 	}
 
+	/**
+	 * <p>Clear graphic resources</p> 
+	 */
 	public void dispose(){
 		// Finish network threads.
 		videoThread.finish();
@@ -323,9 +436,19 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		}
 	}
 
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; APPLICATION EVENTS LISTENER INTERFACE METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	// TODO: Disable start game button until camera has been sucessfully calibrated.
 	// TODO: Add calibration listener callback.
 
+	/**
+	 * <p>Callback used by the networking threads to notify sucessfull connections
+	 * to the application</p>
+	 * 
+	 * @param streamName The name of the thread notifying a connection.
+	 */
 	@Override
 	public synchronized void networkStreamConnected(String streamName){
 		Gdx.app.log(TAG, CLASS_NAME + ".networkStreamConnected() :: Stream " + streamName + " connected.");
@@ -340,6 +463,16 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 		}
 	}
 
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	/**
+	 * <p>Show a toast message on screen using the O.S. functionality
+	 * provider.</p>
+	 * @param msg The message to show.
+	 * @param longToast True for a lasting toast. False for a short toast.
+	 */
 	public void toast(String msg, boolean longToast){
 		if(osFunction != null){
 			if(longToast) osFunction.showLongToast(msg);

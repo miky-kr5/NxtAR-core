@@ -54,8 +54,6 @@ public class InGameState extends BaseState{
 	private static final String CLASS_NAME = InGameState.class.getSimpleName();
 	private static final String BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
 
-	private NxtARCore core;
-
 	// Background related fields.
 	private float uScaling[];
 	protected Sprite background;
@@ -188,8 +186,13 @@ public class InGameState extends BaseState{
 		// Set up Artemis.
 		gameWorld = new World();
 		// TODO: Create entities and systems.
+		gameWorld.initialize();
 	}
 
+	/*;;;;;;;;;;;;;;;;;;;;;;
+	  ; BASE STATE METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;*/
+	
 	@Override
 	public void render(float delta){
 		int w, h;
@@ -342,21 +345,6 @@ public class InGameState extends BaseState{
 	}
 
 	@Override
-	public void resize(int width, int height){ }
-
-	@Override
-	public void show(){ }
-
-	@Override
-	public void hide(){ }
-
-	@Override
-	public void pause(){ }
-
-	@Override
-	public void resume(){ }
-
-	@Override
 	public void dispose(){
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
@@ -441,9 +429,9 @@ public class InGameState extends BaseState{
 		headC.setPosition(-(headC.getWidth() / 2), headA.getY() - headA.getHeight() - 10);
 	}
 
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; BEGIN INPUT PROCESSOR METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT PROCESSOR METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){
@@ -774,9 +762,9 @@ public class InGameState extends BaseState{
 		return false;
 	}
 
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; BEGIN CONTROLLER LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; CONTROLLER LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){

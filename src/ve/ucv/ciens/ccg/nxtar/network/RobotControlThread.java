@@ -24,7 +24,7 @@ import java.net.Socket;
 
 import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEventACK;
-import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -35,7 +35,7 @@ public class RobotControlThread extends Thread {
 	private static final String TAG = "NXTAR_CORE_ROBOTTHREAD";
 	private static final String CLASS_NAME = RobotControlThread.class.getSimpleName();
 
-	private NetworkConnectionListener netListener;
+	private ApplicationEventsListener netListener;
 	private ServerSocket server;
 	private Socket client;
 	private MotorEventQueue queue;
@@ -69,7 +69,7 @@ public class RobotControlThread extends Thread {
 		return SingletonHolder.INSTANCE;
 	}
 
-	public void addNetworkConnectionListener(NetworkConnectionListener listener){
+	public void addNetworkConnectionListener(ApplicationEventsListener listener){
 		netListener = listener;
 	}
 

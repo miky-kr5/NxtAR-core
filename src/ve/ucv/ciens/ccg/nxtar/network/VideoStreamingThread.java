@@ -23,7 +23,7 @@ import java.net.DatagramSocket;
 import java.net.Socket;
 
 import ve.ucv.ciens.ccg.networkdata.VideoFrameDataMessage;
-import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -34,7 +34,7 @@ public class VideoStreamingThread extends Thread{
 	private static final String TAG = "NXTAR_CORE_VIDEOTHREAD";
 	private static final String CLASS_NAME = VideoStreamingThread.class.getSimpleName();
 
-	private NetworkConnectionListener netListener;
+	private ApplicationEventsListener netListener;
 	private DatagramSocket socket;
 	private boolean protocolStarted;
 	private boolean done;
@@ -79,7 +79,7 @@ public class VideoStreamingThread extends Thread{
 		return SingletonHolder.INSTANCE;
 	}
 
-	public void addNetworkConnectionListener(NetworkConnectionListener listener){
+	public void addNetworkConnectionListener(ApplicationEventsListener listener){
 		netListener = listener;
 	}
 

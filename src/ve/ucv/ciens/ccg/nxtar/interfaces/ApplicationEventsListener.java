@@ -15,6 +15,6 @@
  */
 package ve.ucv.ciens.ccg.nxtar.interfaces;
 
-public interface NetworkConnectionListener {
+public interface ApplicationEventsListener {
 	public void networkStreamConnected(String streamName);
 }

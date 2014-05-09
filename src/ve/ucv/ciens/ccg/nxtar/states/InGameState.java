@@ -57,7 +57,7 @@ public class InGameState extends BaseState{
 	private NxtARCore core;
 
 	// Background related fields.
-	private float u_scaling[];
+	private float uScaling[];
 	protected Sprite background;
 	private Texture backgroundTexture;
 	private ShaderProgram backgroundShader;
@@ -164,9 +164,9 @@ public class InGameState extends BaseState{
 			backgroundShader = null;
 		}
 
-		u_scaling = new float[2];
-		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
-		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
+		uScaling = new float[2];
+		uScaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
+		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
 		// Set up the 3D rendering.
 		frameBuffer = null;
@@ -184,8 +184,6 @@ public class InGameState extends BaseState{
 			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + meshShader.getLog());
 			Gdx.app.exit();
 		}
-		// TODO: Move this line to core.
-		ShaderProgram.pedantic = false;
 
 		// Set up Artemis.
 		gameWorld = new World();
@@ -212,7 +210,7 @@ public class InGameState extends BaseState{
 		core.batch.begin();{
 			if(backgroundShader != null){
 				core.batch.setShader(backgroundShader);
-				backgroundShader.setUniform2fv("u_scaling", u_scaling, 0, 2);
+				backgroundShader.setUniform2fv("u_scaling", uScaling, 0, 2);
 			}
 			background.draw(core.batch);
 			if(backgroundShader != null) core.batch.setShader(null);
@@ -319,9 +317,6 @@ public class InGameState extends BaseState{
 			}
 
 			// Render the video frame and the frame buffer.
-			// TODO: Enable blending only once in core.
-			core.batch.enableBlending();
-			core.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
 				frameBufferSprite.draw(core.batch);
@@ -540,9 +535,14 @@ public class InGameState extends BaseState{
 					event.setPower((byte)0x00);
 					queue.addEvent(event);
 				}
+			}else{
+				// TODO: Send input to the input handler system.
 			}
+
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	@Override
@@ -646,9 +646,14 @@ public class InGameState extends BaseState{
 
 				motorButtonsPointers[6] = -1;
 				motorButtonsTouched[6] = false;
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
+
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	@Override
@@ -749,18 +754,23 @@ public class InGameState extends BaseState{
 
 				motorButtonsPointers[6] = -1;
 				motorButtonsTouched[6] = false;
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
+
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	@Override
 	public boolean keyDown(int keycode){
 		if(keycode == Input.Keys.BACK){
-			// TODO: Go to pause state.
 			core.nextState = game_states_t.MAIN_MENU;
 			return true;
 		}
+
 		return false;
 	}
 
@@ -772,7 +782,7 @@ public class InGameState extends BaseState{
 	public boolean buttonDown(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive /*&& Ouya.runningOnOuya*/){
+		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
@@ -842,6 +852,8 @@ public class InGameState extends BaseState{
 				event.setMotor(motor_t.RECENTER);
 				event.setPower((byte)0x00);
 				queue.addEvent(event);
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
 
 			return true;
@@ -854,7 +866,7 @@ public class InGameState extends BaseState{
 	public boolean buttonUp(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive /*&& Ouya.runningOnOuya*/){
+		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
@@ -917,6 +929,8 @@ public class InGameState extends BaseState{
 
 			}else if(buttonCode == Ouya.BUTTON_Y){
 				motorGamepadButtonPressed[6] = false;
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
 
 			return true;
@@ -927,6 +941,7 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
+		// TODO: Pass input to the input handler system.
 		return false;
 	}
 }

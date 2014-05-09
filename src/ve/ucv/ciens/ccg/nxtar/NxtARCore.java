@@ -39,12 +39,14 @@ import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controllers;
 import com.badlogic.gdx.controllers.mappings.Ouya;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
 import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 
 /**
  * <p>Core of the application.</p>
@@ -156,13 +158,17 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			Controllers.addListener(state);
 		}
 
-		// Set up fields.
+		// Set up rendering fields and settings.
 		batch = new SpriteBatch();
+		batch.enableBlending();
+		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 
 		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
+		ShaderProgram.pedantic = false;
+
+		// Set up the overlay font.
 		if(ProjectConstants.DEBUG){
-			// Set up the overlay font.
 			fontX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
 			fontY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
 
@@ -316,6 +322,9 @@ public class NxtARCore extends Game implements NetworkConnectionListener{
 			states[i].dispose();
 		}
 	}
+
+	// TODO: Disable start game button until camera has been sucessfully calibrated.
+	// TODO: Add calibration listener callback.
 
 	@Override
 	public synchronized void networkStreamConnected(String streamName){

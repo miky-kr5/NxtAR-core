@@ -15,8 +15,6 @@
  */
 package ve.ucv.ciens.ccg.nxtar.states;
 
-import java.util.Arrays;
-
 import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
@@ -25,8 +23,8 @@ import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVMarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
-import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
+import com.artemis.World;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
@@ -48,7 +46,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
@@ -68,7 +65,9 @@ public class InGameState extends BaseState{
 	// 3D rendering fields.
 	private FrameBuffer frameBuffer;
 	private Sprite frameBufferSprite;
-	private Matrix4 normalMatrix;
+
+	// Game objects.
+	private World gameWorld;
 
 	// Cameras.
 	private OrthographicCamera camera;
@@ -176,7 +175,7 @@ public class InGameState extends BaseState{
 
 		builder = new MeshBuilder();
 		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
-			builder.setColor(1.0f, 1.0f, 0.0f, 1.0f);
+			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
 			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
 		}mesh = builder.end();
 
@@ -185,18 +184,24 @@ public class InGameState extends BaseState{
 			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + meshShader.getLog());
 			Gdx.app.exit();
 		}
+		// TODO: Move this line to core.
 		ShaderProgram.pedantic = false;
 
-		normalMatrix = new Matrix4();
+		// Set up Artemis.
+		gameWorld = new World();
+		// TODO: Create entities and systems.
 	}
 
 	@Override
 	public void render(float delta){
+		int w, h;
 		byte[] frame;
-		byte[] prevFrame = null;
-		Size dimensions = null;
 		CVMarkerData data;
 		TextureRegion region;
+
+		// Update the game state.
+		gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
+		gameWorld.process();
 
 		// Clear the screen.
 		Gdx.gl.glClearColor(1, 1, 1, 1);
@@ -215,13 +220,11 @@ public class InGameState extends BaseState{
 
 		// Fetch the current video frame.
 		frame = frameMonitor.getCurrentFrame();
+		w = frameMonitor.getFrameDimensions().getWidth();
+		h = frameMonitor.getFrameDimensions().getHeight();
 
+		// Create the 3D perspective camera and the frame buffer object if they don't exist.
 		if(camera3D == null && frameBuffer == null){
-			int w, h;
-
-			w = frameMonitor.getFrameDimensions().getWidth();
-			h = frameMonitor.getFrameDimensions().getHeight();
-
 			frameBuffer = new FrameBuffer(Format.RGBA4444, w, h, true);
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
@@ -242,16 +245,15 @@ public class InGameState extends BaseState{
 		data = core.cvProc.findMarkersInFrame(frame);
 
 		// If a valid frame was fetched.
-		if(data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
+		if(data != null && data.outFrame != null){
 			// Decode the video frame.
-			dimensions = frameMonitor.getFrameDimensions();
-			videoFrame = new Pixmap(data.outFrame, 0, dimensions.getWidth() * dimensions.getHeight());
+			videoFrame = new Pixmap(data.outFrame, 0, w * h);
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();
 
 			// Convert the decoded frame into a renderable texture.
-			region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
+			region = new TextureRegion(videoFrameTexture, 0, 0, w, h);
 			if(renderableVideoFrame == null)
 				renderableVideoFrame = new Sprite(region);
 			else
@@ -264,15 +266,14 @@ public class InGameState extends BaseState{
 				Gdx.gl.glClearColor(1, 1, 1, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-				// TODO: Render something.
+				// TODO: Call rendering system.
+				// TODO: Move hardcoded uniforms to objects.
 				meshShader.begin();{
-					normalMatrix.set(camera3D.combined);
 					meshShader.setUniformMatrix("u_projTrans", camera3D.combined);
-					meshShader.setUniformMatrix("u_normalMat", normalMatrix.tra().inv());
 					meshShader.setUniform4fv("u_lightPos", new float[] {2.0f, 2.0f, 4.0f, 0.0f}, 0, 4);
-					meshShader.setUniform4fv("u_lightDiffuse", new float[] {0.0f, 0.5f, 1.0f, 1.0f}, 0, 4);
+					meshShader.setUniform4fv("u_lightDiffuse", new float[] {1.0f, 1.0f, 1.0f, 1.0f}, 0, 4);
 					meshShader.setUniform4fv("u_ambient", new float[] {0.0f, 0.1f, 0.2f, 1.0f}, 0, 4);
-					meshShader.setUniform1fv("u_shiny", new float[] {2.0f}, 0, 1);
+					meshShader.setUniform1fv("u_shiny", new float[] {50.0f}, 0, 1);
 					meshShader.setUniformf("u_cameraPos", camera3D.position);
 					mesh.render(meshShader, GL20.GL_TRIANGLES);
 				}meshShader.end();
@@ -300,7 +301,7 @@ public class InGameState extends BaseState{
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
 			}else{
-				float xSize = Gdx.graphics.getHeight() * (dimensions.getWidth() / dimensions.getHeight());
+				float xSize = Gdx.graphics.getHeight() * (w / h);
 				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
@@ -318,6 +319,7 @@ public class InGameState extends BaseState{
 			}
 
 			// Render the video frame and the frame buffer.
+			// TODO: Enable blending only once in core.
 			core.batch.enableBlending();
 			core.batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
 			core.batch.begin();{
@@ -342,9 +344,6 @@ public class InGameState extends BaseState{
 				headC.draw(core.batch);
 			}core.batch.end();
 		}
-
-		// Save this frame as previous to avoid processing the same frame twice when network latency is high.
-		prevFrame = frame;
 	}
 
 	@Override

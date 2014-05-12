@@ -19,25 +19,21 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
-import ve.ucv.ciens.ccg.nxtar.components.PositionComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
-import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
-import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPhongShader;
+import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
+import ve.ucv.ciens.ccg.nxtar.entities.TestGameEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVMarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
-import ve.ucv.ciens.ccg.nxtar.systems.RenderSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.RenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
-import com.artemis.Entity;
 import com.artemis.World;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -45,12 +41,8 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
-import com.badlogic.gdx.graphics.VertexAttribute;
-import com.badlogic.gdx.graphics.VertexAttributes;
-import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
@@ -73,6 +65,7 @@ public class InGameState extends BaseState{
 
 	// Game objects.
 	private World gameWorld;
+	private EntityCreatorBase entityCreator;
 
 	// Cameras.
 	private OrthographicCamera camera;
@@ -94,9 +87,6 @@ public class InGameState extends BaseState{
 	private Sprite headA;
 	private Sprite headB;
 	private Sprite headC;
-
-	private MeshBuilder builder;
-	private Mesh mesh;
 
 	// Button touch helper fields.
 	private boolean[] motorButtonsTouched;
@@ -177,28 +167,13 @@ public class InGameState extends BaseState{
 		camera3D = null;
 		frameBufferSprite = null;
 
-		builder = new MeshBuilder();
-		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
-			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
-		}mesh = builder.end();
-
-		// Set up Artemis.
+		// Set up the game world.
 		gameWorld = new World();
+		entityCreator = new TestGameEntityCreator();
+		entityCreator.setWorld(gameWorld);
 
-		// TODO: Separate entity creation from the state class.
-		Entity e = gameWorld.createEntity();
-		e.addComponent(new PositionComponent(new Vector3(0.5f, 0.5f, 0.0f)));
-		e.addComponent(new ModelComponent(mesh));
-		try{
-			e.addComponent(new ShaderComponent(new SingleLightPhongShader().loadShader()));
-		}catch(ShaderFailedToLoadException se){
-			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + se.getMessage());
-			Gdx.app.exit();
-		}
-		e.addToWorld();
-
-		gameWorld.setSystem(new RenderSystem(), true);
+		entityCreator.createAllEntities();
+		gameWorld.setSystem(new RenderingSystem(), true);
 
 		gameWorld.initialize();
 	}
@@ -249,8 +224,6 @@ public class InGameState extends BaseState{
 			camera3D.far = 100.0f;
 			camera3D.lookAt(0.0f, 0.0f, 0.0f);
 			camera3D.update();
-
-			gameWorld.getSystem(RenderSystem.class).setCamera(camera3D);
 		}
 
 		// Apply the undistortion method if the camera has been calibrated already.
@@ -285,7 +258,9 @@ public class InGameState extends BaseState{
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
 				// Render the current state of the game.
-				gameWorld.getSystem(RenderSystem.class).process();
+				RenderParameters.setModelViewProjectionMatrix(camera3D.combined);
+				RenderParameters.setEyePosition(camera3D.position);
+				gameWorld.getSystem(RenderingSystem.class).process();
 
 				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 			}frameBuffer.end();
@@ -354,6 +329,9 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void dispose(){
+		if(entityCreator != null)
+			entityCreator.dispose();
+
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
 
@@ -370,9 +348,6 @@ public class InGameState extends BaseState{
 
 		if(frameBuffer != null)
 			frameBuffer.dispose();
-
-		if(mesh != null)
-			mesh.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;

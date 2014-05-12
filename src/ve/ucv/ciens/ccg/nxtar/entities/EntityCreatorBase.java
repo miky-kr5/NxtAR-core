@@ -13,20 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.entities;
 
-import com.artemis.Component;
-import com.badlogic.gdx.math.Vector3;
+import com.artemis.World;
 
-public class PositionComponent extends Component {
-	public Vector3 position;
+public abstract class EntityCreatorBase {
+	protected World world;
 
-	public PositionComponent(){
-		this.position = new Vector3();
+	public void setWorld(World world) throws IllegalArgumentException{
+		if(world == null)
+			throw new IllegalArgumentException("World cannot be null.");
+
+		this.world = world;
 	}
 
-	public PositionComponent(Vector3 position){
-		this.position = new Vector3();
-		this.position.set(position);
-	}
+	public abstract void createAllEntities();
+
+	public abstract void dispose();
 }

@@ -15,8 +15,8 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
+import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
-import ve.ucv.ciens.ccg.nxtar.components.PositionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
@@ -28,54 +28,50 @@ import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
-public class RenderSystem extends EntityProcessingSystem {
-	@Mapper ComponentMapper<PositionComponent> positionMapper;
+public class RenderingSystem extends EntityProcessingSystem {
+	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
 	@Mapper ComponentMapper<ShaderComponent> shaderMapper;
 	@Mapper ComponentMapper<ModelComponent> modelMapper;
 
-	private PerspectiveCamera camera;
 	private Matrix4 translationMatrix;
+	private Matrix4 rotationMatrix;
+	private Matrix4 scalingMatrix;
+	private Matrix4 combinedTransformationMatrix;
 
 	@SuppressWarnings("unchecked")
-	public RenderSystem() {
-		super(Aspect.getAspectForAll(PositionComponent.class, ShaderComponent.class, ModelComponent.class));
+	public RenderingSystem() {
+		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, ModelComponent.class));
 
-		camera = null;
 		RenderParameters.setLightSource1(new LightSource(new Vector3(2.0f, 2.0f, 4.0f), new Color(0.0f, 0.1f, 0.2f, 1.0f), new Color(1.0f, 1.0f, 1.0f, 1.0f), new Color(1.0f, 0.8f, 0.0f, 1.0f), 50.0f));
-	}
 
-	public void setCamera(PerspectiveCamera camera) throws IllegalArgumentException {
-		if(camera == null)
-			throw new IllegalArgumentException("Camera should not be null.");
-
-		this.camera = camera;
 		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
+		rotationMatrix = new Matrix4().setToRotation(1.0f, 0.0f, 0.0f, 0.0f);
+		scalingMatrix = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
+		combinedTransformationMatrix = new Matrix4();
 	}
 
 	@Override
 	protected void process(Entity e) {
-		PositionComponent positionComponent;
+		GeometryComponent geometryComponent;
 		ShaderComponent shaderComponent;
 		ModelComponent modelComponent;
 
-		// If no camera has been assigned then skip this frame.
-		if(camera == null)
-			return;
-
-		// Get the necesary components.
-		positionComponent = positionMapper.get(e);
+		// Get the necessary components.
+		geometryComponent = geometryMapper.get(e);
 		modelComponent = modelMapper.get(e);
 		shaderComponent = shaderMapper.get(e);
 
+		// Calculate the geometric transformation for this entity.
+		translationMatrix.setToTranslation(geometryComponent.position);
+		rotationMatrix.rotate(geometryComponent.rotation);
+		scalingMatrix.setToScaling(geometryComponent.scaling);
+		combinedTransformationMatrix.idt().mul(scalingMatrix).mul(rotationMatrix).mul(translationMatrix);
+
 		// Set up the global rendering parameters for this frame.
-		translationMatrix.setToTranslation(positionComponent.position);
-		RenderParameters.setTransformationMatrix(translationMatrix);
-		RenderParameters.setModelViewProjectionMatrix(camera.combined);
-		RenderParameters.setEyePosition(camera.position);
+		RenderParameters.setTransformationMatrix(combinedTransformationMatrix);
 
 		// Render this entity.
 		shaderComponent.shader.getShaderProgram().begin();{

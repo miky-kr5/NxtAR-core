@@ -19,11 +19,18 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.PositionComponent;
+import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
+import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPhongShader;
 import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVMarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.systems.RenderSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
+import com.artemis.Entity;
 import com.artemis.World;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -90,7 +97,6 @@ public class InGameState extends BaseState{
 
 	private MeshBuilder builder;
 	private Mesh mesh;
-	private ShaderProgram meshShader;
 
 	// Button touch helper fields.
 	private boolean[] motorButtonsTouched;
@@ -177,22 +183,30 @@ public class InGameState extends BaseState{
 			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
 		}mesh = builder.end();
 
-		meshShader = new ShaderProgram(Gdx.files.internal("shaders/singleDiffuseLight/singleDiffuseLight_vert.glsl"), Gdx.files.internal("shaders/singleDiffuseLight/singleDiffuseLight_frag.glsl"));
-		if(!meshShader.isCompiled()){
-			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + meshShader.getLog());
-			Gdx.app.exit();
-		}
-
 		// Set up Artemis.
 		gameWorld = new World();
-		// TODO: Create entities and systems.
+
+		// TODO: Separate entity creation from the state class.
+		Entity e = gameWorld.createEntity();
+		e.addComponent(new PositionComponent(new Vector3(0.5f, 0.5f, 0.0f)));
+		e.addComponent(new ModelComponent(mesh));
+		try{
+			e.addComponent(new ShaderComponent(new SingleLightPhongShader().loadShader()));
+		}catch(ShaderFailedToLoadException se){
+			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + se.getMessage());
+			Gdx.app.exit();
+		}
+		e.addToWorld();
+
+		gameWorld.setSystem(new RenderSystem(), true);
+
 		gameWorld.initialize();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;
 	  ; BASE STATE METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;*/
-	
+
 	@Override
 	public void render(float delta){
 		int w, h;
@@ -235,6 +249,8 @@ public class InGameState extends BaseState{
 			camera3D.far = 100.0f;
 			camera3D.lookAt(0.0f, 0.0f, 0.0f);
 			camera3D.update();
+
+			gameWorld.getSystem(RenderSystem.class).setCamera(camera3D);
 		}
 
 		// Apply the undistortion method if the camera has been calibrated already.
@@ -262,22 +278,14 @@ public class InGameState extends BaseState{
 			renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
 			renderableVideoFrame.setPosition(0, 0);
 
+			// Set the 3D frame buffer for rendering.
 			frameBuffer.begin();{
 				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 				Gdx.gl.glClearColor(1, 1, 1, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-				// TODO: Call rendering system.
-				// TODO: Move hardcoded uniforms to objects.
-				meshShader.begin();{
-					meshShader.setUniformMatrix("u_projTrans", camera3D.combined);
-					meshShader.setUniform4fv("u_lightPos", new float[] {2.0f, 2.0f, 4.0f, 0.0f}, 0, 4);
-					meshShader.setUniform4fv("u_lightDiffuse", new float[] {1.0f, 1.0f, 1.0f, 1.0f}, 0, 4);
-					meshShader.setUniform4fv("u_ambient", new float[] {0.0f, 0.1f, 0.2f, 1.0f}, 0, 4);
-					meshShader.setUniform1fv("u_shiny", new float[] {50.0f}, 0, 1);
-					meshShader.setUniformf("u_cameraPos", camera3D.position);
-					mesh.render(meshShader, GL20.GL_TRIANGLES);
-				}meshShader.end();
+				// Render the current state of the game.
+				gameWorld.getSystem(RenderSystem.class).process();
 
 				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 			}frameBuffer.end();
@@ -362,9 +370,6 @@ public class InGameState extends BaseState{
 
 		if(frameBuffer != null)
 			frameBuffer.dispose();
-
-		if(meshShader != null)
-			meshShader.dispose();
 
 		if(mesh != null)
 			mesh.dispose();

@@ -19,7 +19,7 @@ import java.util.Arrays;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVCalibrationData;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.CalibrationData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Size;
@@ -210,22 +210,22 @@ public class CameraCalibrationState extends BaseState{
 		frame = frameMonitor.getCurrentFrame();
 
 		// Apply the undistortion method if the camera has been calibrated already.
-		if(core.cvProc.cameraIsCalibrated()){
+		if(core.cvProc.isCameraCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
 		}
 
 		// Find the calibration points in the video frame.
-		CVCalibrationData data = core.cvProc.findCalibrationPattern(frame);
+		CalibrationData data = core.cvProc.findCalibrationPattern(frame);
 
 		// Disable the sampling button if the calibration pattern was not found.
-		if(data.calibrationPoints != null && !core.cvProc.cameraIsCalibrated()){
+		if(data.calibrationPoints != null && !core.cvProc.isCameraCalibrated()){
 			takeSampleButton.setDisabled(false);
 		}else{
 			takeSampleButton.setDisabled(true);
 		}
 
 		// If the user requested a sample be taken.
-		if(takeSample && !core.cvProc.cameraIsCalibrated() && data.calibrationPoints != null){
+		if(takeSample && !core.cvProc.isCameraCalibrated() && data.calibrationPoints != null){
 			// Disable sample taking.
 			takeSample = false;
 			Gdx.app.log(TAG, CLASS_NAME + ".render(): Sample taken.");

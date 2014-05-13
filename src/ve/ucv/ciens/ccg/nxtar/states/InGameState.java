@@ -22,10 +22,12 @@ import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
 import ve.ucv.ciens.ccg.nxtar.entities.TestGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
-import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVMarkerData;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
-import ve.ucv.ciens.ccg.nxtar.systems.RenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.artemis.World;
@@ -173,7 +175,9 @@ public class InGameState extends BaseState{
 		entityCreator.setWorld(gameWorld);
 
 		entityCreator.createAllEntities();
-		gameWorld.setSystem(new RenderingSystem(), true);
+		gameWorld.setSystem(new MarkerPositioningSystem());
+		gameWorld.setSystem(new MarkerRenderingSystem(), true);
+		gameWorld.setSystem(new ObjectRenderingSystem(), true);
 
 		gameWorld.initialize();
 	}
@@ -186,12 +190,8 @@ public class InGameState extends BaseState{
 	public void render(float delta){
 		int w, h;
 		byte[] frame;
-		CVMarkerData data;
+		MarkerData data;
 		TextureRegion region;
-
-		// Update the game state.
-		gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
-		gameWorld.process();
 
 		// Clear the screen.
 		Gdx.gl.glClearColor(1, 1, 1, 1);
@@ -227,7 +227,7 @@ public class InGameState extends BaseState{
 		}
 
 		// Apply the undistortion method if the camera has been calibrated already.
-		if(core.cvProc.cameraIsCalibrated()){
+		if(core.cvProc.isCameraCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
 		}
 
@@ -236,6 +236,11 @@ public class InGameState extends BaseState{
 
 		// If a valid frame was fetched.
 		if(data != null && data.outFrame != null){
+			// Update the game state.
+			gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
+			gameWorld.getSystem(MarkerPositioningSystem.class).setMarkerData(data);
+			gameWorld.process();
+
 			// Decode the video frame.
 			videoFrame = new Pixmap(data.outFrame, 0, w * h);
 			videoFrameTexture = new Texture(videoFrame);
@@ -260,7 +265,9 @@ public class InGameState extends BaseState{
 				// Render the current state of the game.
 				RenderParameters.setModelViewProjectionMatrix(camera3D.combined);
 				RenderParameters.setEyePosition(camera3D.position);
-				gameWorld.getSystem(RenderingSystem.class).process();
+				gameWorld.getSystem(MarkerRenderingSystem.class).setMarkerData(data);
+				gameWorld.getSystem(MarkerRenderingSystem.class).process();
+				gameWorld.getSystem(ObjectRenderingSystem.class).process();
 
 				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 			}frameBuffer.end();
@@ -325,6 +332,8 @@ public class InGameState extends BaseState{
 				headC.draw(core.batch);
 			}core.batch.end();
 		}
+
+		data = null;
 	}
 
 	@Override

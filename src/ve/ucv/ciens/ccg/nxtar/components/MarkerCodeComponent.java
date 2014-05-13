@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Miguel Angel Astor Romero
+ * Copyright (C) 2014 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.interfaces;
+package ve.ucv.ciens.ccg.nxtar.components;
 
-public interface OSFunctionalityProvider{
-	public void showShortToast(String msg);
-	public void showLongToast(String msg);
-	public void enableMulticast();
-	public void disableMulticast();
+import com.artemis.Component;
+
+public class MarkerCodeComponent extends Component {
+	public int code;
+
+	public MarkerCodeComponent(int code) throws IllegalArgumentException{
+		if(code < 0 || code > 1024)
+			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
+		this.code = code;
+	}
 }

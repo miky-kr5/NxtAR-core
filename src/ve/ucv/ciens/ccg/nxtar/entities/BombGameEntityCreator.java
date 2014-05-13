@@ -13,26 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.entities;
 
-import com.artemis.Component;
-import com.badlogic.gdx.math.Matrix3;
-import com.badlogic.gdx.math.Vector3;
-
-public class GeometryComponent extends Component {
-	public Vector3 position;
-	public Matrix3 rotation;
-	public Vector3 scaling;
-
-	public GeometryComponent(){
-		this.position = new Vector3();
-		this.rotation = new Matrix3();
-		this.scaling = new Vector3(1.0f, 1.0f, 1.0f);
+public class BombGameEntityCreator extends EntityCreatorBase {
+	public BombGameEntityCreator(){
+		// TODO: Empty constructor.
 	}
 
-	public GeometryComponent(Vector3 position, Matrix3 rotation, Vector3 scaling){
-		this.position = new Vector3(position);
-		this.rotation = new Matrix3(rotation);
-		this.scaling = new Vector3(scaling);
+	@Override
+	public void createAllEntities() {
+		// TODO Auto-generated method stub
+	}
+
+	@Override
+	public void dispose() {
+		// TODO Auto-generated method stub
 	}
 }

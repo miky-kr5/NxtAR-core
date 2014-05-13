@@ -18,10 +18,10 @@ package ve.ucv.ciens.ccg.nxtar.components;
 import com.artemis.Component;
 import com.badlogic.gdx.graphics.Mesh;
 
-public class ModelComponent extends Component {
+public class MeshComponent extends Component {
 	public Mesh model;
 	
-	public ModelComponent(Mesh model){
+	public MeshComponent(Mesh model){
 		this.model = model;
 	}
 }

@@ -15,21 +15,25 @@
  */
 package ve.ucv.ciens.ccg.nxtar.interfaces;
 
-public interface CVProcessor{
-	public class CVMarkerData{
+import com.badlogic.gdx.math.Matrix3;
+import com.badlogic.gdx.math.Vector3;
+
+public interface ImageProcessor{
+	public class MarkerData{
 		public byte[] outFrame;
 		public int[] markerCodes;
-		// TODO: Add marker location data.
+		public Vector3[] translationVectors;
+		public Matrix3[] rotationMatrices;
 	}
 
-	public class CVCalibrationData{
+	public class CalibrationData{
 		public byte[] outFrame;
 		public float[] calibrationPoints;
 	}
 
-	public CVMarkerData findMarkersInFrame(byte[] frame);
-	public CVCalibrationData findCalibrationPattern(byte[] frame);
+	public MarkerData findMarkersInFrame(byte[] frame);
+	public CalibrationData findCalibrationPattern(byte[] frame);
 	public void calibrateCamera(float[][] calibrationSamples, byte[] frame);
 	public byte[] undistortFrame(byte[] frame);
-	public boolean cameraIsCalibrated();
+	public boolean isCameraCalibrated();
 }

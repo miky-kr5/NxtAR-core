@@ -15,9 +15,9 @@
  */
 package ve.ucv.ciens.ccg.nxtar;
 
-import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
-import ve.ucv.ciens.ccg.nxtar.interfaces.OSFunctionalityProvider;
+import ve.ucv.ciens.ccg.nxtar.interfaces.AndroidFunctionalityWrapper;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
@@ -116,12 +116,12 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	/**
 	 * <p>The OpenCV wrapper.</p>
 	 */
-	public CVProcessor cvProc;
+	public ImageProcessor cvProc;
 
 	/**
 	 * <p>Wrapper around the Operating System methods.</p>
 	 */
-	private OSFunctionalityProvider osFunction;
+	private AndroidFunctionalityWrapper osFunction;
 
 	// Networking related fields.
 	/**
@@ -206,14 +206,14 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 
 		// Check if the concrete application implements all required interfaces.
 		try{
-			this.osFunction = (OSFunctionalityProvider)concreteApp;
+			this.osFunction = (AndroidFunctionalityWrapper)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the Toaster interface. Toasting disabled.");
 			this.osFunction = null;
 		}
 
 		try{
-			this.cvProc = (CVProcessor)concreteApp;
+			this.cvProc = (ImageProcessor)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.error(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the CVProcessor interface. Quitting.");
 			Gdx.app.exit();

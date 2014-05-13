@@ -16,7 +16,8 @@
 package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
+import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
@@ -31,42 +32,73 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 
-public class RenderingSystem extends EntityProcessingSystem {
+/**
+ * <p>Entity processing system in charge of rendering 3D objects using OpenGL. The
+ * entities to be rendered must have a geometry, shader and mesh component associated.</p>
+ */
+public class ObjectRenderingSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
 	@Mapper ComponentMapper<ShaderComponent> shaderMapper;
-	@Mapper ComponentMapper<ModelComponent> modelMapper;
+	@Mapper ComponentMapper<MeshComponent> modelMapper;
 
+	private static final Vector3 LIGHT_POSITION = new Vector3(2.0f, 2.0f, 4.0f);
+	private static final Color AMBIENT_COLOR = new Color(0.0f, 0.1f, 0.2f, 1.0f);
+	private static final Color DIFFUSE_COLOR = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+	private static final Color SPECULAR_COLOR = new Color(1.0f, 0.8f, 0.0f, 1.0f);
+	private static final float SHINYNESS = 50.0f;
+
+	/**
+	 * <p>A matrix representing 3D translations.</p>
+	 */
 	private Matrix4 translationMatrix;
+
+	/**
+	 * <p>A matrix representing 3D rotations.</p>
+	 */
 	private Matrix4 rotationMatrix;
+
+	/**
+	 * <p>A matrix representing 3D scalings.</p>
+	 */
 	private Matrix4 scalingMatrix;
+
+	/**
+	 * <p>The total transformation to be applied to an entity.</p>
+	 */
 	private Matrix4 combinedTransformationMatrix;
 
 	@SuppressWarnings("unchecked")
-	public RenderingSystem() {
-		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, ModelComponent.class));
+	public ObjectRenderingSystem() {
+		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, MeshComponent.class).exclude(MarkerCodeComponent.class));
 
-		RenderParameters.setLightSource1(new LightSource(new Vector3(2.0f, 2.0f, 4.0f), new Color(0.0f, 0.1f, 0.2f, 1.0f), new Color(1.0f, 1.0f, 1.0f, 1.0f), new Color(1.0f, 0.8f, 0.0f, 1.0f), 50.0f));
+		RenderParameters.setLightSource1(new LightSource(LIGHT_POSITION, AMBIENT_COLOR, DIFFUSE_COLOR, SPECULAR_COLOR, SHINYNESS));
 
 		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
-		rotationMatrix = new Matrix4().setToRotation(1.0f, 0.0f, 0.0f, 0.0f);
+		rotationMatrix = new Matrix4().idt();
 		scalingMatrix = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
 		combinedTransformationMatrix = new Matrix4();
 	}
 
+	/**
+	 * <p>Renders the entity passed by parameter, calculating it's corresponding geometric
+	 * transformation and setting and calling it's associated shader program.</p>
+	 * 
+	 * @param e The entity to be processed.
+	 */
 	@Override
 	protected void process(Entity e) {
 		GeometryComponent geometryComponent;
 		ShaderComponent shaderComponent;
-		ModelComponent modelComponent;
+		MeshComponent meshComponent;
 
 		// Get the necessary components.
 		geometryComponent = geometryMapper.get(e);
-		modelComponent = modelMapper.get(e);
+		meshComponent = modelMapper.get(e);
 		shaderComponent = shaderMapper.get(e);
 
 		// Calculate the geometric transformation for this entity.
 		translationMatrix.setToTranslation(geometryComponent.position);
-		rotationMatrix.rotate(geometryComponent.rotation);
+		rotationMatrix.set(geometryComponent.rotation);
 		scalingMatrix.setToScaling(geometryComponent.scaling);
 		combinedTransformationMatrix.idt().mul(scalingMatrix).mul(rotationMatrix).mul(translationMatrix);
 
@@ -76,7 +108,7 @@ public class RenderingSystem extends EntityProcessingSystem {
 		// Render this entity.
 		shaderComponent.shader.getShaderProgram().begin();{
 			shaderComponent.shader.setUniforms();
-			modelComponent.model.render(shaderComponent.shader.getShaderProgram(), GL20.GL_TRIANGLES);
+			meshComponent.model.render(shaderComponent.shader.getShaderProgram(), GL20.GL_TRIANGLES);
 		}shaderComponent.shader.getShaderProgram().end();
 	}
 }

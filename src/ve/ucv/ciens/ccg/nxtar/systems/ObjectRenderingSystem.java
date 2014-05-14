@@ -100,7 +100,7 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 		translationMatrix.setToTranslation(geometryComponent.position);
 		rotationMatrix.set(geometryComponent.rotation);
 		scalingMatrix.setToScaling(geometryComponent.scaling);
-		combinedTransformationMatrix.idt().mul(scalingMatrix).mul(rotationMatrix).mul(translationMatrix);
+		combinedTransformationMatrix.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
 
 		// Set up the global rendering parameters for this frame.
 		RenderParameters.setTransformationMatrix(combinedTransformationMatrix);

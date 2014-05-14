@@ -210,9 +210,9 @@ public class CameraCalibrationState extends BaseState{
 		frame = frameMonitor.getCurrentFrame();
 
 		// Apply the undistortion method if the camera has been calibrated already.
-		if(core.cvProc.isCameraCalibrated()){
+		/*if(core.cvProc.isCameraCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
-		}
+		}*/
 
 		// Find the calibration points in the video frame.
 		CalibrationData data = core.cvProc.findCalibrationPattern(frame);
@@ -248,8 +248,9 @@ public class CameraCalibrationState extends BaseState{
 			if(lastSampleTaken == ProjectConstants.CALIBRATION_SAMPLES){
 				Gdx.app.log(TAG, CLASS_NAME + "render(): Last sample taken.");
 
-				core.toast("Calibrating camera", false);
 				core.cvProc.calibrateCamera(calibrationSamples, frame);
+				msg = "Camera successfully calibrated";
+				core.toast(msg, true);
 			}
 		}
 

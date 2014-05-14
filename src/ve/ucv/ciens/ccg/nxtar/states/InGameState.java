@@ -20,7 +20,7 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
-import ve.ucv.ciens.ccg.nxtar.entities.TestGameEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
@@ -171,9 +171,8 @@ public class InGameState extends BaseState{
 
 		// Set up the game world.
 		gameWorld = new World();
-		entityCreator = new TestGameEntityCreator();
+		entityCreator = new MarkerTestEntityCreator();
 		entityCreator.setWorld(gameWorld);
-
 		entityCreator.createAllEntities();
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new MarkerRenderingSystem(), true);
@@ -215,21 +214,21 @@ public class InGameState extends BaseState{
 
 		// Create the 3D perspective camera and the frame buffer object if they don't exist.
 		if(camera3D == null && frameBuffer == null){
-			frameBuffer = new FrameBuffer(Format.RGBA4444, w, h, true);
+			frameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			camera3D = new PerspectiveCamera(67, w, h);
-			camera3D.translate(0.0f, 0.0f, 2.0f);
+			camera3D.translate(0.0f, 0.0f, 0.0f);
 			camera3D.near = 0.01f;
 			camera3D.far = 100.0f;
-			camera3D.lookAt(0.0f, 0.0f, 0.0f);
+			camera3D.lookAt(0.0f, 0.0f, -1.0f);
 			camera3D.update();
 		}
 
 		// Apply the undistortion method if the camera has been calibrated already.
-		if(core.cvProc.isCameraCalibrated()){
+		/*if(core.cvProc.isCameraCalibrated()){
 			frame = core.cvProc.undistortFrame(frame);
-		}
+		}*/
 
 		// Attempt to find the markers in the current video frame.
 		data = core.cvProc.findMarkersInFrame(frame);
@@ -258,11 +257,11 @@ public class InGameState extends BaseState{
 
 			// Set the 3D frame buffer for rendering.
 			frameBuffer.begin();{
+				Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 				Gdx.gl.glClearColor(1, 1, 1, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 
-				// Render the current state of the game.
 				RenderParameters.setModelViewProjectionMatrix(camera3D.combined);
 				RenderParameters.setEyePosition(camera3D.position);
 				gameWorld.getSystem(MarkerRenderingSystem.class).setMarkerData(data);

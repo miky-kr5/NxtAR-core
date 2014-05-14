@@ -138,7 +138,7 @@ public class VideoStreamingThread extends Thread{
 			VideoFrameDataMessage dataMessage;
 			Object tmpMessage;
 
-			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
+			//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
 			try{
 				packet = new DatagramPacket(size, size.length);
 				socket.receive(packet);
@@ -148,11 +148,11 @@ public class VideoStreamingThread extends Thread{
 				return;
 			}
 
-			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Creating buffers.");
+			//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Creating buffers.");
 			intSize = byteArray2Int(size);
 			data = new byte[intSize];
 
-			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message from socket.");
+			//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message from socket.");
 			try{
 				packet = new DatagramPacket(data, data.length);
 				socket.receive(packet);
@@ -164,17 +164,16 @@ public class VideoStreamingThread extends Thread{
 
 			ByteArrayInputStream bais = new ByteArrayInputStream(data);
 
-			Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Saving message in monitor.");
+			//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Saving message in monitor.");
 			try{
 				ObjectInputStream ois = new ObjectInputStream(bais);
 				tmpMessage = ois.readObject();
 
 				if(tmpMessage instanceof VideoFrameDataMessage){
-					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received a data message.");
+					//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received a data message.");
 					dataMessage = (VideoFrameDataMessage) tmpMessage;
 
-					Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received frame dimensions are: " +
-							Integer.toString(dataMessage.imageWidth) + "x" + Integer.toString(dataMessage.imageHeight));
+					//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Received frame dimensions are: " + Integer.toString(dataMessage.imageWidth) + "x" + Integer.toString(dataMessage.imageHeight));
 					frameMonitor.setFrameDimensions(dataMessage.imageWidth, dataMessage.imageHeight);
 					frameMonitor.setNewFrame(dataMessage.data);
 
@@ -218,7 +217,7 @@ public class VideoStreamingThread extends Thread{
 					try{ pauseMonitor.wait(); }catch(InterruptedException ie){ }
 				}
 			}
-			Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
+			//Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
 			if(netListener != null && !coreNotified && frameMonitor.getCurrentFrame() != null){
 				coreNotified = true;
 				netListener.networkStreamConnected(THREAD_NAME);

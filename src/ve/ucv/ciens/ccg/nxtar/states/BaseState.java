@@ -22,67 +22,144 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.ControllerListener;
 import com.badlogic.gdx.controllers.PovDirection;
+import com.badlogic.gdx.graphics.OrthographicCamera;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
-public abstract class BaseState implements Screen, ControllerListener, InputProcessor {
+public abstract class BaseState implements Screen, ControllerListener, InputProcessor{
 	protected NxtARCore core;
 	protected boolean stateActive;
+	protected OrthographicCamera pixelPerfectCamera;
+	protected Vector3 win2world;
+	protected Vector2 touchPointWorldCoords;
 
-	/* STATE METHODS */
+	/*;;;;;;;;;;;;;;;;;
+	  ; STATE METHODS ;
+	  ;;;;;;;;;;;;;;;;;*/
+
 	public abstract void onStateSet();
 	public abstract void onStateUnset();
-	
-	/* SCREEN METHODS*/
+
+	/*;;;;;;;;;;;;;;;;;;
+	  ; SCREEN METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
 	@Override
 	public abstract void render(float delta);
-	@Override
-	public abstract void resize(int width, int height);
-	@Override
-	public abstract void show();
-	@Override
-	public abstract void hide();
-	@Override
-	public abstract void pause();
-	@Override
-	public abstract void resume();
+
 	@Override
 	public abstract void dispose();
 
-	/* INPUT PROCESSOR METHODS. */
 	@Override
-	public abstract boolean keyDown(int keycode);
-	@Override
-	public abstract boolean keyUp(int keycode);
-	@Override
-	public abstract boolean keyTyped(char character);
-	@Override
-	public abstract boolean touchDown(int screenX, int screenY, int pointer, int button);
-	@Override
-	public abstract boolean touchUp(int screenX, int screenY, int pointer, int button);
-	@Override
-	public abstract boolean touchDragged(int screenX, int screenY, int pointer);
-	@Override
-	public abstract boolean mouseMoved(int screenX, int screenY);
-	@Override
-	public abstract boolean scrolled(int amount);
+	public void resize(int width, int height){ }
 
-	/* CONTROLLER LISTENER METHODS. */
 	@Override
-	public abstract void connected(Controller controller);
+	public void show(){ }
+
 	@Override
-	public abstract void disconnected(Controller controller);
+	public void hide(){ }
+
 	@Override
-	public abstract boolean buttonDown(Controller controller, int buttonCode);
+	public void pause(){ }
+
 	@Override
-	public abstract boolean buttonUp(Controller controller, int buttonCode);
+	public void resume(){ }
+
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	protected final void unprojectTouch(int screenX, int screenY){
+		win2world.set(screenX, screenY, 0.0f);
+		pixelPerfectCamera.unproject(win2world);
+		touchPointWorldCoords.set(win2world.x, win2world.y);
+	}
+
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT PROCESSOR METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
 	@Override
-	public abstract boolean axisMoved(Controller controller, int axisCode, float value);
+	public boolean keyDown(int keycode){
+		return false;
+	};
+
 	@Override
-	public abstract boolean povMoved(Controller controller, int povCode, PovDirection value);
+	public boolean keyUp(int keycode){
+		return false;
+	};
+
 	@Override
-	public abstract boolean xSliderMoved(Controller controller, int sliderCode, boolean value);
+	public boolean keyTyped(char character){
+		return false;
+	};
+
 	@Override
-	public abstract boolean ySliderMoved(Controller controller, int sliderCode, boolean value);
+	public boolean touchDown(int screenX, int screenY, int pointer, int button){
+		return false;
+	};
+
 	@Override
-	public abstract boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value);
+	public boolean touchUp(int screenX, int screenY, int pointer, int button){
+		return false;
+	};
+
+	@Override
+	public boolean touchDragged(int screenX, int screenY, int pointer){
+		return false;
+	};
+
+	@Override
+	public boolean mouseMoved(int screenX, int screenY){
+		return false;
+	};
+
+	@Override
+	public boolean scrolled(int amount){
+		return false;
+	};
+
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; CONTROLLER LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+
+	@Override
+	public void connected(Controller controller){ };
+
+	@Override
+	public void disconnected(Controller controller){ };
+
+	@Override
+	public boolean buttonDown(Controller controller, int buttonCode){
+		return false;
+	};
+
+	@Override
+	public boolean buttonUp(Controller controller, int buttonCode){
+		return false;
+	};
+	@Override
+	public boolean axisMoved(Controller controller, int axisCode, float value){
+		return false;
+	};
+
+	@Override
+	public boolean povMoved(Controller controller, int povCode, PovDirection value){
+		return false;
+	};
+
+	@Override
+	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
+		return false;
+	};
+
+	@Override
+	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
+		return false;
+	};
+
+	@Override
+	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
+		return false;
+	};
 }

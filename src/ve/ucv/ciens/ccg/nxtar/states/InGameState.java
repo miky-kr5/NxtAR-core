@@ -15,78 +15,95 @@
  */
 package ve.ucv.ciens.ccg.nxtar.states;
 
-import java.util.Arrays;
-
 import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.interfaces.CVProcessor.CVData;
+import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
+import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
+import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
-import ve.ucv.ciens.ccg.nxtar.utils.Size;
 
+import com.artemis.World;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.PovDirection;
 import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
+import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public class InGameState extends BaseState{
-	private static final String TAG = "IN_GAME_STATE";
-	private static final String CLASS_NAME = InGameState.class.getSimpleName();
+	private static final String TAG                    = "IN_GAME_STATE";
+	private static final String CLASS_NAME             = InGameState.class.getSimpleName();
+	private static final String BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
+	private static final float  NEAR                   = 0.01f;
+	private static final float  FAR                    = 100.0f;
+	private static final float  FAR_PLUS_NEAR          = FAR + NEAR;
+	private static final float  FAR_LESS_NEAR          = FAR - NEAR;
 
-	private static final String SHADER_PATH = "shaders/bckg/bckg";
+	// Background related fields.
+	private float                   uScaling[];
+	protected Sprite                background;
+	private Texture                 backgroundTexture;
+	private ShaderProgram           backgroundShader;
 
-	private NxtARCore core;
+	// 3D rendering fields.
+	private Matrix4                 projectionMatrix;
+	private FrameBuffer             frameBuffer;
+	private Sprite                  frameBufferSprite;
 
-	private float u_scaling[];
-	protected Sprite background;
-	private Texture backgroundTexture;
-	private ShaderProgram backgroundShader;
+	// Game objects.
+	private World                   gameWorld;
+	private EntityCreatorBase       entityCreator;
 
 	// Cameras.
-	private OrthographicCamera camera;
-	private OrthographicCamera pixelPerfectCamera;
+	private OrthographicCamera      unitaryOrthoCamera;
+	private OrthographicCamera      pixelPerfectOrthoCamera;
+	private CustomPerspectiveCamera perspectiveCamera;
 
 	// Video stream graphics.
-	private Texture videoFrameTexture;
-	private Sprite renderableVideoFrame;
-	private Pixmap videoFrame;
+	private Texture                 videoFrameTexture;
+	private Sprite                  renderableVideoFrame;
+	private Pixmap                  videoFrame;
 
 	// Interface buttons.
-	private Texture buttonTexture;
-	private Texture buttonTexture2;
-	private Sprite motorA;
-	private Sprite motorB;
-	private Sprite motorC;
-	private Sprite motorD;
-	private Sprite headA;
-	private Sprite headB;
-	private Sprite headC;
+	private Texture                 buttonTexture;
+	private Texture                 buttonTexture2;
+	private Sprite                  motorA;
+	private Sprite                  motorB;
+	private Sprite                  motorC;
+	private Sprite                  motorD;
+	private Sprite                  headA;
+	private Sprite                  headB;
+	private Sprite                  headC;
 
 	// Button touch helper fields.
-	private Vector3 win2world;
-	private Vector2 touchPointWorldCoords;
-	private boolean[] motorButtonsTouched;
-	private int[] motorButtonsPointers;
-	private boolean[] motorGamepadButtonPressed;
+	private boolean[]               motorButtonsTouched;
+	private int[]                   motorButtonsPointers;
+	private boolean[]               motorGamepadButtonPressed;
 
 	// Monitors.
-	private VideoFrameMonitor frameMonitor;
-	private MotorEventQueue queue;
+	private VideoFrameMonitor       frameMonitor;
+	private MotorEventQueue         queue;
 
 	public InGameState(final NxtARCore core){
 		this.core = core;
@@ -97,8 +114,8 @@ public class InGameState extends BaseState{
 		videoFrame = null;
 
 		// Set up the cameras.
-		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		camera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
+		pixelPerfectOrthoCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		unitaryOrthoCamera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
 
 		if(!Ouya.runningOnOuya) setUpButtons();
 
@@ -133,6 +150,7 @@ public class InGameState extends BaseState{
 		motorGamepadButtonPressed[5] = false;
 		motorGamepadButtonPressed[6] = false;
 
+		// Set up the background.
 		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
 		backgroundTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
 		backgroundTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
@@ -140,88 +158,208 @@ public class InGameState extends BaseState{
 		background.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
-		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		// Set up the shader.
+		backgroundShader = new ShaderProgram(Gdx.files.internal(BACKGROUND_SHADER_PATH + "_vert.glsl"), Gdx.files.internal(BACKGROUND_SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
 			backgroundShader = null;
 		}
 
-		u_scaling = new float[2];
-		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
-		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
+		uScaling = new float[2];
+		uScaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
+		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
+
+		// Set up the 3D rendering.
+		projectionMatrix = new Matrix4().idt();
+		frameBuffer = null;
+		perspectiveCamera = null;
+		frameBufferSprite = null;
+
+		// Set up the game world.
+		gameWorld = new World();
+		entityCreator = new MarkerTestEntityCreator();
+		entityCreator.setWorld(gameWorld);
+		entityCreator.createAllEntities();
+		gameWorld.setSystem(new MarkerPositioningSystem());
+		gameWorld.setSystem(new MarkerRenderingSystem(), true);
+		gameWorld.setSystem(new ObjectRenderingSystem(), true);
+		gameWorld.initialize();
 	}
+
+	/*;;;;;;;;;;;;;;;;;;;;;;
+	  ; BASE STATE METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public void render(float delta){
-		int fW, fH;
+		int w, h;
 		byte[] frame;
-		byte[] prevFrame = null;
-		Size dimensions = null;
-		CVData data;
+		MarkerData data;
+		TextureRegion region;
+		float focalPointX, focalPointY, cameraCenterX, cameraCenterY;
 
+		// Clear the screen.
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
+		// Render the background.
+		core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
 		core.batch.begin();{
 			if(backgroundShader != null){
 				core.batch.setShader(backgroundShader);
-				backgroundShader.setUniform2fv("u_scaling", u_scaling, 0, 2);
+				backgroundShader.setUniform2fv("u_scaling", uScaling, 0, 2);
 			}
 			background.draw(core.batch);
 			if(backgroundShader != null) core.batch.setShader(null);
 		}core.batch.end();
 
+		// Fetch the current video frame.
 		frame = frameMonitor.getCurrentFrame();
-		fW = frameMonitor.getFrameDimensions().getWidth();
-		fH = frameMonitor.getFrameDimensions().getHeight();
+		w = frameMonitor.getFrameDimensions().getWidth();
+		h = frameMonitor.getFrameDimensions().getHeight();
 
-		data = core.cvProc.processFrame(frame, fW, fH);
+		// Create the 3D perspective camera and the frame buffer object if they don't exist.
+		if(perspectiveCamera == null && frameBuffer == null){
+			frameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
+			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
-		if(data != null){
-			for(int i = 0; i < data.markerCodes.length; i++){
-				Gdx.app.log(TAG, CLASS_NAME + String.format(".render(): Marker code[%d] = %d", i, data.markerCodes[i]));
-			}
+			perspectiveCamera = new CustomPerspectiveCamera(67, w, h);
+			perspectiveCamera.translate(0.0f, 0.0f, 0.0f);
+			perspectiveCamera.near = NEAR;
+			perspectiveCamera.far = FAR;
+			perspectiveCamera.lookAt(0.0f, 0.0f, -1.0f);
+			perspectiveCamera.update();
 		}
 
-		if(data != null && data.outFrame != null && !Arrays.equals(frame, prevFrame)){
-			dimensions = frameMonitor.getFrameDimensions();
-			videoFrame = new Pixmap(data.outFrame, 0, dimensions.getWidth() * dimensions.getHeight());
+		// Apply the undistortion method if the camera has been calibrated already.
+		/*if(core.cvProc.isCameraCalibrated()){
+			frame = core.cvProc.undistortFrame(frame);
+		}*/
+
+		// Attempt to find the markers in the current video frame.
+		data = core.cvProc.findMarkersInFrame(frame);
+
+		// If a valid frame was fetched.
+		if(data != null && data.outFrame != null){
+			// Update the game state.
+			gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
+			gameWorld.getSystem(MarkerPositioningSystem.class).setMarkerData(data);
+			gameWorld.process();
+
+			// Decode the video frame.
+			videoFrame = new Pixmap(data.outFrame, 0, w * h);
 			videoFrameTexture = new Texture(videoFrame);
 			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 			videoFrame.dispose();
 
-			TextureRegion region = new TextureRegion(videoFrameTexture, 0, 0, dimensions.getWidth(), dimensions.getHeight());
-
-			renderableVideoFrame = new Sprite(region);
+			// Convert the decoded frame into a renderable texture.
+			region = new TextureRegion(videoFrameTexture, 0, 0, w, h);
+			if(renderableVideoFrame == null)
+				renderableVideoFrame = new Sprite(region);
+			else
+				renderableVideoFrame.setRegion(region);
 			renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
+			renderableVideoFrame.setPosition(0, 0);
+
+			// Set the 3D frame buffer for rendering.
+			frameBuffer.begin();{
+				// Set OpenGL state.
+				Gdx.gl.glDisable(GL20.GL_CULL_FACE);
+				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
+				Gdx.gl.glClearColor(0, 0, 0, 0);
+				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+
+				// Build the projection matrix.
+				focalPointX   = core.cvProc.getFocalPointX();
+				focalPointY   = core.cvProc.getFocalPointY();
+				cameraCenterX = core.cvProc.getCameraCenterX();
+				cameraCenterY = core.cvProc.getCameraCenterY();
+
+				projectionMatrix.val[Matrix4.M00] = -2.0f * focalPointX / w;
+				projectionMatrix.val[Matrix4.M10] = 0.0f;
+				projectionMatrix.val[Matrix4.M20] = 0.0f;
+				projectionMatrix.val[Matrix4.M30] = 0.0f;
+
+				projectionMatrix.val[Matrix4.M01] = 0.0f;
+				projectionMatrix.val[Matrix4.M11] = 2.0f * focalPointY / h;
+				projectionMatrix.val[Matrix4.M21] = 0.0f;
+				projectionMatrix.val[Matrix4.M31] = 0.0f;
+
+				projectionMatrix.val[Matrix4.M02] = 2.0f * cameraCenterX / w - 1.0f;
+				projectionMatrix.val[Matrix4.M12] = 2.0f * cameraCenterY / h - 1.0f;
+				projectionMatrix.val[Matrix4.M22] = -FAR_PLUS_NEAR / FAR_LESS_NEAR;
+				projectionMatrix.val[Matrix4.M32] = -1.0f;
+
+				projectionMatrix.val[Matrix4.M03] = 0.0f;
+				projectionMatrix.val[Matrix4.M13] = 0.0f;
+				projectionMatrix.val[Matrix4.M23] = -2.0f * FAR * NEAR / FAR_LESS_NEAR;
+				projectionMatrix.val[Matrix4.M33] = 0.0f;
+
+				// Set rendering parameters.
+				perspectiveCamera.update(projectionMatrix, true);
+				RenderParameters.setModelViewProjectionMatrix(perspectiveCamera.combined);
+				RenderParameters.setEyePosition(perspectiveCamera.position);
+
+				// Call rendering systems.
+				gameWorld.getSystem(MarkerRenderingSystem.class).setMarkerData(data);
+				gameWorld.getSystem(MarkerRenderingSystem.class).process();
+				gameWorld.getSystem(ObjectRenderingSystem.class).process();
+
+				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+			}frameBuffer.end();
+
+			// Set the frame buffer object texture to a renderable sprite.
+			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
+			region.flip(false, true);
+			if(frameBufferSprite == null)
+				frameBufferSprite = new Sprite(region);
+			else
+				frameBufferSprite.setRegion(region);
+			frameBufferSprite.setOrigin(frameBufferSprite.getWidth() / 2, frameBufferSprite.getHeight() / 2);
+			frameBufferSprite.setPosition(0, 0);
+
+			// Set the position and orientation of the renderable video frame and the frame buffer.
 			if(!Ouya.runningOnOuya){
 				renderableVideoFrame.setSize(1.0f, renderableVideoFrame.getHeight() / renderableVideoFrame.getWidth() );
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, 0.5f - renderableVideoFrame.getHeight());
+
+				frameBufferSprite.setSize(1.0f, frameBufferSprite.getHeight() / frameBufferSprite.getWidth() );
+				frameBufferSprite.rotate90(true);
+				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
 			}else{
-				float xSize = Gdx.graphics.getHeight() * (dimensions.getWidth() / dimensions.getHeight());
+				float xSize = Gdx.graphics.getHeight() * (w / h);
 				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
+
+				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+				frameBufferSprite.rotate90(true);
+				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
 			}
 
+			// Set the correct camera for the device.
 			if(!Ouya.runningOnOuya){
-				core.batch.setProjectionMatrix(camera.combined);
+				core.batch.setProjectionMatrix(unitaryOrthoCamera.combined);
 			}else{
-				core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
+				core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
 			}
+
+			// Render the video frame and the frame buffer.
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
+				frameBufferSprite.draw(core.batch);
 			}core.batch.end();
 
+			// Clear the video frame from memory.
 			videoFrameTexture.dispose();
 		}
 
-		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
-		core.batch.begin();{
-			if(!Ouya.runningOnOuya){
+		// Render the interface buttons.
+		if(!Ouya.runningOnOuya){
+			core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
+			core.batch.begin();{
 				motorA.draw(core.batch);
 				motorB.draw(core.batch);
 				motorC.draw(core.batch);
@@ -229,40 +367,33 @@ public class InGameState extends BaseState{
 				headA.draw(core.batch);
 				headB.draw(core.batch);
 				headC.draw(core.batch);
-			}
-		}core.batch.end();
+			}core.batch.end();
+		}
 
-		prevFrame = frame;
+		data = null;
 	}
-
-	@Override
-	public void resize(int width, int height){
-		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public void show(){ }
-
-	@Override
-	public void hide(){ }
-
-	@Override
-	public void pause(){ }
-
-	@Override
-	public void resume(){ }
 
 	@Override
 	public void dispose(){
+		if(entityCreator != null)
+			entityCreator.dispose();
+
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
+
 		if(buttonTexture != null)
 			buttonTexture.dispose();
+
 		if(buttonTexture2 != null)
 			buttonTexture2.dispose();
+
 		backgroundTexture.dispose();
-		if(backgroundShader != null) backgroundShader.dispose();
+
+		if(backgroundShader != null)
+			backgroundShader.dispose();
+
+		if(frameBuffer != null)
+			frameBuffer.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;
@@ -324,9 +455,9 @@ public class InGameState extends BaseState{
 		headC.setPosition(-(headC.getWidth() / 2), headA.getY() - headA.getHeight() - 10);
 	}
 
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; BEGIN INPUT PROCESSOR METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; INPUT PROCESSOR METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){
@@ -334,7 +465,7 @@ public class InGameState extends BaseState{
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
-			camera.unproject(win2world);
+			unitaryOrthoCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
@@ -418,9 +549,14 @@ public class InGameState extends BaseState{
 					event.setPower((byte)0x00);
 					queue.addEvent(event);
 				}
+			}else{
+				// TODO: Send input to the input handler system.
 			}
+
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	@Override
@@ -429,7 +565,7 @@ public class InGameState extends BaseState{
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
-			camera.unproject(win2world);
+			unitaryOrthoCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
@@ -524,9 +660,14 @@ public class InGameState extends BaseState{
 
 				motorButtonsPointers[6] = -1;
 				motorButtonsTouched[6] = false;
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
+
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	@Override
@@ -535,7 +676,7 @@ public class InGameState extends BaseState{
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
-			camera.unproject(win2world);
+			unitaryOrthoCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 			if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
@@ -627,30 +768,35 @@ public class InGameState extends BaseState{
 
 				motorButtonsPointers[6] = -1;
 				motorButtonsTouched[6] = false;
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
+
+			return true;
 		}
-		return true;
+
+		return false;
 	}
 
 	@Override
 	public boolean keyDown(int keycode){
 		if(keycode == Input.Keys.BACK){
-			// TODO: Go to pause state.
 			core.nextState = game_states_t.MAIN_MENU;
 			return true;
 		}
+
 		return false;
 	}
 
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; BEGIN CONTROLLER LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; CONTROLLER LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive /*&& Ouya.runningOnOuya*/){
+		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
@@ -720,6 +866,8 @@ public class InGameState extends BaseState{
 				event.setMotor(motor_t.RECENTER);
 				event.setPower((byte)0x00);
 				queue.addEvent(event);
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
 
 			return true;
@@ -732,7 +880,7 @@ public class InGameState extends BaseState{
 	public boolean buttonUp(Controller controller, int buttonCode){
 		MotorEvent event;
 
-		if(stateActive /*&& Ouya.runningOnOuya*/){
+		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
@@ -795,6 +943,8 @@ public class InGameState extends BaseState{
 
 			}else if(buttonCode == Ouya.BUTTON_Y){
 				motorGamepadButtonPressed[6] = false;
+			}else{
+				// TODO: Pass input to the input handler system.
 			}
 
 			return true;
@@ -805,56 +955,7 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
-		return false;
-	}
-
-	@Override
-	public void connected(Controller controller){ }
-
-	@Override
-	public void disconnected(Controller controller){ }
-
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; UNUSED LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
-
-	@Override
-	public boolean mouseMoved(int screenX, int screenY){
-		return false;
-	}
-
-	@Override
-	public boolean keyUp(int keycode){
-		return false;
-	}
-
-	@Override
-	public boolean keyTyped(char character){
-		return false;
-	}
-
-	@Override
-	public boolean povMoved(Controller controller, int povCode, PovDirection value){
-		return false;
-	}
-
-	@Override
-	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
-		return false;
-	}
-
-	@Override
-	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
-		return false;
-	}
-
-	@Override
-	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
-		return false;
-	}
-
-	@Override
-	public boolean scrolled(int amount){
+		// TODO: Pass input to the input handler system.
 		return false;
 	}
 }

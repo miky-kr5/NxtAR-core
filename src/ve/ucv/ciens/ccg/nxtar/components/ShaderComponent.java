@@ -13,14 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.interfaces;
+package ve.ucv.ciens.ccg.nxtar.components;
 
-public interface CVProcessor {
-	public class CVData{
-		public byte[] outFrame;
-		public int[] markerCodes;
-		// TODO: Add marker location data.
+import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
+
+import com.artemis.Component;
+
+public class ShaderComponent extends Component {
+	public CustomShaderBase shader;
+
+	public ShaderComponent(CustomShaderBase shader) throws IllegalArgumentException{
+		if(shader == null)
+			throw new IllegalArgumentException("Shader cannot be null.");
+
+		this.shader = shader;
 	}
-
-	public CVData processFrame(byte[] frame, int w, int h);
 }

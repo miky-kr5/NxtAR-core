@@ -20,9 +20,6 @@ import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
-import com.badlogic.gdx.controllers.Controller;
-import com.badlogic.gdx.controllers.PovDirection;
-import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -42,77 +39,93 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 
-
 public abstract class MainMenuStateBase extends BaseState{
 	protected static final String TAG = "MAIN_MENU";
 	private static final String CLASS_NAME = MainMenuStateBase.class.getSimpleName();
-
 	private static final String SHADER_PATH = "shaders/bckg/bckg";
+
+	protected final int NUM_MENU_BUTTONS = 2;
 
 	// Helper fields.
 	protected boolean clientConnected;
 	private float u_scaling[];
-	protected OrthographicCamera pixelPerfectCamera;
 
 	// Buttons and other gui components.
 	protected TextButton startButton;
 	protected Rectangle startButtonBBox;
 	protected Sprite clientConnectedLedOn;
 	protected Sprite clientConnectedLedOff;
+
+	protected TextButton calibrationButton;
+	protected Rectangle calibrationButtonBBox;
+	protected Sprite cameraCalibratedLedOn;
+	protected Sprite cameraCalibratedLedOff;
+
 	protected Sprite background;
 
 	// Graphic data for the start button.
-	private Texture startButtonEnabledTexture;
-	private Texture startButtonDisabledTexture;
-	private Texture startButtonPressedTexture;
-	private NinePatch startButtonEnabled9p;
-	private NinePatch startButtonDisabled9p;
-	private NinePatch startButtonPressed9p;
+	private Texture menuButtonEnabledTexture;
+	private Texture menuButtonDisabledTexture;
+	private Texture menuButtonPressedTexture;
+	private NinePatch menuButtonEnabled9p;
+	private NinePatch menuButtonDisabled9p;
+	private NinePatch menuButtonPressed9p;
 	private BitmapFont font;
 
 	// Other graphics.
+	private Texture cameraCalibratedLedOffTexture;
+	private Texture cameraCalibratedLedOnTexture;
 	private Texture clientConnectedLedOffTexture;
 	private Texture clientConnectedLedOnTexture;
 	private Texture backgroundTexture;
 	private ShaderProgram backgroundShader;
 
 	// Button touch helper fields.
-	private Vector3 win2world;
-	protected Vector2 touchPointWorldCoords;
 	protected boolean startButtonTouched;
 	protected int startButtonTouchPointer;
+	protected boolean calibrationButtonTouched;
+	protected int calibrationButtonTouchPointer;
 
 	public MainMenuStateBase(){
 		TextureRegion region;
+		TextButtonStyle tbs;
+		FreeTypeFontGenerator generator;
 
 		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
 		// Create the start button background.
-		startButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
-		startButtonEnabled9p = new NinePatch(new TextureRegion(startButtonEnabledTexture, 0, 0, startButtonEnabledTexture.getWidth(), startButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
+		menuButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
+		menuButtonEnabled9p = new NinePatch(new TextureRegion(menuButtonEnabledTexture, 0, 0, menuButtonEnabledTexture.getWidth(), menuButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
 
-		startButtonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
-		startButtonDisabled9p = new NinePatch(new TextureRegion(startButtonDisabledTexture, 0, 0, startButtonDisabledTexture.getWidth(), startButtonDisabledTexture.getHeight()), 49, 49, 45, 45);
+		menuButtonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
+		menuButtonDisabled9p = new NinePatch(new TextureRegion(menuButtonDisabledTexture, 0, 0, menuButtonDisabledTexture.getWidth(), menuButtonDisabledTexture.getHeight()), 49, 49, 45, 45);
 
-		startButtonPressedTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
-		startButtonPressed9p = new NinePatch(new TextureRegion(startButtonPressedTexture, 0, 0, startButtonPressedTexture.getWidth(), startButtonPressedTexture.getHeight()), 49, 49, 45, 45);
+		menuButtonPressedTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
+		menuButtonPressed9p = new NinePatch(new TextureRegion(menuButtonPressedTexture, 0, 0, menuButtonPressedTexture.getWidth(), menuButtonPressedTexture.getHeight()), 49, 49, 45, 45);
 
 		// Create the start button font.
-		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
-		font = generator.generateFont(Ouya.runningOnOuya ? 60 : 40, ProjectConstants.FONT_CHARS, false);
+		generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
+		font = generator.generateFont(ProjectConstants.MENU_BUTTON_FONT_SIZE, ProjectConstants.FONT_CHARS, false);
 		generator.dispose();
 
-		// Create the start button itself.
-		TextButtonStyle tbs = new TextButtonStyle();
+		// Create the start button.
+		tbs = new TextButtonStyle();
 		tbs.font = font;
-		tbs.up = new NinePatchDrawable(startButtonEnabled9p);
-		tbs.checked = new NinePatchDrawable(startButtonPressed9p);
-		tbs.disabled = new NinePatchDrawable(startButtonDisabled9p);
+		tbs.up = new NinePatchDrawable(menuButtonEnabled9p);
+		tbs.checked = new NinePatchDrawable(menuButtonPressed9p);
+		tbs.disabled = new NinePatchDrawable(menuButtonDisabled9p);
 		tbs.disabledFontColor = new Color(0, 0, 0, 1);
+
 		startButton = new TextButton("Start server", tbs);
 		startButton.setText("Start game");
 		startButton.setDisabled(true);
 		startButtonBBox = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
+
+		// Create the calibration button.
+		calibrationButton = new TextButton("Calibrate camera", tbs);
+		calibrationButton.setText("Calibrate camera");
+		calibrationButton.setDisabled(true);
+		calibrationButtonBBox = new Rectangle(0, 0, calibrationButton.getWidth(), calibrationButton.getHeight());
 
 		// Create the connection leds.
 		clientConnectedLedOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
@@ -123,6 +136,14 @@ public abstract class MainMenuStateBase extends BaseState{
 		region = new TextureRegion(clientConnectedLedOffTexture);
 		clientConnectedLedOff = new Sprite(region);
 
+		cameraCalibratedLedOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
+		region = new TextureRegion(cameraCalibratedLedOnTexture);
+		cameraCalibratedLedOn = new Sprite(region);
+
+		cameraCalibratedLedOffTexture = new Texture("data/gfx/gui/Anonymous_Button_Red.png");
+		region = new TextureRegion(cameraCalibratedLedOffTexture);
+		cameraCalibratedLedOff = new Sprite(region);
+
 		// Set up the background.
 		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
 		backgroundTexture.setWrap(TextureWrap.Repeat, TextureWrap.Repeat);
@@ -132,7 +153,7 @@ public abstract class MainMenuStateBase extends BaseState{
 		background.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		background.setPosition(-(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 
-		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + ".vert"), Gdx.files.internal(SHADER_PATH + ".frag"));
+		backgroundShader = new ShaderProgram(Gdx.files.internal(SHADER_PATH + "_vert.glsl"), Gdx.files.internal(SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
 			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
@@ -148,6 +169,8 @@ public abstract class MainMenuStateBase extends BaseState{
 		touchPointWorldCoords = new Vector2();
 		startButtonTouched = false;
 		startButtonTouchPointer = -1;
+		calibrationButtonTouched = false;
+		calibrationButtonTouchPointer = -1;
 
 		clientConnected = false;
 		stateActive = false;
@@ -172,11 +195,13 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	@Override
 	public void dispose(){
-		startButtonEnabledTexture.dispose();
-		startButtonDisabledTexture.dispose();
-		startButtonPressedTexture.dispose();
+		menuButtonEnabledTexture.dispose();
+		menuButtonDisabledTexture.dispose();
+		menuButtonPressedTexture.dispose();
 		clientConnectedLedOnTexture.dispose();
 		clientConnectedLedOffTexture.dispose();
+		cameraCalibratedLedOnTexture.dispose();
+		cameraCalibratedLedOffTexture.dispose();
 		backgroundTexture.dispose();
 		if(backgroundShader != null) backgroundShader.dispose();
 		font.dispose();
@@ -210,16 +235,7 @@ public abstract class MainMenuStateBase extends BaseState{
 	public void onClientConnected(){
 		clientConnected = true;
 		startButton.setDisabled(false);
-	}
-
-	/*;;;;;;;;;;;;;;;;;;
-	  ; HELPER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;*/
-
-	protected void unprojectTouch(int screenX, int screenY){
-		win2world.set(screenX, screenY, 0.0f);
-		pixelPerfectCamera.unproject(win2world);
-		touchPointWorldCoords.set(win2world.x, win2world.y);
+		calibrationButton.setDisabled(false);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -233,11 +249,16 @@ public abstract class MainMenuStateBase extends BaseState{
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
+		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords) && !calibrationButtonTouched){
 			startButton.setChecked(true);
 			startButtonTouched = true;
 			startButtonTouchPointer = pointer;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button pressed.");
+		}else if(!calibrationButton.isDisabled() && calibrationButtonBBox.contains(touchPointWorldCoords) && !startButtonTouched){
+			calibrationButton.setChecked(true);
+			calibrationButtonTouched = true;
+			calibrationButtonTouchPointer = pointer;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Calibration button pressed.");
 		}
 
 		return true;
@@ -250,12 +271,18 @@ public abstract class MainMenuStateBase extends BaseState{
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
+		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords) && startButtonTouched){
 			startButton.setChecked(false);
 			startButtonTouched = false;
 			startButtonTouchPointer = -1;
 			core.nextState = game_states_t.IN_GAME;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
+		}else if(!calibrationButton.isDisabled() && calibrationButtonBBox.contains(touchPointWorldCoords) && calibrationButtonTouched){
+			calibrationButton.setChecked(false);
+			calibrationButtonTouched = false;
+			calibrationButtonTouchPointer = -1;
+			core.nextState = game_states_t.CALIBRATION;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Calibration button released.");
 		}
 
 		return true;
@@ -270,6 +297,11 @@ public abstract class MainMenuStateBase extends BaseState{
 			startButtonTouched = false;
 			startButton.setChecked(false);
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Start button released.");
+		}else if(!calibrationButton.isDisabled() && calibrationButtonTouched && pointer == calibrationButtonTouchPointer && !calibrationButtonBBox.contains(touchPointWorldCoords)){
+			calibrationButtonTouchPointer = -1;
+			calibrationButtonTouched = false;
+			calibrationButton.setChecked(false);
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Start button released.");
 		}
 
 		return true;
@@ -281,71 +313,6 @@ public abstract class MainMenuStateBase extends BaseState{
 			// Ignore.
 			return true;
 		}
-		return false;
-	}
-
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; INPUT LISTENER METHOD STUBS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
-
-	@Override
-	public boolean keyUp(int keycode){
-		return false;
-	}
-
-	@Override
-	public boolean keyTyped(char character){
-		return false;
-	}
-
-	@Override
-	public boolean mouseMoved(int screenX, int screenY){
-		return false;
-	}
-
-	@Override
-	public boolean scrolled(int amount){
-		return false;
-	}
-
-	@Override
-	public void connected(Controller controller){ }
-
-	@Override
-	public void disconnected(Controller controller){ }
-
-	@Override
-	public boolean buttonDown(Controller controller, int buttonCode){
-		return false;
-	}
-
-	@Override
-	public boolean buttonUp(Controller controller, int buttonCode){
-		return false;
-	}
-
-	@Override
-	public boolean axisMoved(Controller controller, int axisCode, float value){
-		return false;
-	}
-
-	@Override
-	public boolean povMoved(Controller controller, int povCode, PovDirection value){
-		return false;
-	}
-
-	@Override
-	public boolean xSliderMoved(Controller controller, int sliderCode, boolean value){
-		return false;
-	}
-
-	@Override
-	public boolean ySliderMoved(Controller controller, int sliderCode, boolean value){
-		return false;
-	}
-
-	@Override
-	public boolean accelerometerMoved(Controller controller, int accelerometerCode, Vector3 value){
 		return false;
 	}
 }

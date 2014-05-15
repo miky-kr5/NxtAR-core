@@ -20,7 +20,7 @@ import java.io.InputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-import ve.ucv.ciens.ccg.nxtar.interfaces.NetworkConnectionListener;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.badlogic.gdx.Gdx;
@@ -30,7 +30,7 @@ public class SensorReportThread extends Thread {
 	private static final String TAG = "NXTAR_CORE_ROBOTTHREAD";
 	private static final String CLASS_NAME = SensorReportThread.class.getSimpleName();
 
-	private NetworkConnectionListener netListener;
+	private ApplicationEventsListener netListener;
 	private ServerSocket server;
 	private Socket client;
 	private Object pauseMonitor;
@@ -63,7 +63,7 @@ public class SensorReportThread extends Thread {
 		return SingletonHolder.INSTANCE;
 	}
 
-	public void addNetworkConnectionListener(NetworkConnectionListener listener){
+	public void addNetworkConnectionListener(ApplicationEventsListener listener){
 		netListener = listener;
 	}
 

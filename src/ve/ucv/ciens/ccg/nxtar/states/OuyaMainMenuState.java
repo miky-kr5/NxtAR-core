@@ -32,26 +32,34 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	private Texture ouyaOButtonTexture;
 	private Sprite ouyaOButton;
 	private boolean oButtonPressed;
+	private int oButtonSelection;
 
 	public OuyaMainMenuState(final NxtARCore core){
+		super();
+
 		this.core = core;
 
 		startButton.setPosition(-(startButton.getWidth() / 2), -(startButton.getHeight() / 2));
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
 
-		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (startButton.getY() * 0.5f);
+		calibrationButton.setPosition(-(calibrationButton.getWidth() / 2), (startButton.getY() + startButton.getHeight()) + 10);
+		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
+
+		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
 		clientConnectedLedOn.setSize(clientConnectedLedOn.getWidth() * 0.5f, clientConnectedLedOn.getHeight() * 0.5f);
 		clientConnectedLedOn.setPosition(-(clientConnectedLedOn.getWidth() / 2), ledYPos);
 
 		clientConnectedLedOff.setSize(clientConnectedLedOff.getWidth() * 0.5f, clientConnectedLedOff.getHeight() * 0.5f);
 		clientConnectedLedOff.setPosition(-(clientConnectedLedOff.getWidth() / 2), ledYPos);
 
+		// TODO: Set calibration led attributes.
+
 		ouyaOButtonTexture = new Texture("data/gfx/gui/OUYA_O.png");
 		TextureRegion region = new TextureRegion(ouyaOButtonTexture, ouyaOButtonTexture.getWidth(), ouyaOButtonTexture.getHeight());
 		ouyaOButton = new Sprite(region);
 		ouyaOButton.setSize(ouyaOButton.getWidth() * 0.6f, ouyaOButton.getHeight() * 0.6f);
-		ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY() + (ouyaOButton.getHeight() / 2));
 
+		oButtonSelection = 0;
 		oButtonPressed = false;
 	}
 
@@ -65,13 +73,25 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 			core.batch.disableBlending();
 			drawBackground(core.batch);
 			core.batch.enableBlending();
+
 			if(clientConnected){
 				clientConnectedLedOn.draw(core.batch);
 			}else{
 				clientConnectedLedOff.draw(core.batch);
 			}
+
+			// TODO: Render calibration leds.
+
 			startButton.draw(core.batch, 1.0f);
+			calibrationButton.draw(core.batch, 1.0f);
+
+			if(oButtonSelection == 0){
+				ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY() + (ouyaOButton.getHeight() / 2));
+			}else if(oButtonSelection == 1){
+				ouyaOButton.setPosition(calibrationButton.getX() - ouyaOButton.getWidth() - 20, calibrationButton.getY() + (ouyaOButton.getHeight() / 2));
+			}
 			ouyaOButton.draw(core.batch);
+
 		}core.batch.end();
 	}
 
@@ -86,38 +106,64 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
-	public boolean buttonDown(Controller controller, int buttonCode) {
+	public boolean buttonDown(Controller controller, int buttonCode){
+		// TODO: Test this.
+
 		if(stateActive){
 			if(buttonCode == Ouya.BUTTON_O){
-				if(!clientConnected){
-					core.toast("Can't start the game. No client is connected.", true);
-				}else{
-					oButtonPressed = true;
-					startButton.setChecked(true);
+				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): O button pressed.");
+
+				if(oButtonSelection == 0){
+					if(!clientConnected){
+						core.toast("Can't start the game. No client is connected.", true);
+					}else{
+						oButtonPressed = true;
+						startButton.setChecked(true);
+					}
+				}else if(oButtonSelection == 1){
+					if(!clientConnected){
+						core.toast("Can't calibrate the camera. No client is connected.", true);
+					}else{
+						oButtonPressed = true;
+						calibrationButton.setChecked(true);
+					}
 				}
+			}else if(buttonCode == Ouya.BUTTON_DPAD_UP){
+				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad up button pressed.");
+				oButtonSelection = oButtonSelection - 1 < 0 ? NUM_MENU_BUTTONS - 1 : oButtonSelection - 1;
+			}else if(buttonCode == Ouya.BUTTON_DPAD_DOWN){
+				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad down button pressed.");
+				oButtonSelection = (oButtonSelection + 1) % NUM_MENU_BUTTONS;
 			}
 
 			return true;
-
 		}else{
 			return false;
 		}
 	}
 
 	@Override
-	public boolean buttonUp(Controller controller, int buttonCode) {
+	public boolean buttonUp(Controller controller, int buttonCode){
+		// TODO: Test this.
+
 		if(stateActive){
 			if(buttonCode == Ouya.BUTTON_O){
+				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): O button released.");
+
 				if(oButtonPressed){
 					oButtonPressed = false;
-					startButton.setChecked(false);
-					core.nextState = game_states_t.IN_GAME;
-					Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
+
+					if(oButtonSelection == 0){
+						startButton.setChecked(false);
+						core.nextState = game_states_t.IN_GAME;
+					}else if(oButtonSelection == 1){
+						calibrationButton.setChecked(false);
+						core.nextState = game_states_t.IN_GAME;
+					}
 				}
 			}
 
 			return true;
-
 		}else{
 			return false;
 		}

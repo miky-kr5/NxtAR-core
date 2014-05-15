@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Miguel Angel Astor Romero
+ * Copyright (C) 2014 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.interfaces;
+package ve.ucv.ciens.ccg.nxtar.graphics.shaders;
 
-public interface NetworkConnectionListener {
-	public void networkStreamConnected(String streamName);
+import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
+
+import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+
+public abstract class CustomShaderBase{
+	protected ShaderProgram shaderProgram;
+
+	public abstract CustomShaderBase loadShader() throws ShaderFailedToLoadException;
+
+	public abstract void setUniforms();
+
+	public ShaderProgram getShaderProgram(){
+		return this.shaderProgram;
+	}
 }

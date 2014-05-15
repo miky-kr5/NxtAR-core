@@ -21,17 +21,26 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL10;
 
 public class TabletMainMenuState extends MainMenuStateBase{
+
 	public TabletMainMenuState(final NxtARCore core){
+		super();
+
 		this.core = core;
+
 		startButton.setPosition(-(startButton.getWidth() / 2), -(startButton.getHeight() / 2));
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
 
-		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (startButton.getY() * 0.5f);
+		calibrationButton.setPosition(-(calibrationButton.getWidth() / 2), (startButton.getY() + startButton.getHeight()) + 10);
+		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
+
+		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
 		clientConnectedLedOn.setSize(clientConnectedLedOn.getWidth() * 0.5f, clientConnectedLedOn.getHeight() * 0.5f);
 		clientConnectedLedOn.setPosition(-(clientConnectedLedOn.getWidth() / 2), ledYPos);
 
 		clientConnectedLedOff.setSize(clientConnectedLedOff.getWidth() * 0.5f, clientConnectedLedOff.getHeight() * 0.5f);
 		clientConnectedLedOff.setPosition(-(clientConnectedLedOff.getWidth() / 2), ledYPos);
+
+		// TODO: Set calibration led attributes.
 	}
 
 	@Override
@@ -41,6 +50,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
+
 			core.batch.disableBlending();
 			drawBackground(core.batch);
 			core.batch.enableBlending();
@@ -50,7 +60,12 @@ public class TabletMainMenuState extends MainMenuStateBase{
 			}else{
 				clientConnectedLedOff.draw(core.batch);
 			}
+
+			// TODO: Render calibration led.
+
 			startButton.draw(core.batch, 1.0f);
+			calibrationButton.draw(core.batch, 1.0f);
+
 		}core.batch.end();
 	}
 }

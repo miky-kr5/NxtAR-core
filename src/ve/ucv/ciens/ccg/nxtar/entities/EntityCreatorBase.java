@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2013 Miguel Angel Astor Romero
+ * Copyright (C) 2014 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.interfaces;
+package ve.ucv.ciens.ccg.nxtar.entities;
 
-public interface Toaster {
-	public void showShortToast(String msg);
-	public void showLongToast(String msg);
+import com.artemis.World;
+
+public abstract class EntityCreatorBase {
+	protected World world;
+
+	public void setWorld(World world) throws IllegalArgumentException{
+		if(world == null)
+			throw new IllegalArgumentException("World cannot be null.");
+
+		this.world = world;
+	}
+
+	public abstract void createAllEntities();
+
+	public abstract void dispose();
 }

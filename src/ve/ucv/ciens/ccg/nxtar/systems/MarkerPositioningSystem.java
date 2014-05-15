@@ -62,17 +62,16 @@ public class MarkerPositioningSystem extends EntityProcessingSystem {
 		Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing markers.");
 		for(int i = 0; i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
 			if(markers.markerCodes[i] != 1){
+				Gdx.app.log(TAG, CLASS_NAME + ".process(): Checking marker code: " + Integer.toString(markers.markerCodes[i]));
+				Gdx.app.log(TAG, CLASS_NAME + ".process(): This entity's code is: " + Integer.toString(marker.code));
 				if(markers.markerCodes[i] == marker.code){
 					Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing marker code " + Integer.toString(markers.markerCodes[i]) + ".");
 					geometry.position.set(markers.translationVectors[i]);
 					geometry.rotation.set(markers.rotationMatrices[i]);
-					break;
 				}
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");
 			}
 		}
-
-		markers = null;
 	}
 }

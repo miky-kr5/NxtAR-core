@@ -22,6 +22,7 @@ import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
 import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
+import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
@@ -36,6 +37,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -52,13 +54,18 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public class InGameState extends BaseState{
-	private static final String TAG                    = "IN_GAME_STATE";
-	private static final String CLASS_NAME             = InGameState.class.getSimpleName();
-	private static final String BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
-	private static final float  NEAR                   = 0.01f;
-	private static final float  FAR                    = 100.0f;
-	private static final float  FAR_PLUS_NEAR          = FAR + NEAR;
-	private static final float  FAR_LESS_NEAR          = FAR - NEAR;
+	private static final String  TAG                    = "IN_GAME_STATE";
+	private static final String  CLASS_NAME             = InGameState.class.getSimpleName();
+	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
+	private static final float   NEAR                   = 0.01f;
+	private static final float   FAR                    = 100.0f;
+	private static final float   FAR_PLUS_NEAR          = FAR + NEAR;
+	private static final float   FAR_LESS_NEAR          = FAR - NEAR;
+	private static final Vector3 LIGHT_POSITION         = new Vector3(2.0f, 2.0f, 4.0f);
+	private static final Color   AMBIENT_COLOR          = new Color(0.0f, 0.1f, 0.2f, 1.0f);
+	private static final Color   DIFFUSE_COLOR          = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+	private static final Color   SPECULAR_COLOR         = new Color(1.0f, 0.8f, 0.0f, 1.0f);
+	private static final float   SHINYNESS              = 50.0f;
 
 	// Background related fields.
 	private float                   uScaling[];
@@ -175,6 +182,7 @@ public class InGameState extends BaseState{
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
+		RenderParameters.setLightSource1(new LightSource(LIGHT_POSITION, AMBIENT_COLOR, DIFFUSE_COLOR, SPECULAR_COLOR, SHINYNESS));
 
 		// Set up the game world.
 		gameWorld = new World();

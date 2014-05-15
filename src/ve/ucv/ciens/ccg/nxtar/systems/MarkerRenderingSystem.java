@@ -82,6 +82,8 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 		Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing markers.");
 		for(int i = 0; i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
 			if(markers.markerCodes[i] != 1){
+				Gdx.app.log(TAG, CLASS_NAME + ".process(): Checking marker code: " + Integer.toString(markers.markerCodes[i]));
+				Gdx.app.log(TAG, CLASS_NAME + ".process(): This entity's code is: " + Integer.toString(marker.code));
 				if(markers.markerCodes[i] == marker.code){
 					Gdx.app.log(TAG, CLASS_NAME + ".process(): Rendering marker code " + Integer.toString(markers.markerCodes[i]) + ".");
 					// Set the geometric transformations.
@@ -113,15 +115,11 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 						shaderComp.shader.setUniforms();
 						meshComp.model.render(shaderComp.shader.getShaderProgram(), GL20.GL_TRIANGLES);
 					}shaderComp.shader.getShaderProgram().end();
-
-					break;
 				}
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");
 			}
 		}
-
-		markers = null;
 	}
 
 }

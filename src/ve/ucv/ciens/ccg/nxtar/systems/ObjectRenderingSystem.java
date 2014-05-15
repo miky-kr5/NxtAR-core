@@ -19,7 +19,6 @@ import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
-import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 
 import com.artemis.Aspect;
@@ -27,10 +26,8 @@ import com.artemis.ComponentMapper;
 import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 
 /**
  * <p>Entity processing system in charge of rendering 3D objects using OpenGL. The
@@ -40,12 +37,6 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
 	@Mapper ComponentMapper<ShaderComponent> shaderMapper;
 	@Mapper ComponentMapper<MeshComponent> modelMapper;
-
-	private static final Vector3 LIGHT_POSITION = new Vector3(2.0f, 2.0f, 4.0f);
-	private static final Color AMBIENT_COLOR = new Color(0.0f, 0.1f, 0.2f, 1.0f);
-	private static final Color DIFFUSE_COLOR = new Color(1.0f, 1.0f, 1.0f, 1.0f);
-	private static final Color SPECULAR_COLOR = new Color(1.0f, 0.8f, 0.0f, 1.0f);
-	private static final float SHINYNESS = 50.0f;
 
 	/**
 	 * <p>A matrix representing 3D translations.</p>
@@ -70,8 +61,6 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 	@SuppressWarnings("unchecked")
 	public ObjectRenderingSystem() {
 		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, MeshComponent.class).exclude(MarkerCodeComponent.class));
-
-		RenderParameters.setLightSource1(new LightSource(LIGHT_POSITION, AMBIENT_COLOR, DIFFUSE_COLOR, SPECULAR_COLOR, SHINYNESS));
 
 		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
 		rotationMatrix = new Matrix4().idt();

@@ -38,14 +38,14 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	private static final String TAG = "MARKER_TEST_ENTITY_CREATOR";
 	private static final String CLASS_NAME = MarkerTestEntityCreator.class.getSimpleName();
 
-	private Mesh markerMesh;
+	private Mesh patchMesh, sphereMesh, boxMesh;
 	private CustomShaderBase phongShader;
 
 	@Override
 	public void createAllEntities() {
 		MeshBuilder builder;
 		Matrix3 identity = new Matrix3().idt();
-		Entity marker;
+		Entity patch, sphere, box;
 
 		// Create mesh.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the meshes.");
@@ -58,7 +58,17 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 			Vector3 v01 = new Vector3( 0.5f, -0.5f, 0.0f);
 			Vector3 n = new Vector3(0.0f, 1.0f, 0.0f);
 			builder.patch(v00, v10, v11, v01, n, 10, 10);
-		}markerMesh = builder.end();
+		}patchMesh = builder.end();
+
+		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
+			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
+		}sphereMesh = builder.end();
+
+		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
+			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
+			builder.box(0.5f, 0.5f, 6.0f);
+		}boxMesh = builder.end();
 
 		// Load the phong shader.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Loading the phong shader.");
@@ -71,15 +81,28 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 
 		// Create the entities.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the enitites.");
-		marker = world.createEntity();
-		marker.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), identity, new Vector3(1.0f, 1.0f, 1.0f)));
-		marker.addComponent(new MeshComponent(markerMesh));
-		marker.addComponent(new ShaderComponent(phongShader));
-		marker.addComponent(new MarkerCodeComponent(213));
+		patch = world.createEntity();
+		patch.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), identity, new Vector3(1.0f, 1.0f, 1.0f)));
+		patch.addComponent(new MeshComponent(patchMesh));
+		patch.addComponent(new ShaderComponent(phongShader));
+		patch.addComponent(new MarkerCodeComponent(213));
+
+		sphere = world.createEntity();
+		sphere.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), identity, new Vector3(1.0f, 1.0f, 1.0f)));
+		sphere.addComponent(new MeshComponent(sphereMesh));
+		sphere.addComponent(new ShaderComponent(phongShader));
+		sphere.addComponent(new MarkerCodeComponent(10));
+
+		box = world.createEntity();
+		box.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), identity, new Vector3(1.0f, 1.0f, 1.0f)));
+		box.addComponent(new MeshComponent(boxMesh));
+		box.addComponent(new ShaderComponent(phongShader));
 
 		// Add the entities to the world.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Adding entities to the world.");
-		marker.addToWorld();
+		sphere.addToWorld();
+		patch.addToWorld();
+		box.addToWorld();
 	}
 
 	@Override
@@ -87,7 +110,13 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		if(phongShader != null && phongShader.getShaderProgram() != null)
 			phongShader.getShaderProgram().dispose();
 
-		if(markerMesh != null)
-			markerMesh.dispose();
+		if(patchMesh != null)
+			patchMesh.dispose();
+
+		if(sphereMesh != null)
+			sphereMesh.dispose();
+
+		if(boxMesh != null)
+			boxMesh.dispose();
 	}
 }

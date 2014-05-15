@@ -87,9 +87,6 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 					// Set the geometric transformations.
 					translationMatrix.setToTranslation(geometry.position);
 
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): TRANSLATION:");
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): (" + Float.toString(geometry.position.x) + ", " + Float.toString(geometry.position.y) + ", " + Float.toString(geometry.position.z) + ")");
-
 					rotationMatrix.val[0] = geometry.rotation.val[0];
 					rotationMatrix.val[1] = geometry.rotation.val[1];
 					rotationMatrix.val[2] = geometry.rotation.val[2];
@@ -106,13 +103,6 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 					rotationMatrix.val[13] = 0;
 					rotationMatrix.val[14] = 0;
 					rotationMatrix.val[15] = 1;
-					//rotationMatrix.idt();
-
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): ROTATION:");
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): |" + Float.toString(rotationMatrix.val[0]) + ", " + Float.toString(rotationMatrix.val[4]) + ", " + Float.toString(rotationMatrix.val[8]) + ", " + Float.toString(rotationMatrix.val[12]) + "|");
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): |" + Float.toString(rotationMatrix.val[1]) + ", " + Float.toString(rotationMatrix.val[5]) + ", " + Float.toString(rotationMatrix.val[9]) + ", " + Float.toString(rotationMatrix.val[13]) + "|");
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): |" + Float.toString(rotationMatrix.val[2]) + ", " + Float.toString(rotationMatrix.val[6]) + ", " + Float.toString(rotationMatrix.val[10]) + ", " + Float.toString(rotationMatrix.val[14]) + "|");
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): |" + Float.toString(rotationMatrix.val[3]) + ", " + Float.toString(rotationMatrix.val[7]) + ", " + Float.toString(rotationMatrix.val[11]) + ", " + Float.toString(rotationMatrix.val[15]) + "|");
 
 					scalingMatrix.setToScaling(geometry.scaling);
 					combinedTransformationMatrix.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
@@ -123,6 +113,8 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 						shaderComp.shader.setUniforms();
 						meshComp.model.render(shaderComp.shader.getShaderProgram(), GL20.GL_TRIANGLES);
 					}shaderComp.shader.getShaderProgram().end();
+
+					break;
 				}
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");

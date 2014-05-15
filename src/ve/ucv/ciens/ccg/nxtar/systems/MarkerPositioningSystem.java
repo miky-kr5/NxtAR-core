@@ -66,6 +66,7 @@ public class MarkerPositioningSystem extends EntityProcessingSystem {
 					Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing marker code " + Integer.toString(markers.markerCodes[i]) + ".");
 					geometry.position.set(markers.translationVectors[i]);
 					geometry.rotation.set(markers.rotationMatrices[i]);
+					break;
 				}
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");

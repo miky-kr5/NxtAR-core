@@ -62,7 +62,7 @@ public class InGameState extends BaseState{
 	private static final float   FAR_PLUS_NEAR          = FAR + NEAR;
 	private static final float   FAR_LESS_NEAR          = FAR - NEAR;
 	private static final Vector3 LIGHT_POSITION         = new Vector3(2.0f, 2.0f, 4.0f);
-	private static final Color   AMBIENT_COLOR          = new Color(0.0f, 0.1f, 0.2f, 1.0f);
+	private static final Color   AMBIENT_COLOR          = new Color(0.0f, 0.1f, 0.3f, 1.0f);
 	private static final Color   DIFFUSE_COLOR          = new Color(1.0f, 1.0f, 1.0f, 1.0f);
 	private static final Color   SPECULAR_COLOR         = new Color(1.0f, 0.8f, 0.0f, 1.0f);
 	private static final float   SHINYNESS              = 50.0f;
@@ -240,11 +240,6 @@ public class InGameState extends BaseState{
 			perspectiveCamera.update();
 		}
 
-		// Apply the undistortion method if the camera has been calibrated already.
-		/*if(core.cvProc.isCameraCalibrated()){
-			frame = core.cvProc.undistortFrame(frame);
-		}*/
-
 		// Attempt to find the markers in the current video frame.
 		data = core.cvProc.findMarkersInFrame(frame);
 
@@ -273,7 +268,6 @@ public class InGameState extends BaseState{
 			// Set the 3D frame buffer for rendering.
 			frameBuffer.begin();{
 				// Set OpenGL state.
-				Gdx.gl.glDisable(GL20.GL_CULL_FACE);
 				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 				Gdx.gl.glClearColor(0, 0, 0, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);

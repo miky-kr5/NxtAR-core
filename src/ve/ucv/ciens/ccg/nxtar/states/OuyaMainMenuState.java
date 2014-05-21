@@ -21,7 +21,7 @@ import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
-import com.badlogic.gdx.graphics.GL10;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
@@ -66,7 +66,7 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	@Override
 	public void render(float delta) {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
-		Gdx.gl.glClear(GL10.GL_COLOR_BUFFER_BIT);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{

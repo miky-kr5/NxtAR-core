@@ -64,15 +64,6 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		// Create mesh.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the meshes.");
 		builder = new MeshBuilder();
-		/*builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
-			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-			Vector3 v00 = new Vector3(-0.5f, -0.5f, 0.0f);
-			Vector3 v10 = new Vector3(-0.5f,  0.5f, 0.0f);
-			Vector3 v11 = new Vector3( 0.5f,  0.5f, 0.0f);
-			Vector3 v01 = new Vector3( 0.5f, -0.5f, 0.0f);
-			Vector3 n = new Vector3(0.0f, 1.0f, 0.0f);
-			builder.patch(v00, v10, v11, v01, n, 10, 10);
-		}patchMesh = builder.end();*/
 
 		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
 			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);

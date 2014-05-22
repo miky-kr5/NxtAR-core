@@ -29,6 +29,7 @@ import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.ModelBatchMarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -191,6 +192,7 @@ public class InGameState extends BaseState{
 		entityCreator.createAllEntities();
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new MarkerRenderingSystem(), true);
+		gameWorld.setSystem(new ModelBatchMarkerRenderingSystem(), true);
 		gameWorld.setSystem(new ObjectRenderingSystem(), true);
 		gameWorld.initialize();
 	}
@@ -306,6 +308,11 @@ public class InGameState extends BaseState{
 				// Call rendering systems.
 				gameWorld.getSystem(MarkerRenderingSystem.class).setMarkerData(data);
 				gameWorld.getSystem(MarkerRenderingSystem.class).process();
+
+				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).begin(perspectiveCamera, data);
+				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).process();
+				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).end();
+
 				gameWorld.getSystem(ObjectRenderingSystem.class).process();
 
 				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
@@ -377,6 +384,8 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void dispose(){
+		gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).dispose();
+
 		if(entityCreator != null)
 			entityCreator.dispose();
 

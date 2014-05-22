@@ -40,6 +40,7 @@ import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -93,6 +94,7 @@ public class CameraCalibrationState extends BaseState{
 	public CameraCalibrationState(final NxtARCore core){
 		TextButtonStyle tbs;
 		FreeTypeFontGenerator generator;
+		FreeTypeFontParameter param;
 
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
@@ -124,8 +126,12 @@ public class CameraCalibrationState extends BaseState{
 
 		// Set up the sampling button.
 		// Create the font.
+		param = new FreeTypeFontParameter();
+		param.characters = ProjectConstants.FONT_CHARS;
+		param.size = ProjectConstants.MENU_BUTTON_FONT_SIZE;
+		param.flip = false;
 		generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
-		font = generator.generateFont(ProjectConstants.MENU_BUTTON_FONT_SIZE, ProjectConstants.FONT_CHARS, false);
+		font = generator.generateFont(param);
 		generator.dispose();
 
 		// Load the textures.

@@ -31,6 +31,7 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -90,6 +91,7 @@ public abstract class MainMenuStateBase extends BaseState{
 		TextureRegion region;
 		TextButtonStyle tbs;
 		FreeTypeFontGenerator generator;
+		FreeTypeFontParameter param;
 
 		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -104,8 +106,12 @@ public abstract class MainMenuStateBase extends BaseState{
 		menuButtonPressed9p = new NinePatch(new TextureRegion(menuButtonPressedTexture, 0, 0, menuButtonPressedTexture.getWidth(), menuButtonPressedTexture.getHeight()), 49, 49, 45, 45);
 
 		// Create the start button font.
+		param = new FreeTypeFontParameter();
+		param.characters = ProjectConstants.FONT_CHARS;
+		param.size = ProjectConstants.MENU_BUTTON_FONT_SIZE;
+		param.flip = false;
 		generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
-		font = generator.generateFont(ProjectConstants.MENU_BUTTON_FONT_SIZE, ProjectConstants.FONT_CHARS, false);
+		font = generator.generateFont(param);
 		generator.dispose();
 
 		// Create the start button.

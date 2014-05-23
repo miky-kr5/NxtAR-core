@@ -15,7 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.components.CustomShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
@@ -35,7 +35,7 @@ import com.badlogic.gdx.math.Matrix4;
 public class MarkerRenderingSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<MarkerCodeComponent>   markerMapper;
 	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
-	@Mapper ComponentMapper<ShaderComponent>       shaderMapper;
+	@Mapper ComponentMapper<CustomShaderComponent>       shaderMapper;
 	@Mapper ComponentMapper<MeshComponent>         meshMapper;
 
 	private static final String TAG = "MARKER_RENDERING_SYSTEM";
@@ -65,7 +65,7 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 
 	@SuppressWarnings("unchecked")
 	public MarkerRenderingSystem(){
-		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, ShaderComponent.class, MeshComponent.class));
+		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, CustomShaderComponent.class, MeshComponent.class));
 
 		markers = null;
 		translationMatrix            = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
@@ -82,7 +82,7 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 	protected void process(Entity e) {
 		MarkerCodeComponent   marker;
 		GeometryComponent     geometry;
-		ShaderComponent       shaderComp;
+		CustomShaderComponent       shaderComp;
 		MeshComponent         meshComp;
 
 		if(markers == null)

@@ -18,7 +18,7 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.components.CustomShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 
 import com.artemis.Aspect;
@@ -35,7 +35,7 @@ import com.badlogic.gdx.math.Matrix4;
  */
 public class ObjectRenderingSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
-	@Mapper ComponentMapper<ShaderComponent> shaderMapper;
+	@Mapper ComponentMapper<CustomShaderComponent> shaderMapper;
 	@Mapper ComponentMapper<MeshComponent> modelMapper;
 
 	/**
@@ -60,7 +60,7 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 
 	@SuppressWarnings("unchecked")
 	public ObjectRenderingSystem() {
-		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, MeshComponent.class).exclude(MarkerCodeComponent.class));
+		super(Aspect.getAspectForAll(GeometryComponent.class, CustomShaderComponent.class, MeshComponent.class).exclude(MarkerCodeComponent.class));
 
 		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
 		rotationMatrix = new Matrix4().idt();
@@ -77,13 +77,13 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 	@Override
 	protected void process(Entity e) {
 		GeometryComponent geometryComponent;
-		ShaderComponent shaderComponent;
+		CustomShaderComponent customShaderComponent;
 		MeshComponent meshComponent;
 
 		// Get the necessary components.
 		geometryComponent = geometryMapper.get(e);
 		meshComponent = modelMapper.get(e);
-		shaderComponent = shaderMapper.get(e);
+		customShaderComponent = shaderMapper.get(e);
 
 		// Calculate the geometric transformation for this entity.
 		translationMatrix.setToTranslation(geometryComponent.position);
@@ -95,9 +95,9 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 		RenderParameters.setTransformationMatrix(combinedTransformationMatrix);
 
 		// Render this entity.
-		shaderComponent.shader.getShaderProgram().begin();{
-			shaderComponent.shader.setUniforms();
-			meshComponent.model.render(shaderComponent.shader.getShaderProgram(), GL20.GL_TRIANGLES);
-		}shaderComponent.shader.getShaderProgram().end();
+		customShaderComponent.shader.getShaderProgram().begin();{
+			customShaderComponent.shader.setUniforms();
+			meshComponent.model.render(customShaderComponent.shader.getShaderProgram(), GL20.GL_TRIANGLES);
+		}customShaderComponent.shader.getShaderProgram().end();
 	}
 }

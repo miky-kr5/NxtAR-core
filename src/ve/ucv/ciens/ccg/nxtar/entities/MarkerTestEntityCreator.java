@@ -15,14 +15,16 @@
  */
 package ve.ucv.ciens.ccg.nxtar.entities;
 
+import ve.ucv.ciens.ccg.nxtar.components.CustomShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
+import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
+import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPerPixelShader;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPhongShader;
 
 import com.artemis.Entity;
@@ -36,7 +38,6 @@ import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
-import com.badlogic.gdx.graphics.g3d.attributes.DepthTestAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
@@ -52,6 +53,7 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	private Mesh boxMesh;
 	private Model bombModel;
 	private CustomShaderBase phongShader;
+	private SingleLightPerPixelShader ppShader;
 	private Mesh bombMesh;
 
 	@Override
@@ -90,8 +92,10 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 			Gdx.app.exit();
 		}
 
+		ppShader = new SingleLightPerPixelShader();
+		ppShader.init();
+
 		environment = new Environment();
-		environment.set(new DepthTestAttribute(GL20.GL_LEQUAL, true));
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
 		environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(-2, -2, -2)));
 
@@ -100,7 +104,7 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		bomb = world.createEntity();
 		bomb.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
 		bomb.addComponent(new MeshComponent(bombMesh));
-		bomb.addComponent(new ShaderComponent(phongShader));
+		bomb.addComponent(new CustomShaderComponent(phongShader));
 		bomb.addComponent(new MarkerCodeComponent(1023));
 
 		bombModelBatch = world.createEntity();
@@ -108,17 +112,18 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		bombModelBatch.addComponent(new ModelComponent(bombModel));
 		bombModelBatch.addComponent(new EnvironmentComponent(environment));
 		bombModelBatch.addComponent(new MarkerCodeComponent(89));
+		bombModelBatch.addComponent(new ShaderComponent(ppShader));
 
 		sphere = world.createEntity();
 		sphere.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
 		sphere.addComponent(new MeshComponent(sphereMesh));
-		sphere.addComponent(new ShaderComponent(phongShader));
+		sphere.addComponent(new CustomShaderComponent(phongShader));
 		sphere.addComponent(new MarkerCodeComponent(10));
 
 		box = world.createEntity();
 		box.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
 		box.addComponent(new MeshComponent(boxMesh));
-		box.addComponent(new ShaderComponent(phongShader));
+		box.addComponent(new CustomShaderComponent(phongShader));
 
 		// Add the entities to the world.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Adding entities to the world.");
@@ -142,5 +147,8 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 
 		if(bombModel != null)
 			bombModel.dispose();
+
+		if(ppShader != null)
+			ppShader.dispose();
 	}
 }

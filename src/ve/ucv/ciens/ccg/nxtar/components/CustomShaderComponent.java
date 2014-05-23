@@ -15,15 +15,16 @@
  */
 package ve.ucv.ciens.ccg.nxtar.components;
 
+import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
+
 import com.artemis.Component;
-import com.badlogic.gdx.graphics.g3d.Shader;
 
-public class ShaderComponent extends Component{
-	public Shader shader;
+public class CustomShaderComponent extends Component {
+	public CustomShaderBase shader;
 
-	public ShaderComponent(Shader shader) throws IllegalArgumentException{
+	public CustomShaderComponent(CustomShaderBase shader) throws IllegalArgumentException{
 		if(shader == null)
-			throw new IllegalArgumentException("Shader is null.");
+			throw new IllegalArgumentException("Shader cannot be null.");
 
 		this.shader = shader;
 	}

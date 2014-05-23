@@ -270,9 +270,9 @@ public class InGameState extends BaseState{
 			// Set the 3D frame buffer for rendering.
 			frameBuffer.begin();{
 				// Set OpenGL state.
-				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 				Gdx.gl.glClearColor(0, 0, 0, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
 
 				// Build the projection matrix.
 				focalPointX   = core.cvProc.getFocalPointX();
@@ -314,8 +314,6 @@ public class InGameState extends BaseState{
 				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).end();
 
 				gameWorld.getSystem(ObjectRenderingSystem.class).process();
-
-				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
 			}frameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.

@@ -19,6 +19,7 @@ import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -37,6 +38,7 @@ public class ModelBatchMarkerRenderingSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
 	@Mapper ComponentMapper<ModelComponent>        modelMapper;
 	@Mapper ComponentMapper<EnvironmentComponent>  environmentMapper;
+	@Mapper ComponentMapper<ShaderComponent>       shaderMapper;
 
 	private static final String TAG = "MODEL_BATCH_MARKER_RENDERING_SYSTEM";
 	private static final String CLASS_NAME = ModelBatchMarkerRenderingSystem.class.getSimpleName();
@@ -64,7 +66,7 @@ public class ModelBatchMarkerRenderingSystem extends EntityProcessingSystem {
 
 	@SuppressWarnings("unchecked")
 	public ModelBatchMarkerRenderingSystem(){
-		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, EnvironmentComponent.class, ModelComponent.class));
+		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, ShaderComponent.class, EnvironmentComponent.class, ModelComponent.class));
 
 		markers           = null;
 		camera            = null;
@@ -102,6 +104,7 @@ public class ModelBatchMarkerRenderingSystem extends EntityProcessingSystem {
 		GeometryComponent     geometry;
 		EnvironmentComponent  environment;
 		ModelComponent        model;
+		ShaderComponent       shader;
 
 		if(markers == null || camera == null)
 			return;
@@ -111,6 +114,7 @@ public class ModelBatchMarkerRenderingSystem extends EntityProcessingSystem {
 		geometry    = geometryMapper.get(e);
 		model       = modelMapper.get(e);
 		environment = environmentMapper.get(e);
+		shader      = shaderMapper.get(e);
 
 		Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing markers.");
 		for(int i = 0; i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
@@ -147,7 +151,7 @@ public class ModelBatchMarkerRenderingSystem extends EntityProcessingSystem {
 					model.instance.calculateTransforms();
 
 					// Render the marker;
-					batch.render(model.instance, environment.environment);
+					batch.render(model.instance, environment.environment, shader.shader);
 				}
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");

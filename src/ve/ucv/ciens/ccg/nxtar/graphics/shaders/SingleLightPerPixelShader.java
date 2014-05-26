@@ -25,18 +25,18 @@ import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
 import com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute;
 import com.badlogic.gdx.graphics.g3d.utils.RenderContext;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
 public class SingleLightPerPixelShader implements Shader{
-	private static final String TAG                  = "SINGLE_LIGHT_PER_PIXEL_SHADER";
-	private static final String CLASS_NAME           = SingleLightPerPixelShader.class.getSimpleName();
 	private static final String VERTEX_SHADER_PATH   = "shaders/directionalPerPixelSingleLight/directionalPerPixel_vert.glsl";
 	private static final String FRAGMENT_SHADER_PATH = "shaders/directionalPerPixelSingleLight/directionalPerPixel_frag.glsl";
 
 	private ShaderProgram program;
 	private Camera        camera;
 	private RenderContext context;
+	private Matrix4       normalMatrix;
 
 	// Uniform locations.
 	private int u_geomTrans;
@@ -48,6 +48,7 @@ public class SingleLightPerPixelShader implements Shader{
 	private int u_shiny;
 	private int u_cameraPos;
 	private int u_materialDiffuse;
+	private int u_normalMatrix;
 
 	public SingleLightPerPixelShader(){
 		program = null;
@@ -57,12 +58,13 @@ public class SingleLightPerPixelShader implements Shader{
 
 	@Override
 	public void init() throws GdxRuntimeException{
+		normalMatrix = new Matrix4().idt();
+
 		// Compile the shader.
 		program = new ShaderProgram(Gdx.files.internal(VERTEX_SHADER_PATH), Gdx.files.internal(FRAGMENT_SHADER_PATH));
-		if(!program.isCompiled()){
-			Gdx.app.log(TAG, CLASS_NAME + ".init(): Shader failed to compile.");
+
+		if(!program.isCompiled())
 			throw new GdxRuntimeException(program.getLog());
-		}
 
 		// Cache uniform locations.
 		u_projTrans       = program.getUniformLocation("u_projTrans");
@@ -74,6 +76,7 @@ public class SingleLightPerPixelShader implements Shader{
 		u_shiny           = program.getUniformLocation("u_shiny");
 		u_cameraPos       = program.getUniformLocation("u_cameraPos");
 		u_materialDiffuse = program.getUniformLocation("u_materialDiffuse");
+		u_normalMatrix    = program.getUniformLocation("u_normalMatrix");
 	}
 
 	@Override
@@ -92,12 +95,16 @@ public class SingleLightPerPixelShader implements Shader{
 		// Check for all needed lighting and material attributes.
 		if(renderable.environment.directionalLights.size < 1)
 			return false;
+
 		if(!renderable.environment.has(ColorAttribute.AmbientLight))
 			return false;
+
 		if(!renderable.material.has(ColorAttribute.Diffuse))
 			return false;
+
 		if(!renderable.material.has(ColorAttribute.Specular))
 			return false;
+
 		if(!renderable.material.has(FloatAttribute.Shininess))
 			return false;
 
@@ -109,7 +116,7 @@ public class SingleLightPerPixelShader implements Shader{
 		if(this.camera != null || this.context != null)
 			throw new GdxRuntimeException("Called begin twice before calling end.");
 
-		this.camera = camera;
+		this.camera  = camera;
 		this.context = context;
 		program.begin();
 
@@ -125,15 +132,16 @@ public class SingleLightPerPixelShader implements Shader{
 	@Override
 	public void render(Renderable renderable){
 		// Get material colors.
-		Vector3 lightPosition     = renderable.environment.directionalLights.get(0).direction;
-		Color   diffuseLightColor = renderable.environment.directionalLights.get(0).color;
-		Color   diffuseColor      = ((ColorAttribute)renderable.material.get(ColorAttribute.Diffuse)).color;
-		Color   specularColor     = ((ColorAttribute)renderable.material.get(ColorAttribute.Specular)).color;
-		Color   ambientColor      = ((ColorAttribute)renderable.environment.get(ColorAttribute.AmbientLight)).color;
-		float   shininess         = ((FloatAttribute)renderable.material.get(FloatAttribute.Shininess)).value;
+		Vector3 lightPosition   = renderable.environment.directionalLights.get(0).direction;
+		Color diffuseLightColor = renderable.environment.directionalLights.get(0).color;
+		Color diffuseColor      = ((ColorAttribute)renderable.material.get(ColorAttribute.Diffuse)).color;
+		Color specularColor     = ((ColorAttribute)renderable.material.get(ColorAttribute.Specular)).color;
+		Color ambientColor      = ((ColorAttribute)renderable.environment.get(ColorAttribute.AmbientLight)).color;
+		float shininess         = ((FloatAttribute)renderable.material.get(FloatAttribute.Shininess)).value;
 
 		// Set model dependant uniforms.
 		program.setUniformMatrix(u_geomTrans, renderable.worldTransform);
+		program.setUniformMatrix(u_normalMatrix, normalMatrix.idt().mul(renderable.worldTransform).inv().tra());
 		program.setUniformf(u_lightPos, lightPosition);
 		program.setUniformf(u_lightDiffuse, diffuseLightColor);
 		program.setUniformf(u_materialDiffuse, diffuseColor);
@@ -149,7 +157,7 @@ public class SingleLightPerPixelShader implements Shader{
 	public void end(){
 		program.end();
 
-		this.camera = null;
+		this.camera  = null;
 		this.context = null;
 	}
 

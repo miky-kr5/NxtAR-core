@@ -15,32 +15,27 @@
  */
 package ve.ucv.ciens.ccg.nxtar.entities;
 
-import ve.ucv.ciens.ccg.nxtar.components.CustomShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
-import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
-import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPerPixelShader;
-import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPhongShader;
 
 import com.artemis.Entity;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
-import com.badlogic.gdx.graphics.Mesh;
 import com.badlogic.gdx.graphics.VertexAttribute;
 import com.badlogic.gdx.graphics.VertexAttributes;
 import com.badlogic.gdx.graphics.VertexAttributes.Usage;
 import com.badlogic.gdx.graphics.g3d.Environment;
+import com.badlogic.gdx.graphics.g3d.Material;
 import com.badlogic.gdx.graphics.g3d.Model;
 import com.badlogic.gdx.graphics.g3d.attributes.ColorAttribute;
+import com.badlogic.gdx.graphics.g3d.attributes.FloatAttribute;
 import com.badlogic.gdx.graphics.g3d.environment.DirectionalLight;
 import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
-import com.badlogic.gdx.graphics.g3d.utils.MeshBuilder;
+import com.badlogic.gdx.graphics.g3d.utils.ModelBuilder;
 import com.badlogic.gdx.math.Matrix3;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.JsonReader;
@@ -49,101 +44,71 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	private static final String TAG = "MARKER_TEST_ENTITY_CREATOR";
 	private static final String CLASS_NAME = MarkerTestEntityCreator.class.getSimpleName();
 
-	private Mesh sphereMesh;
-	private Mesh boxMesh;
 	private Model bombModel;
-	private CustomShaderBase phongShader;
+	private Model boxModel;
 	private SingleLightPerPixelShader ppShader;
-	private Mesh bombMesh;
 
 	@Override
 	public void createAllEntities() {
-		MeshBuilder builder;
-		Entity bomb, sphere, box, bombModelBatch;
+		ModelBuilder builder;
+		Entity bomb1, box, bomb2;
 		G3dModelLoader loader;
 		Environment environment;
+		Material material;
 
 		// Create mesh.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the meshes.");
-		builder = new MeshBuilder();
-
-		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
-			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-			builder.sphere(1.0f, 1.0f, 1.0f, 10, 10);
-		}sphereMesh = builder.end();
-
-		builder.begin(new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")), GL20.GL_TRIANGLES);{
-			builder.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-			builder.box(0.5f, 0.5f, 6.0f);
-		}boxMesh = builder.end();
 
 		loader = new G3dModelLoader(new JsonReader());
 		bombModel = loader.loadModel(Gdx.files.internal("models/Bomb_test_2.g3dj"));
 
-		bombMesh = bombModel.meshes.get(0);
-		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): " + bombMesh.getVertexAttributes().toString());
+		material = new Material(new FloatAttribute(FloatAttribute.Shininess, 50.0f), new ColorAttribute(ColorAttribute.Diffuse, 1.0f, 1.0f, 1.0f, 1.0f), new ColorAttribute(ColorAttribute.Specular, 1.0f, 1.0f, 1.0f, 1.0f));
 
-		// Load the phong shader.
-		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Loading the phong shader.");
-		try{
-			phongShader = new SingleLightPhongShader().loadShader();
-		}catch(ShaderFailedToLoadException se){
-			Gdx.app.error(TAG, CLASS_NAME + ".InGameState(): " + se.getMessage());
-			Gdx.app.exit();
-		}
+		builder = new ModelBuilder();
+		boxModel = builder.createBox(0.5f, 0.5f, 6.0f, material, new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")).getMask());
 
+		// Load the shader.
 		ppShader = new SingleLightPerPixelShader();
 		ppShader.init();
 
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
-		environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(-2, -2, -2)));
+		environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(1, 0, 0.5f)));
 
 		// Create the entities.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the enitites.");
-		bomb = world.createEntity();
-		bomb.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		bomb.addComponent(new MeshComponent(bombMesh));
-		bomb.addComponent(new CustomShaderComponent(phongShader));
-		bomb.addComponent(new MarkerCodeComponent(1023));
+		bomb1 = world.createEntity();
+		bomb1.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
+		bomb1.addComponent(new ModelComponent(bombModel));
+		bomb1.addComponent(new EnvironmentComponent(environment));
+		bomb1.addComponent(new ShaderComponent(ppShader));
+		bomb1.addComponent(new MarkerCodeComponent(1023));
 
-		bombModelBatch = world.createEntity();
-		bombModelBatch.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		bombModelBatch.addComponent(new ModelComponent(bombModel));
-		bombModelBatch.addComponent(new EnvironmentComponent(environment));
-		bombModelBatch.addComponent(new MarkerCodeComponent(89));
-		bombModelBatch.addComponent(new ShaderComponent(ppShader));
-
-		sphere = world.createEntity();
-		sphere.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		sphere.addComponent(new MeshComponent(sphereMesh));
-		sphere.addComponent(new CustomShaderComponent(phongShader));
-		sphere.addComponent(new MarkerCodeComponent(10));
+		bomb2 = world.createEntity();
+		bomb2.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
+		bomb2.addComponent(new ModelComponent(bombModel));
+		bomb2.addComponent(new EnvironmentComponent(environment));
+		bomb2.addComponent(new MarkerCodeComponent(89));
+		bomb2.addComponent(new ShaderComponent(ppShader));
 
 		box = world.createEntity();
 		box.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		box.addComponent(new MeshComponent(boxMesh));
-		box.addComponent(new CustomShaderComponent(phongShader));
+		box.addComponent(new ModelComponent(boxModel));
+		box.addComponent(new ShaderComponent(ppShader));
+		box.addComponent(new EnvironmentComponent(environment));
 
 		// Add the entities to the world.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Adding entities to the world.");
 		//sphere.addToWorld();
-		bomb.addToWorld();
-		bombModelBatch.addToWorld();
-		sphere.addToWorld();
+		bomb1.addToWorld();
+		bomb2.addToWorld();
 		box.addToWorld();
 	}
 
 	@Override
 	public void dispose() {
-		if(phongShader != null && phongShader.getShaderProgram() != null)
-			phongShader.getShaderProgram().dispose();
-
-		if(sphereMesh != null)
-			sphereMesh.dispose();
-
-		if(boxMesh != null)
-			boxMesh.dispose();
+		if(boxModel != null)
+			boxModel.dispose();
 
 		if(bombModel != null)
 			bombModel.dispose();

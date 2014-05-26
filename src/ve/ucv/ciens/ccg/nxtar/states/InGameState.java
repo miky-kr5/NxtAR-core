@@ -29,7 +29,6 @@ import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.ModelBatchMarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -48,6 +47,7 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
@@ -69,49 +69,52 @@ public class InGameState extends BaseState{
 	private static final float   SHINYNESS              = 50.0f;
 
 	// Background related fields.
-	private float                   uScaling[];
-	protected Sprite                background;
-	private Texture                 backgroundTexture;
-	private ShaderProgram           backgroundShader;
+	private float                           uScaling[];
+	protected Sprite                        background;
+	private Texture                         backgroundTexture;
+	private ShaderProgram                   backgroundShader;
 
 	// 3D rendering fields.
-	private Matrix4                 projectionMatrix;
-	private FrameBuffer             frameBuffer;
-	private Sprite                  frameBufferSprite;
+	private ModelBatch                      modelBatch;
+	private Matrix4                         projectionMatrix;
+	private FrameBuffer                     frameBuffer;
+	private Sprite                          frameBufferSprite;
 
-	// Game objects.
-	private World                   gameWorld;
-	private EntityCreatorBase       entityCreator;
+	// Game world objects.
+	private World                           gameWorld;
+	private EntityCreatorBase               entityCreator;
+	private MarkerRenderingSystem           markerRenderingSystem;
+	private ObjectRenderingSystem           objectRenderingSystem;
 
 	// Cameras.
-	private OrthographicCamera      unitaryOrthoCamera;
-	private OrthographicCamera      pixelPerfectOrthoCamera;
-	private CustomPerspectiveCamera perspectiveCamera;
+	private OrthographicCamera              unitaryOrthoCamera;
+	private OrthographicCamera              pixelPerfectOrthoCamera;
+	private CustomPerspectiveCamera         perspectiveCamera;
 
 	// Video stream graphics.
-	private Texture                 videoFrameTexture;
-	private Sprite                  renderableVideoFrame;
-	private Pixmap                  videoFrame;
+	private Texture                         videoFrameTexture;
+	private Sprite                          renderableVideoFrame;
+	private Pixmap                          videoFrame;
 
 	// Interface buttons.
-	private Texture                 buttonTexture;
-	private Texture                 buttonTexture2;
-	private Sprite                  motorA;
-	private Sprite                  motorB;
-	private Sprite                  motorC;
-	private Sprite                  motorD;
-	private Sprite                  headA;
-	private Sprite                  headB;
-	private Sprite                  headC;
+	private Texture                         buttonTexture;
+	private Texture                         buttonTexture2;
+	private Sprite                          motorA;
+	private Sprite                          motorB;
+	private Sprite                          motorC;
+	private Sprite                          motorD;
+	private Sprite                          headA;
+	private Sprite                          headB;
+	private Sprite                          headC;
 
 	// Button touch helper fields.
-	private boolean[]               motorButtonsTouched;
-	private int[]                   motorButtonsPointers;
-	private boolean[]               motorGamepadButtonPressed;
+	private boolean[]                       motorButtonsTouched;
+	private int[]                           motorButtonsPointers;
+	private boolean[]                       motorGamepadButtonPressed;
 
 	// Monitors.
-	private VideoFrameMonitor       frameMonitor;
-	private MotorEventQueue         queue;
+	private VideoFrameMonitor               frameMonitor;
+	private MotorEventQueue                 queue;
 
 	public InGameState(final NxtARCore core){
 		this.core = core;
@@ -179,6 +182,7 @@ public class InGameState extends BaseState{
 		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
 		// Set up the 3D rendering.
+		modelBatch = new ModelBatch();
 		projectionMatrix = new Matrix4().idt();
 		frameBuffer = null;
 		perspectiveCamera = null;
@@ -191,9 +195,10 @@ public class InGameState extends BaseState{
 		entityCreator.setWorld(gameWorld);
 		entityCreator.createAllEntities();
 		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(new MarkerRenderingSystem(), true);
-		gameWorld.setSystem(new ModelBatchMarkerRenderingSystem(), true);
-		gameWorld.setSystem(new ObjectRenderingSystem(), true);
+		markerRenderingSystem = new MarkerRenderingSystem(modelBatch);
+		objectRenderingSystem = new ObjectRenderingSystem(modelBatch);
+		gameWorld.setSystem(markerRenderingSystem, true);
+		gameWorld.setSystem(objectRenderingSystem, true);
 		gameWorld.initialize();
 	}
 
@@ -306,14 +311,13 @@ public class InGameState extends BaseState{
 				RenderParameters.setEyePosition(perspectiveCamera.position);
 
 				// Call rendering systems.
-				gameWorld.getSystem(MarkerRenderingSystem.class).setMarkerData(data);
-				gameWorld.getSystem(MarkerRenderingSystem.class).process();
+				markerRenderingSystem.begin(perspectiveCamera, data);
+				markerRenderingSystem.process();
+				markerRenderingSystem.end();
 
-				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).begin(perspectiveCamera, data);
-				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).process();
-				gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).end();
-
-				gameWorld.getSystem(ObjectRenderingSystem.class).process();
+				objectRenderingSystem.begin(perspectiveCamera);
+				objectRenderingSystem.process();
+				objectRenderingSystem.end();
 			}frameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.
@@ -382,7 +386,8 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void dispose(){
-		gameWorld.getSystem(ModelBatchMarkerRenderingSystem.class).dispose();
+		if(modelBatch != null)
+			modelBatch.dispose();
 
 		if(entityCreator != null)
 			entityCreator.dispose();

@@ -15,7 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.interfaces;
 
-public interface AndroidFunctionalityWrapper{
+public interface ActionResolver{
 	public void showShortToast(String msg);
 	public void showLongToast(String msg);
 	public void enableMulticast();

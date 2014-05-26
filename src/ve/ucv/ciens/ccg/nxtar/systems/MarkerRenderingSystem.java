@@ -15,11 +15,11 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.components.CustomShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
-import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
+import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -29,16 +29,18 @@ import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Matrix4;
 
 public class MarkerRenderingSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<MarkerCodeComponent>   markerMapper;
 	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
-	@Mapper ComponentMapper<CustomShaderComponent>       shaderMapper;
-	@Mapper ComponentMapper<MeshComponent>         meshMapper;
+	@Mapper ComponentMapper<ModelComponent>        modelMapper;
+	@Mapper ComponentMapper<EnvironmentComponent>  environmentMapper;
+	@Mapper ComponentMapper<ShaderComponent>       shaderMapper;
 
-	private static final String TAG = "MARKER_RENDERING_SYSTEM";
+	private static final String TAG = "MODEL_BATCH_MARKER_RENDERING_SYSTEM";
 	private static final String CLASS_NAME = MarkerRenderingSystem.class.getSimpleName();
 
 	/**
@@ -56,43 +58,59 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 	 */
 	private Matrix4 scalingMatrix;
 
-	/**
-	 * <p>The total transformation to be applied to an entity.</p>
-	 */
-	private Matrix4 combinedTransformationMatrix;
+	private MarkerData markers;
 
-	MarkerData markers;
+	private PerspectiveCamera camera;
+
+	private ModelBatch batch;
 
 	@SuppressWarnings("unchecked")
-	public MarkerRenderingSystem(){
-		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, CustomShaderComponent.class, MeshComponent.class));
+	public MarkerRenderingSystem(ModelBatch batch){
+		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, ShaderComponent.class, EnvironmentComponent.class, ModelComponent.class));
 
-		markers = null;
-		translationMatrix            = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
-		rotationMatrix               = new Matrix4().idt();
-		scalingMatrix                = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
-		combinedTransformationMatrix = new Matrix4();
+		markers           = null;
+		camera            = null;
+		this.batch             = batch;
+		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
+		rotationMatrix    = new Matrix4().idt();
+		scalingMatrix     = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
 	}
 
-	public void setMarkerData(MarkerData markers){
+	public void begin(PerspectiveCamera camera, MarkerData markers) throws RuntimeException{
+		if(this.camera != null)
+			throw new RuntimeException("Begin called twice without calling end.");
+
+		if(this.markers != null)
+			throw new RuntimeException("Begin called twice without calling end.");
+
 		this.markers = markers;
+		this.camera = camera;
+		batch.begin(camera);
+	}
+
+	public void end(){
+		batch.end();
+		camera = null;
+		markers = null;
 	}
 
 	@Override
 	protected void process(Entity e) {
 		MarkerCodeComponent   marker;
 		GeometryComponent     geometry;
-		CustomShaderComponent       shaderComp;
-		MeshComponent         meshComp;
+		EnvironmentComponent  environment;
+		ModelComponent        model;
+		ShaderComponent       shader;
 
-		if(markers == null)
+		if(markers == null || camera == null)
 			return;
 
 		Gdx.app.log(TAG, CLASS_NAME + ".process(): Getting components.");
-		marker     = markerMapper.get(e);
-		geometry   = geometryMapper.get(e);
-		shaderComp = shaderMapper.get(e);
-		meshComp   = meshMapper.get(e);
+		marker      = markerMapper.get(e);
+		geometry    = geometryMapper.get(e);
+		model       = modelMapper.get(e);
+		environment = environmentMapper.get(e);
+		shader      = shaderMapper.get(e);
 
 		Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing markers.");
 		for(int i = 0; i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
@@ -123,14 +141,13 @@ public class MarkerRenderingSystem extends EntityProcessingSystem {
 					rotationMatrix.val[Matrix4.M33] = 1;
 
 					scalingMatrix.setToScaling(geometry.scaling);
-					combinedTransformationMatrix.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
-					RenderParameters.setTransformationMatrix(combinedTransformationMatrix);
+
+					// Apply the geometric transformations to the model.
+					model.instance.transform.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
+					model.instance.calculateTransforms();
 
 					// Render the marker;
-					shaderComp.shader.getShaderProgram().begin();{
-						shaderComp.shader.setUniforms();
-						meshComp.model.render(shaderComp.shader.getShaderProgram(), GL20.GL_TRIANGLES);
-					}shaderComp.shader.getShaderProgram().end();
+					batch.render(model.instance, environment.environment, shader.shader);
 				}
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");

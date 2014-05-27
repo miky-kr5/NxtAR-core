@@ -27,6 +27,7 @@ import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
@@ -191,14 +192,19 @@ public class InGameState extends BaseState{
 
 		// Set up the game world.
 		gameWorld = new World();
+
 		entityCreator = new MarkerTestEntityCreator();
 		entityCreator.setWorld(gameWorld);
 		entityCreator.createAllEntities();
+
 		gameWorld.setSystem(new MarkerPositioningSystem());
+		gameWorld.setSystem(new AnimationSystem());
+
 		markerRenderingSystem = new MarkerRenderingSystem(modelBatch);
 		objectRenderingSystem = new ObjectRenderingSystem(modelBatch);
 		gameWorld.setSystem(markerRenderingSystem, true);
 		gameWorld.setSystem(objectRenderingSystem, true);
+
 		gameWorld.initialize();
 	}
 

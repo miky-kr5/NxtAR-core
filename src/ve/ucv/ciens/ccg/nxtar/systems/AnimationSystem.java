@@ -15,23 +15,32 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 
 import com.artemis.Aspect;
+import com.artemis.ComponentMapper;
 import com.artemis.Entity;
+import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
+import com.badlogic.gdx.Gdx;
 
 public class AnimationSystem extends EntityProcessingSystem {
+	@Mapper ComponentMapper<AnimationComponent> animationMapper;
 
 	@SuppressWarnings("unchecked")
 	public AnimationSystem(){
-		super(Aspect.getAspectForAll(ModelComponent.class));
+		super(Aspect.getAspectForAll(AnimationComponent.class));
 	}
 
 	@Override
 	protected void process(Entity e) {
-		// TODO Auto-generated method stub
+		AnimationComponent animation = animationMapper.get(e);
 
+		if(animation.current != animation.next){
+			animation.controller.setAnimation(animation.animationsIds.get(animation.next));
+		}
+
+		animation.controller.update(Gdx.graphics.getDeltaTime());
 	}
 
 }

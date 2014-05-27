@@ -27,15 +27,29 @@ public class AnimationComponent extends Component {
 	public List<String> animationsIds;
 	public int current;
 	public int next;
+	public boolean loop;
 
 	public AnimationComponent(ModelInstance instance) throws IllegalArgumentException{
+		this(instance, -1, false);
+	}
+
+	public AnimationComponent(ModelInstance instance, int next) throws IllegalArgumentException{
+		this(instance, next, false);
+	}
+
+	public AnimationComponent(ModelInstance instance, int next, boolean loop) throws IllegalArgumentException{
 		if(instance == null)
 			throw new IllegalArgumentException("Instance is null.");
+		else if(next < 0)
+			throw new IllegalArgumentException("Next is less than 0.");
+		else if(next > instance.animations.size)
+			throw new IllegalArgumentException("Next is greater than the number of animations for this model.");
 
-		controller = new AnimationController(instance);
+		controller    = new AnimationController(instance);
 		animationsIds = new LinkedList<String>();
-		current = -1;
-		next = -1;
+		current       = -1;
+		this.next     = next;
+		this.loop     = loop;
 
 		for(int i = 0; i < instance.animations.size; i++){
 			animationsIds.add(instance.animations.get(i).id);

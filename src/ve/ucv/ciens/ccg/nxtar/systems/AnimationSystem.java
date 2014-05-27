@@ -36,8 +36,11 @@ public class AnimationSystem extends EntityProcessingSystem {
 	protected void process(Entity e) {
 		AnimationComponent animation = animationMapper.get(e);
 
-		if(animation.current != animation.next){
-			animation.controller.setAnimation(animation.animationsIds.get(animation.next));
+		if(animation.current != animation.next && animation.next >= 0 && animation.next < animation.animationsIds.size()){
+			if(animation.loop)
+				animation.controller.setAnimation(animation.animationsIds.get(animation.next), -1);
+			else
+				animation.controller.setAnimation(animation.animationsIds.get(animation.next));
 		}
 
 		animation.controller.update(Gdx.graphics.getDeltaTime());

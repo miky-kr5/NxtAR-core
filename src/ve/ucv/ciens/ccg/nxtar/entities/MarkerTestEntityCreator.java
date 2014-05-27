@@ -15,6 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.entities;
 
+import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
@@ -45,13 +46,14 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	private static final String CLASS_NAME = MarkerTestEntityCreator.class.getSimpleName();
 
 	private Model bombModel;
+	private Model animatedModel;
 	private Model boxModel;
 	private SingleLightPerPixelShader ppShader;
 
 	@Override
 	public void createAllEntities() {
 		ModelBuilder builder;
-		Entity bomb1, box, bomb2;
+		Entity bomb, box, anim;
 		G3dModelLoader loader;
 		Environment environment;
 		Material material;
@@ -60,7 +62,9 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the meshes.");
 
 		loader = new G3dModelLoader(new JsonReader());
+
 		bombModel = loader.loadModel(Gdx.files.internal("models/Bomb_test_2.g3dj"));
+		animatedModel = loader.loadModel(Gdx.files.internal("models/cube.g3dj"));
 
 		material = new Material(new FloatAttribute(FloatAttribute.Shininess, 50.0f), new ColorAttribute(ColorAttribute.Diffuse, 1.0f, 1.0f, 1.0f, 1.0f), new ColorAttribute(ColorAttribute.Specular, 1.0f, 1.0f, 1.0f, 1.0f));
 
@@ -77,19 +81,20 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 
 		// Create the entities.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the enitites.");
-		bomb1 = world.createEntity();
-		bomb1.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		bomb1.addComponent(new ModelComponent(bombModel));
-		bomb1.addComponent(new EnvironmentComponent(environment));
-		bomb1.addComponent(new ShaderComponent(ppShader));
-		bomb1.addComponent(new MarkerCodeComponent(1023));
+		bomb = world.createEntity();
+		bomb.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
+		bomb.addComponent(new ModelComponent(bombModel));
+		bomb.addComponent(new EnvironmentComponent(environment));
+		bomb.addComponent(new ShaderComponent(ppShader));
+		bomb.addComponent(new MarkerCodeComponent(1023));
 
-		bomb2 = world.createEntity();
-		bomb2.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		bomb2.addComponent(new ModelComponent(bombModel));
-		bomb2.addComponent(new EnvironmentComponent(environment));
-		bomb2.addComponent(new MarkerCodeComponent(89));
-		bomb2.addComponent(new ShaderComponent(ppShader));
+		anim = world.createEntity();
+		anim.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(0.25f, 0.25f, -0.25f)));
+		anim.addComponent(new ModelComponent(animatedModel));
+		anim.addComponent(new AnimationComponent(anim.getComponent(ModelComponent.class).instance, 0, true));
+		anim.addComponent(new EnvironmentComponent(environment));
+		anim.addComponent(new MarkerCodeComponent(89));
+		anim.addComponent(new ShaderComponent(ppShader));
 
 		box = world.createEntity();
 		box.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
@@ -100,8 +105,8 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		// Add the entities to the world.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Adding entities to the world.");
 		//sphere.addToWorld();
-		bomb1.addToWorld();
-		bomb2.addToWorld();
+		bomb.addToWorld();
+		anim.addToWorld();
 		box.addToWorld();
 	}
 
@@ -109,6 +114,9 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	public void dispose() {
 		if(boxModel != null)
 			boxModel.dispose();
+
+		if(animatedModel != null)
+			animatedModel.dispose();
 
 		if(bombModel != null)
 			bombModel.dispose();

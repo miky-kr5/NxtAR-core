@@ -15,37 +15,30 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
+import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
+import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
-import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
-import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
 import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.PerspectiveCamera;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.math.Matrix4;
-import com.badlogic.gdx.math.Vector3;
 
 /**
  * <p>Entity processing system in charge of rendering 3D objects using OpenGL. The
  * entities to be rendered must have a geometry, shader and mesh component associated.</p>
  */
 public class ObjectRenderingSystem extends EntityProcessingSystem {
-	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
-	@Mapper ComponentMapper<ShaderComponent> shaderMapper;
-	@Mapper ComponentMapper<MeshComponent> modelMapper;
-
-	private static final Vector3 LIGHT_POSITION = new Vector3(2.0f, 2.0f, 4.0f);
-	private static final Color AMBIENT_COLOR = new Color(0.0f, 0.1f, 0.2f, 1.0f);
-	private static final Color DIFFUSE_COLOR = new Color(1.0f, 1.0f, 1.0f, 1.0f);
-	private static final Color SPECULAR_COLOR = new Color(1.0f, 0.8f, 0.0f, 1.0f);
-	private static final float SHINYNESS = 50.0f;
+	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
+	@Mapper ComponentMapper<ShaderComponent>       shaderMapper;
+	@Mapper ComponentMapper<ModelComponent>        modelMapper;
+	@Mapper ComponentMapper<EnvironmentComponent>  environmentMapper;
 
 	/**
 	 * <p>A matrix representing 3D translations.</p>
@@ -62,21 +55,32 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 	 */
 	private Matrix4 scalingMatrix;
 
-	/**
-	 * <p>The total transformation to be applied to an entity.</p>
-	 */
-	private Matrix4 combinedTransformationMatrix;
+	private PerspectiveCamera camera;
+
+	private ModelBatch batch;
 
 	@SuppressWarnings("unchecked")
-	public ObjectRenderingSystem() {
-		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, MeshComponent.class).exclude(MarkerCodeComponent.class));
+	public ObjectRenderingSystem(ModelBatch batch) {
+		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, ModelComponent.class, EnvironmentComponent.class).exclude(MarkerCodeComponent.class));
 
-		RenderParameters.setLightSource1(new LightSource(LIGHT_POSITION, AMBIENT_COLOR, DIFFUSE_COLOR, SPECULAR_COLOR, SHINYNESS));
-
+		camera            = null;
+		this.batch        = batch;
 		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
-		rotationMatrix = new Matrix4().idt();
-		scalingMatrix = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
-		combinedTransformationMatrix = new Matrix4();
+		rotationMatrix    = new Matrix4().idt();
+		scalingMatrix     = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
+	}
+
+	public void begin(PerspectiveCamera camera) throws RuntimeException{
+		if(this.camera != null)
+			throw new RuntimeException("Begin called twice without calling end.");
+
+		this.camera = camera;
+		batch.begin(camera);
+	}
+
+	public void end(){
+		batch.end();
+		camera = null;
 	}
 
 	/**
@@ -87,28 +91,25 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 	 */
 	@Override
 	protected void process(Entity e) {
-		GeometryComponent geometryComponent;
-		ShaderComponent shaderComponent;
-		MeshComponent meshComponent;
+		EnvironmentComponent  environment;
+		GeometryComponent     geometryComponent;
+		ShaderComponent       shaderComponent;
+		ModelComponent        modelComponent;
 
 		// Get the necessary components.
 		geometryComponent = geometryMapper.get(e);
-		meshComponent = modelMapper.get(e);
-		shaderComponent = shaderMapper.get(e);
+		modelComponent    = modelMapper.get(e);
+		shaderComponent   = shaderMapper.get(e);
+		environment       = environmentMapper.get(e);
 
 		// Calculate the geometric transformation for this entity.
 		translationMatrix.setToTranslation(geometryComponent.position);
 		rotationMatrix.set(geometryComponent.rotation);
 		scalingMatrix.setToScaling(geometryComponent.scaling);
-		combinedTransformationMatrix.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
-
-		// Set up the global rendering parameters for this frame.
-		RenderParameters.setTransformationMatrix(combinedTransformationMatrix);
+		modelComponent.instance.transform.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
+		modelComponent.instance.calculateTransforms();
 
 		// Render this entity.
-		shaderComponent.shader.getShaderProgram().begin();{
-			shaderComponent.shader.setUniforms();
-			meshComponent.model.render(shaderComponent.shader.getShaderProgram(), GL20.GL_TRIANGLES);
-		}shaderComponent.shader.getShaderProgram().end();
+		batch.render(modelComponent.instance, environment.environment, shaderComponent.shader);
 	}
 }

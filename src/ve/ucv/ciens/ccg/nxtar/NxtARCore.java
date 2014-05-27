@@ -17,7 +17,7 @@ package ve.ucv.ciens.ccg.nxtar;
 
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
-import ve.ucv.ciens.ccg.nxtar.interfaces.AndroidFunctionalityWrapper;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ActionResolver;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
@@ -121,7 +121,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	/**
 	 * <p>Wrapper around the Operating System methods.</p>
 	 */
-	private AndroidFunctionalityWrapper osFunction;
+	private ActionResolver osFunction;
 
 	// Networking related fields.
 	/**
@@ -206,7 +206,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 
 		// Check if the concrete application implements all required interfaces.
 		try{
-			this.osFunction = (AndroidFunctionalityWrapper)concreteApp;
+			this.osFunction = (ActionResolver)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the Toaster interface. Toasting disabled.");
 			this.osFunction = null;

@@ -16,15 +16,15 @@
 package ve.ucv.ciens.ccg.nxtar.components;
 
 import com.artemis.Component;
-import com.badlogic.gdx.graphics.g3d.Shader;
+import com.badlogic.gdx.graphics.g3d.Environment;
 
-public class ShaderComponent extends Component{
-	public Shader shader;
+public class EnvironmentComponent extends Component {
+	public Environment environment;
 
-	public ShaderComponent(Shader shader) throws IllegalArgumentException{
-		if(shader == null)
-			throw new IllegalArgumentException("Shader is null.");
+	public EnvironmentComponent(Environment environment) throws IllegalArgumentException{
+		if(environment == null)
+			throw new IllegalArgumentException("Environment is null.");
 
-		this.shader = shader;
+		this.environment = environment;
 	}
 }

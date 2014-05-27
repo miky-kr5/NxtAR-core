@@ -22,10 +22,12 @@ import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
 import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
+import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
 import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
@@ -36,6 +38,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -45,6 +48,7 @@ import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Matrix4;
@@ -52,58 +56,66 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
 public class InGameState extends BaseState{
-	private static final String TAG                    = "IN_GAME_STATE";
-	private static final String CLASS_NAME             = InGameState.class.getSimpleName();
-	private static final String BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
-	private static final float  NEAR                   = 0.01f;
-	private static final float  FAR                    = 100.0f;
-	private static final float  FAR_PLUS_NEAR          = FAR + NEAR;
-	private static final float  FAR_LESS_NEAR          = FAR - NEAR;
+	private static final String  TAG                    = "IN_GAME_STATE";
+	private static final String  CLASS_NAME             = InGameState.class.getSimpleName();
+	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
+	private static final float   NEAR                   = 0.01f;
+	private static final float   FAR                    = 100.0f;
+	private static final float   FAR_PLUS_NEAR          = FAR + NEAR;
+	private static final float   FAR_LESS_NEAR          = FAR - NEAR;
+	private static final Vector3 LIGHT_POSITION         = new Vector3(2.0f, 2.0f, 4.0f);
+	private static final Color   AMBIENT_COLOR          = new Color(0.0f, 0.1f, 0.3f, 1.0f);
+	private static final Color   DIFFUSE_COLOR          = new Color(1.0f, 1.0f, 1.0f, 1.0f);
+	private static final Color   SPECULAR_COLOR         = new Color(1.0f, 0.8f, 0.0f, 1.0f);
+	private static final float   SHINYNESS              = 50.0f;
 
 	// Background related fields.
-	private float                   uScaling[];
-	protected Sprite                background;
-	private Texture                 backgroundTexture;
-	private ShaderProgram           backgroundShader;
+	private float                           uScaling[];
+	protected Sprite                        background;
+	private Texture                         backgroundTexture;
+	private ShaderProgram                   backgroundShader;
 
 	// 3D rendering fields.
-	private Matrix4                 projectionMatrix;
-	private FrameBuffer             frameBuffer;
-	private Sprite                  frameBufferSprite;
+	private ModelBatch                      modelBatch;
+	private Matrix4                         projectionMatrix;
+	private FrameBuffer                     frameBuffer;
+	private Sprite                          frameBufferSprite;
 
-	// Game objects.
-	private World                   gameWorld;
-	private EntityCreatorBase       entityCreator;
+	// Game world objects.
+	private World                           gameWorld;
+	private EntityCreatorBase               entityCreator;
+	private MarkerRenderingSystem           markerRenderingSystem;
+	private ObjectRenderingSystem           objectRenderingSystem;
 
 	// Cameras.
-	private OrthographicCamera      unitaryOrthoCamera;
-	private OrthographicCamera      pixelPerfectOrthoCamera;
-	private CustomPerspectiveCamera perspectiveCamera;
+	private OrthographicCamera              unitaryOrthoCamera;
+	private OrthographicCamera              pixelPerfectOrthoCamera;
+	private CustomPerspectiveCamera         perspectiveCamera;
 
 	// Video stream graphics.
-	private Texture                 videoFrameTexture;
-	private Sprite                  renderableVideoFrame;
-	private Pixmap                  videoFrame;
+	private Texture                         videoFrameTexture;
+	private Sprite                          renderableVideoFrame;
+	private Pixmap                          videoFrame;
 
 	// Interface buttons.
-	private Texture                 buttonTexture;
-	private Texture                 buttonTexture2;
-	private Sprite                  motorA;
-	private Sprite                  motorB;
-	private Sprite                  motorC;
-	private Sprite                  motorD;
-	private Sprite                  headA;
-	private Sprite                  headB;
-	private Sprite                  headC;
+	private Texture                         buttonTexture;
+	private Texture                         buttonTexture2;
+	private Sprite                          motorA;
+	private Sprite                          motorB;
+	private Sprite                          motorC;
+	private Sprite                          motorD;
+	private Sprite                          headA;
+	private Sprite                          headB;
+	private Sprite                          headC;
 
 	// Button touch helper fields.
-	private boolean[]               motorButtonsTouched;
-	private int[]                   motorButtonsPointers;
-	private boolean[]               motorGamepadButtonPressed;
+	private boolean[]                       motorButtonsTouched;
+	private int[]                           motorButtonsPointers;
+	private boolean[]                       motorGamepadButtonPressed;
 
 	// Monitors.
-	private VideoFrameMonitor       frameMonitor;
-	private MotorEventQueue         queue;
+	private VideoFrameMonitor               frameMonitor;
+	private MotorEventQueue                 queue;
 
 	public InGameState(final NxtARCore core){
 		this.core = core;
@@ -171,19 +183,28 @@ public class InGameState extends BaseState{
 		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
 		// Set up the 3D rendering.
+		modelBatch = new ModelBatch();
 		projectionMatrix = new Matrix4().idt();
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
+		RenderParameters.setLightSource1(new LightSource(LIGHT_POSITION, AMBIENT_COLOR, DIFFUSE_COLOR, SPECULAR_COLOR, SHINYNESS));
 
 		// Set up the game world.
 		gameWorld = new World();
+
 		entityCreator = new MarkerTestEntityCreator();
 		entityCreator.setWorld(gameWorld);
 		entityCreator.createAllEntities();
+
 		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(new MarkerRenderingSystem(), true);
-		gameWorld.setSystem(new ObjectRenderingSystem(), true);
+		gameWorld.setSystem(new AnimationSystem());
+
+		markerRenderingSystem = new MarkerRenderingSystem(modelBatch);
+		objectRenderingSystem = new ObjectRenderingSystem(modelBatch);
+		gameWorld.setSystem(markerRenderingSystem, true);
+		gameWorld.setSystem(objectRenderingSystem, true);
+
 		gameWorld.initialize();
 	}
 
@@ -232,11 +253,6 @@ public class InGameState extends BaseState{
 			perspectiveCamera.update();
 		}
 
-		// Apply the undistortion method if the camera has been calibrated already.
-		/*if(core.cvProc.isCameraCalibrated()){
-			frame = core.cvProc.undistortFrame(frame);
-		}*/
-
 		// Attempt to find the markers in the current video frame.
 		data = core.cvProc.findMarkersInFrame(frame);
 
@@ -265,10 +281,9 @@ public class InGameState extends BaseState{
 			// Set the 3D frame buffer for rendering.
 			frameBuffer.begin();{
 				// Set OpenGL state.
-				Gdx.gl.glDisable(GL20.GL_CULL_FACE);
-				Gdx.gl.glEnable(GL20.GL_DEPTH_TEST);
 				Gdx.gl.glClearColor(0, 0, 0, 0);
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
 
 				// Build the projection matrix.
 				focalPointX   = core.cvProc.getFocalPointX();
@@ -302,11 +317,13 @@ public class InGameState extends BaseState{
 				RenderParameters.setEyePosition(perspectiveCamera.position);
 
 				// Call rendering systems.
-				gameWorld.getSystem(MarkerRenderingSystem.class).setMarkerData(data);
-				gameWorld.getSystem(MarkerRenderingSystem.class).process();
-				gameWorld.getSystem(ObjectRenderingSystem.class).process();
+				markerRenderingSystem.begin(perspectiveCamera, data);
+				markerRenderingSystem.process();
+				markerRenderingSystem.end();
 
-				Gdx.gl.glDisable(GL20.GL_DEPTH_TEST);
+				objectRenderingSystem.begin(perspectiveCamera);
+				objectRenderingSystem.process();
+				objectRenderingSystem.end();
 			}frameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.
@@ -375,6 +392,9 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void dispose(){
+		if(modelBatch != null)
+			modelBatch.dispose();
+
 		if(entityCreator != null)
 			entityCreator.dispose();
 

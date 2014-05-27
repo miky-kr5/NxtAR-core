@@ -17,7 +17,7 @@ package ve.ucv.ciens.ccg.nxtar.entities;
 
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MeshComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.components.CustomShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPhongShader;
@@ -89,22 +89,22 @@ public class TestGameEntityCreator extends EntityCreatorBase {
 		sphere = world.createEntity();
 		sphere.addComponent(new GeometryComponent(new Vector3(0.5f, 0.5f, 0.0f), identity, new Vector3(1.0f, 1.0f, 1.0f)));
 		sphere.addComponent(new MeshComponent(sphereMesh));
-		sphere.addComponent(new ShaderComponent(singleLightPhongShader));
+		sphere.addComponent(new CustomShaderComponent(singleLightPhongShader));
 
 		cube = world.createEntity();
 		cube.addComponent(new GeometryComponent(new Vector3(-0.5f, -0.5f, 0.0f), identity, new Vector3(1.0f, 1.0f, 1.0f)));
 		cube.addComponent(new MeshComponent(cubeMesh));
-		cube.addComponent(new ShaderComponent(singleLightPhongShader));
+		cube.addComponent(new CustomShaderComponent(singleLightPhongShader));
 
 		capsule1 = world.createEntity();
 		capsule1.addComponent(new GeometryComponent(new Vector3(-0.5f, 0.5f, 0.0f), identity, new Vector3(1.5f, 1.0f, 1.0f)));
 		capsule1.addComponent(new MeshComponent(capsuleMesh));
-		capsule1.addComponent(new ShaderComponent(singleLightPhongShader));
+		capsule1.addComponent(new CustomShaderComponent(singleLightPhongShader));
 
 		capsule2 = world.createEntity();
 		capsule2.addComponent(new GeometryComponent(new Vector3(0.5f, -0.5f, 0.0f), identity, new Vector3(1.0f, 1.5f, 1.0f)));
 		capsule2.addComponent(new MeshComponent(capsuleMesh));
-		capsule2.addComponent(new ShaderComponent(singleLightPhongShader));
+		capsule2.addComponent(new CustomShaderComponent(singleLightPhongShader));
 
 		// Add the entities to the world.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Adding entities to the world.");

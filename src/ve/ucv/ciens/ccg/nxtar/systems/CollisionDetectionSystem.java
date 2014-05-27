@@ -13,18 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.systems;
 
-import com.artemis.Component;
-import com.badlogic.gdx.graphics.g3d.Shader;
+import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
 
-public class ShaderComponent extends Component{
-	public Shader shader;
+import com.artemis.Aspect;
+import com.artemis.Entity;
+import com.artemis.systems.EntityProcessingSystem;
 
-	public ShaderComponent(Shader shader) throws IllegalArgumentException{
-		if(shader == null)
-			throw new IllegalArgumentException("Shader is null.");
+public class CollisionDetectionSystem extends EntityProcessingSystem {
 
-		this.shader = shader;
+	@SuppressWarnings("unchecked")
+	public CollisionDetectionSystem(){
+		super(Aspect.getAspectForAll(ModelComponent.class));
 	}
+
+	@Override
+	protected void process(Entity e) {
+		// TODO Auto-generated method stub
+
+	}
+
 }

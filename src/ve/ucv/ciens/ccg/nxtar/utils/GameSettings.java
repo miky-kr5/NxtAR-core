@@ -13,20 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.graphics.shaders;
+package ve.ucv.ciens.ccg.nxtar.utils;
 
-import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
+import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
+import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
 
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+public abstract class GameSettings{
+	public static EntityCreatorBase entityCreator = null;
+	public static GameLogicSystemBase gameLogicSystem = null;
 
-public abstract class CustomShaderBase{
-	protected ShaderProgram shaderProgram;
-
-	public abstract CustomShaderBase loadShader() throws ShaderFailedToLoadException;
-
-	public abstract void setUniforms();
-
-	public ShaderProgram getShaderProgram(){
-		return this.shaderProgram;
+	public static void initGameSettings(){
+		entityCreator = new MarkerTestEntityCreator();
+		gameLogicSystem = null;
+		//gameLogicSystem = new BombGameLogicSystem();
 	}
 }

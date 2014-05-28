@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
+import com.artemis.Aspect;
+import com.artemis.Entity;
 
-import com.artemis.Component;
+public class BombGameLogicSystem extends GameLogicSystemBase {
 
-public class CustomShaderComponent extends Component {
-	public CustomShaderBase shader;
+	@SuppressWarnings("unchecked")
+	public BombGameLogicSystem(){
+		super(Aspect.getAspectForAll(null));
+	}
 
-	public CustomShaderComponent(CustomShaderBase shader) throws IllegalArgumentException{
-		if(shader == null)
-			throw new IllegalArgumentException("Shader cannot be null.");
-
-		this.shader = shader;
+	@Override
+	protected void process(Entity e){
 	}
 }

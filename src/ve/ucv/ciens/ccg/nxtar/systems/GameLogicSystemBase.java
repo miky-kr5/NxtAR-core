@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.systems;
 
-import com.artemis.Component;
-import com.badlogic.gdx.graphics.Mesh;
+import com.artemis.Aspect;
+import com.artemis.Entity;
+import com.artemis.systems.EntityProcessingSystem;
 
-public class MeshComponent extends Component {
-	public Mesh model;
-	
-	public MeshComponent(Mesh model){
-		this.model = model;
+public abstract class GameLogicSystemBase extends EntityProcessingSystem {
+
+	public GameLogicSystemBase(Aspect aspect){
+		super(aspect);
 	}
+
+	@Override
+	protected abstract void process(Entity e);
 }

@@ -19,11 +19,7 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
-import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
-import ve.ucv.ciens.ccg.nxtar.graphics.LightSource;
-import ve.ucv.ciens.ccg.nxtar.graphics.RenderParameters;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
@@ -31,6 +27,7 @@ import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.artemis.World;
@@ -38,7 +35,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -63,11 +59,6 @@ public class InGameState extends BaseState{
 	private static final float   FAR                    = 100.0f;
 	private static final float   FAR_PLUS_NEAR          = FAR + NEAR;
 	private static final float   FAR_LESS_NEAR          = FAR - NEAR;
-	private static final Vector3 LIGHT_POSITION         = new Vector3(2.0f, 2.0f, 4.0f);
-	private static final Color   AMBIENT_COLOR          = new Color(0.0f, 0.1f, 0.3f, 1.0f);
-	private static final Color   DIFFUSE_COLOR          = new Color(1.0f, 1.0f, 1.0f, 1.0f);
-	private static final Color   SPECULAR_COLOR         = new Color(1.0f, 0.8f, 0.0f, 1.0f);
-	private static final float   SHINYNESS              = 50.0f;
 
 	// Background related fields.
 	private float                           uScaling[];
@@ -83,7 +74,6 @@ public class InGameState extends BaseState{
 
 	// Game world objects.
 	private World                           gameWorld;
-	private EntityCreatorBase               entityCreator;
 	private MarkerRenderingSystem           markerRenderingSystem;
 	private ObjectRenderingSystem           objectRenderingSystem;
 
@@ -188,17 +178,18 @@ public class InGameState extends BaseState{
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
-		RenderParameters.setLightSource1(new LightSource(LIGHT_POSITION, AMBIENT_COLOR, DIFFUSE_COLOR, SPECULAR_COLOR, SHINYNESS));
 
 		// Set up the game world.
 		gameWorld = new World();
 
-		entityCreator = new MarkerTestEntityCreator();
-		entityCreator.setWorld(gameWorld);
-		entityCreator.createAllEntities();
+		GameSettings.initGameSettings();
+		GameSettings.entityCreator.setWorld(gameWorld);
+		GameSettings.entityCreator.createAllEntities();
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new AnimationSystem());
+		// TODO: Add collision system.
+		//gameWorld.setSystem(GameSettings.gameLogicSystem);
 
 		markerRenderingSystem = new MarkerRenderingSystem(modelBatch);
 		objectRenderingSystem = new ObjectRenderingSystem(modelBatch);
@@ -313,8 +304,6 @@ public class InGameState extends BaseState{
 
 				// Set rendering parameters.
 				perspectiveCamera.update(projectionMatrix, true);
-				RenderParameters.setModelViewProjectionMatrix(perspectiveCamera.combined);
-				RenderParameters.setEyePosition(perspectiveCamera.position);
 
 				// Call rendering systems.
 				markerRenderingSystem.begin(perspectiveCamera, data);
@@ -395,8 +384,8 @@ public class InGameState extends BaseState{
 		if(modelBatch != null)
 			modelBatch.dispose();
 
-		if(entityCreator != null)
-			entityCreator.dispose();
+		if(GameSettings.entityCreator != null)
+			GameSettings.entityCreator.dispose();
 
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();

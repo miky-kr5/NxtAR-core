@@ -28,4 +28,11 @@ public class ModelComponent extends Component {
 
 		this.instance = new ModelInstance(model);
 	}
+
+	public ModelComponent(ModelInstance instance) throws IllegalArgumentException{
+		if(instance == null)
+			throw new IllegalArgumentException("Instance is null.");
+
+		this.instance = instance;
+	}
 }

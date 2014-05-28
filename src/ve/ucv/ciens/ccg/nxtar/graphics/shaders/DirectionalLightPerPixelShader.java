@@ -30,7 +30,7 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
-public class SingleLightPerPixelShader implements Shader{
+public class DirectionalLightPerPixelShader implements Shader{
 	private static final int     MAX_NUM_BONES        = 4;
 	private static final Matrix4 IDENTITY             = new Matrix4();
 	private static final String  VERTEX_SHADER_PATH   = "shaders/directionalPerPixelSingleLight/directionalPerPixel_vert.glsl";
@@ -56,7 +56,7 @@ public class SingleLightPerPixelShader implements Shader{
 	private int[]   u_normalMatrix;
 	private int[]   u_bones;
 
-	public SingleLightPerPixelShader(){
+	public DirectionalLightPerPixelShader(){
 		skinningProgram = null;
 		baseProgram     = null;
 		camera          = null;
@@ -79,7 +79,7 @@ public class SingleLightPerPixelShader implements Shader{
 			throw new GdxRuntimeException(skinningProgram.getLog());
 
 		if(!baseProgram.isCompiled())
-			throw new GdxRuntimeException(skinningProgram.getLog());
+			throw new GdxRuntimeException(baseProgram.getLog());
 
 		// Create uniform locations.
 		u_projTrans       = new int[2];
@@ -198,7 +198,7 @@ public class SingleLightPerPixelShader implements Shader{
 
 		// Set model dependant uniforms.
 		program.setUniformMatrix(u_geomTrans[index], renderable.worldTransform);
-		program.setUniformMatrix(u_normalMatrix[index], normalMatrix.idt().mul(renderable.worldTransform).inv().tra());
+		program.setUniformMatrix(u_normalMatrix[index], normalMatrix.set(renderable.worldTransform).toNormalMatrix());
 		program.setUniformf(u_lightPos[index], lightPosition);
 		program.setUniformf(u_lightDiffuse[index], diffuseLightColor);
 		program.setUniformf(u_materialDiffuse[index], diffuseColor);

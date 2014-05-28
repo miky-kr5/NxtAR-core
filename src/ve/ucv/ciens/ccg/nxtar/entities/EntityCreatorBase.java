@@ -16,8 +16,9 @@
 package ve.ucv.ciens.ccg.nxtar.entities;
 
 import com.artemis.World;
+import com.badlogic.gdx.utils.Disposable;
 
-public abstract class EntityCreatorBase {
+public abstract class EntityCreatorBase implements Disposable{
 	protected World world;
 
 	public void setWorld(World world) throws IllegalArgumentException{

@@ -21,7 +21,7 @@ import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
-import ve.ucv.ciens.ccg.nxtar.graphics.shaders.SingleLightPerPixelShader;
+import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
 
 import com.artemis.Entity;
 import com.badlogic.gdx.Gdx;
@@ -48,7 +48,7 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	private Model bombModel;
 	private Model animatedModel;
 	private Model boxModel;
-	private SingleLightPerPixelShader ppShader;
+	private DirectionalLightPerPixelShader ppShader;
 
 	@Override
 	public void createAllEntities() {
@@ -72,12 +72,12 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		boxModel = builder.createBox(0.5f, 0.5f, 6.0f, material, new VertexAttributes(new VertexAttribute(Usage.Position, 3, "a_position"), new VertexAttribute(Usage.Normal, 3, "a_normal"), new VertexAttribute(Usage.Color, 4, "a_color")).getMask());
 
 		// Load the shader.
-		ppShader = new SingleLightPerPixelShader();
+		ppShader = new DirectionalLightPerPixelShader();
 		ppShader.init();
 
 		environment = new Environment();
 		environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
-		environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(1, 0, 0.5f)));
+		environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(1, 0, -0.5f)));
 
 		// Create the entities.
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the enitites.");

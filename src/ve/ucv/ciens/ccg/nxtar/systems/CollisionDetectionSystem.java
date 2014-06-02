@@ -15,7 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 
 import com.artemis.Aspect;
 import com.artemis.Entity;
@@ -25,7 +25,7 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 
 	@SuppressWarnings("unchecked")
 	public CollisionDetectionSystem(){
-		super(Aspect.getAspectForAll(ModelComponent.class));
+		super(Aspect.getAspectForAll(CollisionModelComponent.class));
 	}
 
 	@Override

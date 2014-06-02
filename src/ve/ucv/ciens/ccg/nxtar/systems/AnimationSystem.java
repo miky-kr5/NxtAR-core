@@ -16,6 +16,7 @@
 package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
+import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
@@ -26,24 +27,26 @@ import com.badlogic.gdx.Gdx;
 
 public class AnimationSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<AnimationComponent> animationMapper;
+	@Mapper ComponentMapper<VisibilityComponent> visibilityMapper;
 
 	@SuppressWarnings("unchecked")
 	public AnimationSystem(){
-		super(Aspect.getAspectForAll(AnimationComponent.class));
+		super(Aspect.getAspectForAll(AnimationComponent.class, VisibilityComponent.class));
 	}
 
 	@Override
 	protected void process(Entity e) {
 		AnimationComponent animation = animationMapper.get(e);
+		VisibilityComponent visibility = visibilityMapper.get(e);
 
 		if(animation.current != animation.next && animation.next >= 0 && animation.next < animation.animationsIds.size()){
 			if(animation.loop)
-				animation.controller.setAnimation(animation.animationsIds.get(animation.next), -1);
+				animation.controller.animate(animation.animationsIds.get(animation.next), -1, 1, null,0.1f);
 			else
-				animation.controller.setAnimation(animation.animationsIds.get(animation.next));
+				animation.controller.animate(animation.animationsIds.get(animation.next), 1, 1, null,0.1f);
 		}
 
-		animation.controller.update(Gdx.graphics.getDeltaTime());
+		if(visibility.visible)
+			animation.controller.update(Gdx.graphics.getDeltaTime());
 	}
-
 }

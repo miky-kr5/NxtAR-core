@@ -19,7 +19,7 @@ import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
 
@@ -83,22 +83,22 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		Gdx.app.log(TAG, CLASS_NAME + ".createAllEntities(): Creating the enitites.");
 		bomb = world.createEntity();
 		bomb.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		bomb.addComponent(new ModelComponent(bombModel));
+		bomb.addComponent(new RenderModelComponent(bombModel));
 		bomb.addComponent(new EnvironmentComponent(environment));
 		bomb.addComponent(new ShaderComponent(ppShader));
 		bomb.addComponent(new MarkerCodeComponent(1023));
 
 		anim = world.createEntity();
 		anim.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(0.25f, 0.25f, -0.25f)));
-		anim.addComponent(new ModelComponent(animatedModel));
-		anim.addComponent(new AnimationComponent(anim.getComponent(ModelComponent.class).instance, 0, true));
+		anim.addComponent(new RenderModelComponent(animatedModel));
+		anim.addComponent(new AnimationComponent(anim.getComponent(RenderModelComponent.class).instance, 0, true));
 		anim.addComponent(new EnvironmentComponent(environment));
 		anim.addComponent(new MarkerCodeComponent(89));
 		anim.addComponent(new ShaderComponent(ppShader));
 
 		box = world.createEntity();
 		box.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), new Matrix3().idt(), new Vector3(1.0f, 1.0f, 1.0f)));
-		box.addComponent(new ModelComponent(boxModel));
+		box.addComponent(new RenderModelComponent(boxModel));
 		box.addComponent(new ShaderComponent(ppShader));
 		box.addComponent(new EnvironmentComponent(environment));
 

@@ -16,15 +16,17 @@
 package ve.ucv.ciens.ccg.nxtar.entities;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
+import ve.ucv.ciens.ccg.nxtar.components.BombComponent;
+import ve.ucv.ciens.ccg.nxtar.components.BombComponent.bomb_type_t;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
 
 import com.artemis.Entity;
-import com.artemis.World;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g3d.Environment;
@@ -43,25 +45,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private static final String TAG        = "BOMB_ENTITY_CREATOR";
 	private static final String CLASS_NAME = BombGameEntityCreator.class.getSimpleName();
 
-	/*private enum bomb_type_t{
-		COMBINATION(0), INCLINATION(1), WIRES(2);
-
-		private int value;
-
-		private bomb_type_t(int value){
-			this.value = value;
-		}
-
-		public int getValue(){
-			return this.value;
-		}
-	};*/
-
 	private class EntityParameters{
 		public Environment environment;
 		public Shader      shader;
-		public Model       model1;
-		public Model       model2;
 		public int         markerCode;
 		public int         nextAnimation;
 		public boolean     loopAnimation;
@@ -69,8 +55,6 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		public EntityParameters(){
 			environment   = new Environment();
 			shader        = null;
-			model1        = null;
-			model2        = null;
 			markerCode    = -1;
 			nextAnimation = -1;
 			loopAnimation = false;
@@ -84,10 +68,15 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model            bombModelCombination;
 	private Model            bombModelInclination;
 	private Model            bombModelWires;
+	private Model            bombModelWiresWire1;
+	private Model            bombModelWiresWire2;
+	private Model            bombModelWiresWire3;
 	private Model            easterEggModel;
+	private int              currentBombId;
 
 	public BombGameEntityCreator(){
 		G3dModelLoader loader = new G3dModelLoader(new JsonReader());
+		currentBombId = 0;
 
 		parameters = new EntityParameters();
 		parameters.environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
@@ -105,45 +94,42 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 
 		// Create the models.
 		// TODO: Set the correct model paths.
-		doorModel            = loader.loadModel(Gdx.files.internal(""));
-		doorFrameModel       = loader.loadModel(Gdx.files.internal(""));
-		bombModelCombination = loader.loadModel(Gdx.files.internal(""));
-		bombModelInclination = loader.loadModel(Gdx.files.internal(""));
-		bombModelWires       = loader.loadModel(Gdx.files.internal(""));
-		easterEggModel       = loader.loadModel(Gdx.files.internal(""));
+		// TODO: Load collision models.
+		doorModel            = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		doorFrameModel       = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		bombModelCombination = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		bombModelInclination = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		bombModelWires       = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		easterEggModel       = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		bombModelWiresWire1  = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		bombModelWiresWire2  = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		bombModelWiresWire3  = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
 	}
 
 	@Override
 	public void createAllEntities(){
-		// TODO: Create the scene.
-
 		// TODO: Add the robot arms.
-		
+
 		// Add bombs.
 		parameters.markerCode = 89;
-		parameters.model1 = bombModelCombination;
-		addBomb(world, parameters);
+		addBomb(parameters, bomb_type_t.COMBINATION);
 
 		parameters.markerCode = 90;
-		parameters.model1 = bombModelInclination;
-		addBomb(world, parameters);
+		addBomb(parameters, bomb_type_t.INCLINATION);
 
 		parameters.markerCode = 91;
-		parameters.model1 = bombModelWires;
-		addBomb(world, parameters);
+		addBomb(parameters, bomb_type_t.WIRES);
 
 		// Add doors.
-		parameters.model1 = doorFrameModel;
-		parameters.model2 = doorModel;
 		parameters.nextAnimation = 0;
 		parameters.loopAnimation = false;
 
 		parameters.markerCode = 89;
-		addDoor(world, parameters);
+		addDoor(parameters);
 		parameters.markerCode = 90;
-		addDoor(world, parameters);
+		addDoor(parameters);
 		parameters.markerCode = 91;
-		addDoor(world, parameters);
+		addDoor(parameters);
 	}
 
 	@Override
@@ -162,44 +148,99 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 			bombModelInclination.dispose();
 		if(bombModelWires != null)
 			bombModelWires.dispose();
+		if(bombModelWiresWire1 != null)
+			bombModelWiresWire1.dispose();
+		if(bombModelWiresWire2 != null)
+			bombModelWiresWire2.dispose();
+		if(bombModelWiresWire3 != null)
+			bombModelWiresWire3.dispose();
 		if(easterEggModel != null)
 			easterEggModel.dispose();
 	}
 
-	private void addBomb(World world, EntityParameters parameters){
+	private void addBomb(EntityParameters parameters, bomb_type_t type) throws IllegalArgumentException{
 		Entity bomb;
+		BombComponent bombComponent = new BombComponent(currentBombId, type);
 
 		bomb = world.createEntity();
 		bomb.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		bomb.addComponent(new ModelComponent(parameters.model1));
 		bomb.addComponent(new EnvironmentComponent(parameters.environment));
 		bomb.addComponent(new ShaderComponent(parameters.shader));
 		bomb.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		bomb.addComponent(bombComponent);
+		bomb.addComponent(new VisibilityComponent());
+
+		if(type == bomb_type_t.COMBINATION){
+			bomb.addComponent(new RenderModelComponent(bombModelCombination));
+		}else if(type == bomb_type_t.INCLINATION){
+			bomb.addComponent(new RenderModelComponent(bombModelInclination));
+		}else if(type == bomb_type_t.WIRES){
+			bomb.addComponent(new RenderModelComponent(bombModelWires));
+			addBombWires(parameters, bombComponent);
+		}else
+			throw new IllegalArgumentException("Unrecognized bomb type: " + Integer.toString(type.getValue()));
+
 		bomb.addToWorld();
+		currentBombId++;
 	}
 
-	private void addDoor(World world, EntityParameters parameters){
-		ModelInstance frameModel, doorModel;
-		Entity frame, door;
+	private void addBombWires(EntityParameters parameters, BombComponent bomb){
+		// TODO: Add collision models.
+		Entity wire1, wire2, wire3;
 
-		frameModel = new ModelInstance(parameters.model1);
-		doorModel  = new ModelInstance(parameters.model2);
+		wire1 = world.createEntity();
+		wire1.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		wire1.addComponent(new EnvironmentComponent(parameters.environment));
+		wire1.addComponent(new ShaderComponent(parameters.shader));
+		wire1.addComponent(new RenderModelComponent(bombModelWiresWire1));
+		wire1.addComponent(new BombComponent(bomb));
+		wire1.addComponent(new VisibilityComponent());
+		wire1.addToWorld();
+
+		wire2 = world.createEntity();
+		wire2.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		wire2.addComponent(new EnvironmentComponent(parameters.environment));
+		wire2.addComponent(new ShaderComponent(parameters.shader));
+		wire2.addComponent(new RenderModelComponent(bombModelWiresWire2));
+		wire2.addComponent(new BombComponent(bomb));
+		wire2.addComponent(new VisibilityComponent());
+		wire2.addToWorld();
+
+		wire3 = world.createEntity();
+		wire3.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		wire3.addComponent(new EnvironmentComponent(parameters.environment));
+		wire3.addComponent(new ShaderComponent(parameters.shader));
+		wire3.addComponent(new RenderModelComponent(bombModelWiresWire3));
+		wire3.addComponent(new BombComponent(bomb));
+		wire3.addComponent(new VisibilityComponent());
+		wire3.addToWorld();
+	}
+
+	private void addDoor(EntityParameters parameters){
+		// TODO: Add collision models.
+		ModelInstance doorInstance;
+		Entity frame, door;
 
 		frame = world.createEntity();
 		frame.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		frame.addComponent(new ModelComponent(frameModel));
+		frame.addComponent(new RenderModelComponent(doorFrameModel));
 		frame.addComponent(new EnvironmentComponent(parameters.environment));
 		frame.addComponent(new ShaderComponent(parameters.shader));
+		frame.addComponent(new VisibilityComponent());
 		frame.addComponent(new MarkerCodeComponent(parameters.markerCode));
+
 		frame.addToWorld();
 
 		door = world.createEntity();
 		door.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		door.addComponent(new ModelComponent(doorModel));
+		door.addComponent(new RenderModelComponent(doorModel));
 		door.addComponent(new EnvironmentComponent(parameters.environment));
 		door.addComponent(new ShaderComponent(parameters.shader));
 		door.addComponent(new MarkerCodeComponent(parameters.markerCode));
-		door.addComponent(new AnimationComponent(doorModel, parameters.nextAnimation, parameters.loopAnimation));
+		door.addComponent(new VisibilityComponent());
+		doorInstance = door.getComponent(RenderModelComponent.class).instance;
+		door.addComponent(new AnimationComponent(doorInstance, parameters.nextAnimation, parameters.loopAnimation));
+
 		door.addToWorld();
 	}
 }

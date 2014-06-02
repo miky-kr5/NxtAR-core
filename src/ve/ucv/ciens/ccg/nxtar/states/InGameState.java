@@ -24,9 +24,11 @@ import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.VisibilitySystem;
 import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -187,6 +189,9 @@ public class InGameState extends BaseState{
 		GameSettings.entityCreator.createAllEntities();
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
+		// TODO: Make and add positioning systems.
+		gameWorld.setSystem(new GeometrySystem());
+		//gameWorld.setSystem(new VisibilitySystem());
 		gameWorld.setSystem(new AnimationSystem());
 		// TODO: Add collision system.
 		//gameWorld.setSystem(GameSettings.gameLogicSystem);
@@ -242,6 +247,8 @@ public class InGameState extends BaseState{
 			perspectiveCamera.far = FAR;
 			perspectiveCamera.lookAt(0.0f, 0.0f, -1.0f);
 			perspectiveCamera.update();
+
+			gameWorld.getSystem(VisibilitySystem.class).setCamera(perspectiveCamera);
 		}
 
 		// Attempt to find the markers in the current video frame.

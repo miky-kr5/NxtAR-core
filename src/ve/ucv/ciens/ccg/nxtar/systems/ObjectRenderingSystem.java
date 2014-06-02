@@ -18,8 +18,9 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.ModelComponent;
+import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
+import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
@@ -28,32 +29,32 @@ import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
 import com.badlogic.gdx.graphics.PerspectiveCamera;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
-import com.badlogic.gdx.math.Matrix4;
 
 /**
  * <p>Entity processing system in charge of rendering 3D objects using OpenGL. The
  * entities to be rendered must have a geometry, shader and mesh component associated.</p>
  */
 public class ObjectRenderingSystem extends EntityProcessingSystem {
-	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
+//	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
 	@Mapper ComponentMapper<ShaderComponent>       shaderMapper;
-	@Mapper ComponentMapper<ModelComponent>        modelMapper;
+	@Mapper ComponentMapper<RenderModelComponent>  modelMapper;
 	@Mapper ComponentMapper<EnvironmentComponent>  environmentMapper;
+	@Mapper ComponentMapper<VisibilityComponent>   visibiltyMapper;
 
-	/**
-	 * <p>A matrix representing 3D translations.</p>
-	 */
-	private Matrix4 translationMatrix;
-
-	/**
-	 * <p>A matrix representing 3D rotations.</p>
-	 */
-	private Matrix4 rotationMatrix;
-
-	/**
-	 * <p>A matrix representing 3D scalings.</p>
-	 */
-	private Matrix4 scalingMatrix;
+//	/**
+//	 * <p>A matrix representing 3D translations.</p>
+//	 */
+//	private Matrix4 translationMatrix;
+//
+//	/**
+//	 * <p>A matrix representing 3D rotations.</p>
+//	 */
+//	private Matrix4 rotationMatrix;
+//
+//	/**
+//	 * <p>A matrix representing 3D scalings.</p>
+//	 */
+//	private Matrix4 scalingMatrix;
 
 	private PerspectiveCamera camera;
 
@@ -61,13 +62,13 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 
 	@SuppressWarnings("unchecked")
 	public ObjectRenderingSystem(ModelBatch batch) {
-		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, ModelComponent.class, EnvironmentComponent.class).exclude(MarkerCodeComponent.class));
+		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, RenderModelComponent.class, EnvironmentComponent.class, VisibilityComponent.class).exclude(MarkerCodeComponent.class));
 
 		camera            = null;
 		this.batch        = batch;
-		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
-		rotationMatrix    = new Matrix4().idt();
-		scalingMatrix     = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
+//		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
+//		rotationMatrix    = new Matrix4().idt();
+//		scalingMatrix     = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
 	}
 
 	public void begin(PerspectiveCamera camera) throws RuntimeException{
@@ -92,24 +93,28 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 	@Override
 	protected void process(Entity e) {
 		EnvironmentComponent  environment;
-		GeometryComponent     geometryComponent;
+//		GeometryComponent     geometryComponent;
 		ShaderComponent       shaderComponent;
-		ModelComponent        modelComponent;
+		RenderModelComponent  renderModelComponent;
+		VisibilityComponent   visibility;
 
 		// Get the necessary components.
-		geometryComponent = geometryMapper.get(e);
-		modelComponent    = modelMapper.get(e);
-		shaderComponent   = shaderMapper.get(e);
-		environment       = environmentMapper.get(e);
+//		geometryComponent    = geometryMapper.get(e);
+		renderModelComponent = modelMapper.get(e);
+		shaderComponent      = shaderMapper.get(e);
+		environment          = environmentMapper.get(e);
+		visibility           = visibiltyMapper.get(e);
 
-		// Calculate the geometric transformation for this entity.
-		translationMatrix.setToTranslation(geometryComponent.position);
-		rotationMatrix.set(geometryComponent.rotation);
-		scalingMatrix.setToScaling(geometryComponent.scaling);
-		modelComponent.instance.transform.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
-		modelComponent.instance.calculateTransforms();
+		if(visibility.visible){
+			// Calculate the geometric transformation for this entity.
+//			translationMatrix.setToTranslation(geometryComponent.position);
+//			rotationMatrix.set(geometryComponent.rotation);
+//			scalingMatrix.setToScaling(geometryComponent.scaling);
+//			renderModelComponent.instance.transform.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
+//			renderModelComponent.instance.calculateTransforms();
 
-		// Render this entity.
-		batch.render(modelComponent.instance, environment.environment, shaderComponent.shader);
+			// Render this entity.
+			batch.render(renderModelComponent.instance, environment.environment, shaderComponent.shader);
+		}
 	}
 }

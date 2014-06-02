@@ -16,23 +16,15 @@
 package ve.ucv.ciens.ccg.nxtar.components;
 
 import com.artemis.Component;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
 
-public class ModelComponent extends Component {
-	public ModelInstance instance;
+public class VisibilityComponent extends Component {
+	public boolean visible;
 
-	public ModelComponent(Model model) throws IllegalArgumentException{
-		if(model == null)
-			throw new IllegalArgumentException("Model is null.");
-
-		this.instance = new ModelInstance(model);
+	public VisibilityComponent(){
+		this.visible = true;
 	}
 
-	public ModelComponent(ModelInstance instance) throws IllegalArgumentException{
-		if(instance == null)
-			throw new IllegalArgumentException("Instance is null.");
-
-		this.instance = instance;
+	public VisibilityComponent(boolean visibility){
+		this.visible = visibility;
 	}
 }

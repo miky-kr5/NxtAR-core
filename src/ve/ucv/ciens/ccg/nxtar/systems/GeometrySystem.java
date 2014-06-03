@@ -28,8 +28,8 @@ import com.badlogic.gdx.graphics.g3d.ModelInstance;
 import com.badlogic.gdx.math.Matrix4;
 
 public class GeometrySystem extends EntityProcessingSystem {
-	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
-	@Mapper ComponentMapper<RenderModelComponent> renderModelMapper;
+	@Mapper ComponentMapper<GeometryComponent>       geometryMapper;
+	@Mapper ComponentMapper<RenderModelComponent>    renderModelMapper;
 	@Mapper ComponentMapper<CollisionModelComponent> colModelMapper;
 
 	/**

@@ -27,8 +27,8 @@ import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.ObjectPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.VisibilitySystem;
 import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -49,7 +49,6 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
-import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 
@@ -59,8 +58,6 @@ public class InGameState extends BaseState{
 	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
 	private static final float   NEAR                   = 0.01f;
 	private static final float   FAR                    = 100.0f;
-	private static final float   FAR_PLUS_NEAR          = FAR + NEAR;
-	private static final float   FAR_LESS_NEAR          = FAR - NEAR;
 
 	// Background related fields.
 	private float                           uScaling[];
@@ -70,7 +67,6 @@ public class InGameState extends BaseState{
 
 	// 3D rendering fields.
 	private ModelBatch                      modelBatch;
-	private Matrix4                         projectionMatrix;
 	private FrameBuffer                     frameBuffer;
 	private Sprite                          frameBufferSprite;
 
@@ -176,7 +172,6 @@ public class InGameState extends BaseState{
 
 		// Set up the 3D rendering.
 		modelBatch = new ModelBatch();
-		projectionMatrix = new Matrix4().idt();
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
@@ -189,11 +184,10 @@ public class InGameState extends BaseState{
 		GameSettings.entityCreator.createAllEntities();
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
-		// TODO: Make and add positioning systems.
+		gameWorld.setSystem(new ObjectPositioningSystem(), true);
 		gameWorld.setSystem(new GeometrySystem());
-		//gameWorld.setSystem(new VisibilitySystem());
 		gameWorld.setSystem(new AnimationSystem());
-		// TODO: Add collision system.
+		// TODO: Make and add object-marker collision detection system.
 		//gameWorld.setSystem(GameSettings.gameLogicSystem);
 
 		markerRenderingSystem = new MarkerRenderingSystem(modelBatch);
@@ -247,8 +241,6 @@ public class InGameState extends BaseState{
 			perspectiveCamera.far = FAR;
 			perspectiveCamera.lookAt(0.0f, 0.0f, -1.0f);
 			perspectiveCamera.update();
-
-//			gameWorld.getSystem(VisibilitySystem.class).setCamera(perspectiveCamera);
 		}
 
 		// Attempt to find the markers in the current video frame.
@@ -256,6 +248,14 @@ public class InGameState extends BaseState{
 
 		// If a valid frame was fetched.
 		if(data != null && data.outFrame != null){
+			// Set the camera to the correct projection.
+			focalPointX   = core.cvProc.getFocalPointX();
+			focalPointY   = core.cvProc.getFocalPointY();
+			cameraCenterX = core.cvProc.getCameraCenterX();
+			cameraCenterY = core.cvProc.getCameraCenterY();
+			perspectiveCamera.setCustomARProjectionMatrix(focalPointX, focalPointY, cameraCenterX, cameraCenterY, NEAR, FAR, w, h);
+			perspectiveCamera.update(perspectiveCamera.projection);
+
 			// Update the game state.
 			gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
 			gameWorld.getSystem(MarkerPositioningSystem.class).setMarkerData(data);
@@ -283,37 +283,8 @@ public class InGameState extends BaseState{
 				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
 				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
 
-				// Build the projection matrix.
-				focalPointX   = core.cvProc.getFocalPointX();
-				focalPointY   = core.cvProc.getFocalPointY();
-				cameraCenterX = core.cvProc.getCameraCenterX();
-				cameraCenterY = core.cvProc.getCameraCenterY();
-
-				projectionMatrix.val[Matrix4.M00] = -2.0f * focalPointX / w;
-				projectionMatrix.val[Matrix4.M10] = 0.0f;
-				projectionMatrix.val[Matrix4.M20] = 0.0f;
-				projectionMatrix.val[Matrix4.M30] = 0.0f;
-
-				projectionMatrix.val[Matrix4.M01] = 0.0f;
-				projectionMatrix.val[Matrix4.M11] = 2.0f * focalPointY / h;
-				projectionMatrix.val[Matrix4.M21] = 0.0f;
-				projectionMatrix.val[Matrix4.M31] = 0.0f;
-
-				projectionMatrix.val[Matrix4.M02] = 2.0f * cameraCenterX / w - 1.0f;
-				projectionMatrix.val[Matrix4.M12] = 2.0f * cameraCenterY / h - 1.0f;
-				projectionMatrix.val[Matrix4.M22] = -FAR_PLUS_NEAR / FAR_LESS_NEAR;
-				projectionMatrix.val[Matrix4.M32] = -1.0f;
-
-				projectionMatrix.val[Matrix4.M03] = 0.0f;
-				projectionMatrix.val[Matrix4.M13] = 0.0f;
-				projectionMatrix.val[Matrix4.M23] = -2.0f * FAR * NEAR / FAR_LESS_NEAR;
-				projectionMatrix.val[Matrix4.M33] = 0.0f;
-
-				// Set rendering parameters.
-				perspectiveCamera.update(projectionMatrix, true);
-
 				// Call rendering systems.
-				markerRenderingSystem.begin(perspectiveCamera, data);
+				markerRenderingSystem.begin(perspectiveCamera);
 				markerRenderingSystem.process();
 				markerRenderingSystem.end();
 

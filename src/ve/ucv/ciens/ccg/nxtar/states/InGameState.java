@@ -248,7 +248,7 @@ public class InGameState extends BaseState{
 			perspectiveCamera.lookAt(0.0f, 0.0f, -1.0f);
 			perspectiveCamera.update();
 
-			gameWorld.getSystem(VisibilitySystem.class).setCamera(perspectiveCamera);
+//			gameWorld.getSystem(VisibilitySystem.class).setCamera(perspectiveCamera);
 		}
 
 		// Attempt to find the markers in the current video frame.

@@ -36,14 +36,16 @@ public class AnimationSystem extends EntityProcessingSystem {
 
 	@Override
 	protected void process(Entity e) {
-		AnimationComponent animation = animationMapper.get(e);
+		AnimationComponent  animation  = animationMapper.get(e);
 		VisibilityComponent visibility = visibilityMapper.get(e);
+		int                 loopCount  = animation.loop ? -1 : 1;
 
 		if(animation.current != animation.next && animation.next >= 0 && animation.next < animation.animationsIds.size()){
-			if(animation.loop)
-				animation.controller.animate(animation.animationsIds.get(animation.next), -1, 1, null,0.1f);
-			else
-				animation.controller.animate(animation.animationsIds.get(animation.next), 1, 1, null,0.1f);
+			if(animation.controller.current == null){
+				animation.controller.setAnimation(animation.animationsIds.get(animation.next), loopCount, 1, null);
+			}else{
+				animation.controller.animate(animation.animationsIds.get(animation.next), loopCount, 1, null, 0.1f);
+			}
 		}
 
 		if(visibility.visible)

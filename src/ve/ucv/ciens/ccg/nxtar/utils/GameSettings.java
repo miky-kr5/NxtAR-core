@@ -15,8 +15,8 @@
  */
 package ve.ucv.ciens.ccg.nxtar.utils;
 
+import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
-import ve.ucv.ciens.ccg.nxtar.entities.MarkerTestEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
 
 public abstract class GameSettings{
@@ -24,7 +24,7 @@ public abstract class GameSettings{
 	public static GameLogicSystemBase gameLogicSystem = null;
 
 	public static void initGameSettings(){
-		entityCreator = new MarkerTestEntityCreator();
+		entityCreator = new BombGameEntityCreator();
 		gameLogicSystem = null;
 		//gameLogicSystem = new BombGameLogicSystem();
 	}

@@ -39,7 +39,7 @@ import com.badlogic.gdx.graphics.g3d.loader.G3dModelLoader;
 import com.badlogic.gdx.math.Matrix3;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.GdxRuntimeException;
-import com.badlogic.gdx.utils.JsonReader;
+import com.badlogic.gdx.utils.UBJsonReader;
 
 public class BombGameEntityCreator extends EntityCreatorBase{
 	private static final String TAG        = "BOMB_ENTITY_CREATOR";
@@ -75,12 +75,12 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private int              currentBombId;
 
 	public BombGameEntityCreator(){
-		G3dModelLoader loader = new G3dModelLoader(new JsonReader());
+		G3dModelLoader loader = new G3dModelLoader(new UBJsonReader());
 		currentBombId = 0;
 
 		parameters = new EntityParameters();
 		parameters.environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
-		parameters.environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(1, 0, -0.5f)));
+		parameters.environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(0, 0, -1)));
 
 		// Load the shader.
 		shader = new DirectionalLightPerPixelShader();
@@ -95,15 +95,15 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// Create the models.
 		// TODO: Set the correct model paths.
 		// TODO: Load collision models.
-		doorModel            = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		doorFrameModel       = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		bombModelCombination = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		bombModelInclination = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		bombModelWires       = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		easterEggModel       = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		bombModelWiresWire1  = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		bombModelWiresWire2  = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
-		bombModelWiresWire3  = loader.loadModel(Gdx.files.internal("assets/models/render_models/"));
+		doorModel            = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door.g3db"));
+		doorFrameModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door_frame1.g3db"));
+//		bombModelCombination = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
+//		bombModelInclination = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
+		bombModelWires       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_1_body.g3db"));
+//		easterEggModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
+		bombModelWiresWire1  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_1.g3db"));
+		bombModelWiresWire2  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_2.g3db"));
+		bombModelWiresWire3  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_3.g3db"));
 	}
 
 	@Override
@@ -111,23 +111,23 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// TODO: Add the robot arms.
 
 		// Add bombs.
-		parameters.markerCode = 89;
-		addBomb(parameters, bomb_type_t.COMBINATION);
-
-		parameters.markerCode = 90;
-		addBomb(parameters, bomb_type_t.INCLINATION);
+//		parameters.markerCode = 89;
+//		addBomb(parameters, bomb_type_t.COMBINATION);
+//
+//		parameters.markerCode = 90;
+//		addBomb(parameters, bomb_type_t.INCLINATION);
 
 		parameters.markerCode = 91;
 		addBomb(parameters, bomb_type_t.WIRES);
 
 		// Add doors.
-		parameters.nextAnimation = 0;
+		parameters.nextAnimation = 1;
 		parameters.loopAnimation = false;
 
-		parameters.markerCode = 89;
-		addDoor(parameters);
-		parameters.markerCode = 90;
-		addDoor(parameters);
+//		parameters.markerCode = 89;
+//		addDoor(parameters);
+//		parameters.markerCode = 90;
+//		addDoor(parameters);
 		parameters.markerCode = 91;
 		addDoor(parameters);
 	}
@@ -170,6 +170,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		bomb.addComponent(bombComponent);
 		bomb.addComponent(new VisibilityComponent());
 
+		// Add the collision and render models depending on the bomb type.
 		if(type == bomb_type_t.COMBINATION){
 			bomb.addComponent(new RenderModelComponent(bombModelCombination));
 		}else if(type == bomb_type_t.INCLINATION){
@@ -195,6 +196,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wire1.addComponent(new RenderModelComponent(bombModelWiresWire1));
 		wire1.addComponent(new BombComponent(bomb));
 		wire1.addComponent(new VisibilityComponent());
+		wire1.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		wire1.addToWorld();
 
 		wire2 = world.createEntity();
@@ -204,6 +206,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wire2.addComponent(new RenderModelComponent(bombModelWiresWire2));
 		wire2.addComponent(new BombComponent(bomb));
 		wire2.addComponent(new VisibilityComponent());
+		wire2.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		wire2.addToWorld();
 
 		wire3 = world.createEntity();
@@ -213,6 +216,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wire3.addComponent(new RenderModelComponent(bombModelWiresWire3));
 		wire3.addComponent(new BombComponent(bomb));
 		wire3.addComponent(new VisibilityComponent());
+		wire3.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		wire3.addToWorld();
 	}
 

@@ -141,7 +141,6 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// Add bombs.
 		//		parameters.markerCode = 89;
 		//		addBomb(parameters, bomb_type_t.COMBINATION);
-
 		parameters.markerCode = 90;
 		addBomb(parameters, bomb_type_t.INCLINATION);
 		parameters.markerCode = 91;
@@ -229,53 +228,41 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private void addBombInclinationButton(EntityParameters parameters, BombComponent bomb){
 		Entity button;
 
-		button = world.createEntity();
-		button.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		button.addComponent(new EnvironmentComponent(parameters.environment));
-		button.addComponent(new ShaderComponent(parameters.shader));
-		button.addComponent(new RenderModelComponent(inclinationBombButtonModel));
-		button.addComponent(new CollisionModelComponent(inclinationBombButtonCollisionModel));
-		button.addComponent(new BombComponent(bomb));
-		button.addComponent(new VisibilityComponent());
-		button.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		button = addBombParaphernalia(inclinationBombButtonModel, inclinationBombButtonCollisionModel, bomb, parameters);
+
+		// TODO: Add button parameters.
+
 		button.addToWorld();
 	}
 
 	private void addBombWires(EntityParameters parameters, BombComponent bomb){
 		Entity wire1, wire2, wire3;
 
-		wire1 = world.createEntity();
-		wire1.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		wire1.addComponent(new EnvironmentComponent(parameters.environment));
-		wire1.addComponent(new ShaderComponent(parameters.shader));
-		wire1.addComponent(new RenderModelComponent(wiresBombModelWire1));
-		wire1.addComponent(new CollisionModelComponent(wiresBombCollisionModelWire1));
-		wire1.addComponent(new BombComponent(bomb));
-		wire1.addComponent(new VisibilityComponent());
-		wire1.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		wire1 = addBombParaphernalia(wiresBombModelWire1, wiresBombCollisionModelWire1, bomb, parameters);
+		wire2 = addBombParaphernalia(wiresBombModelWire2, wiresBombCollisionModelWire2, bomb, parameters);
+		wire3 = addBombParaphernalia(wiresBombModelWire3, wiresBombCollisionModelWire3, bomb, parameters);
+
+		// TODO: Add Wire parameters.
+
 		wire1.addToWorld();
-
-		wire2 = world.createEntity();
-		wire2.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		wire2.addComponent(new EnvironmentComponent(parameters.environment));
-		wire2.addComponent(new ShaderComponent(parameters.shader));
-		wire2.addComponent(new RenderModelComponent(wiresBombModelWire2));
-		wire2.addComponent(new CollisionModelComponent(wiresBombCollisionModelWire2));
-		wire2.addComponent(new BombComponent(bomb));
-		wire2.addComponent(new VisibilityComponent());
-		wire2.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		wire2.addToWorld();
-
-		wire3 = world.createEntity();
-		wire3.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
-		wire3.addComponent(new EnvironmentComponent(parameters.environment));
-		wire3.addComponent(new ShaderComponent(parameters.shader));
-		wire3.addComponent(new RenderModelComponent(wiresBombModelWire3));
-		wire3.addComponent(new CollisionModelComponent(wiresBombCollisionModelWire3));
-		wire3.addComponent(new BombComponent(bomb));
-		wire3.addComponent(new VisibilityComponent());
-		wire3.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		wire3.addToWorld();
+	}
+
+	private Entity addBombParaphernalia(Model renderModel, Model collisionModel, BombComponent bomb, EntityParameters parameters){
+		Entity thing;
+
+		thing = world.createEntity();
+		thing.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		thing.addComponent(new EnvironmentComponent(parameters.environment));
+		thing.addComponent(new ShaderComponent(parameters.shader));
+		thing.addComponent(new RenderModelComponent(renderModel));
+		thing.addComponent(new CollisionModelComponent(collisionModel));
+		thing.addComponent(new BombComponent(bomb));
+		thing.addComponent(new VisibilityComponent());
+		thing.addComponent(new MarkerCodeComponent(parameters.markerCode));
+
+		return thing;
 	}
 
 	private void addDoor(EntityParameters parameters){

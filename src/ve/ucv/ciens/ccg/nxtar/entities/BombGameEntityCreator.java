@@ -71,6 +71,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model            doorFrameModel                = null;
 	private Model            combinationBombModel          = null;
 	private Model            inclinationBombModel          = null;
+	private Model            inclinationBombButtonModel    = null;
 	private Model            wiresBombModel                = null;
 	private Model            wiresBombModelWire1           = null;
 	private Model            wiresBombModelWire2           = null;
@@ -78,15 +79,16 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model            easterEggModel                = null;
 
 	// Collision models.
-	private Model            doorCollisionModel            = null;
-	private Model            doorFrameCollisionModel       = null;
-	private Model            combinationBombCollisionModel = null;
-	private Model            inclinationBombCollisionModel = null;
-	private Model            wiresBombCollisionModel       = null;
-	private Model            wiresBombCollisionModelWire1  = null;
-	private Model            wiresBombCollisionModelWire2  = null;
-	private Model            wiresBombCollisionModelWire3  = null;
-	private Model            easterEggCollisionModel       = null;
+	private Model            doorCollisionModel                  = null;
+	private Model            doorFrameCollisionModel             = null;
+	private Model            combinationBombCollisionModel       = null;
+	private Model            inclinationBombCollisionModel       = null;
+	private Model            inclinationBombButtonCollisionModel = null;
+	private Model            wiresBombCollisionModel             = null;
+	private Model            wiresBombCollisionModelWire1        = null;
+	private Model            wiresBombCollisionModelWire2        = null;
+	private Model            wiresBombCollisionModelWire3        = null;
+	private Model            easterEggCollisionModel             = null;
 
 	public BombGameEntityCreator(){
 		G3dModelLoader loader = new G3dModelLoader(new UBJsonReader());
@@ -108,26 +110,28 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		parameters.shader = shader;
 
 		// Load the render models.
-		doorModel            = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door.g3db"));
-		doorFrameModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door_frame1.g3db"));
-		//		bombModelCombination = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
-		//		bombModelInclination = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
-		wiresBombModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_1_body.g3db"));
-		wiresBombModelWire1  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_1.g3db"));
-		wiresBombModelWire2  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_2.g3db"));
-		wiresBombModelWire3  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_3.g3db"));
-		//		easterEggModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
+		doorModel                  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door.g3db"));
+		doorFrameModel             = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door_frame1.g3db"));
+		// bombModelCombination = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
+		inclinationBombModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_2_body.g3db"));
+		inclinationBombButtonModel = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/big_btn.g3db"));
+		wiresBombModel             = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_1_body.g3db"));
+		wiresBombModelWire1        = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_1.g3db"));
+		wiresBombModelWire2        = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_2.g3db"));
+		wiresBombModelWire3        = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_3.g3db"));
+		// easterEggModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
 
 		// Load the collision models.
-		doorCollisionModel            = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door_col.g3db"));
-		doorFrameCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door_frame1_col.g3db"));
-		//		combinationBombCollisionModel = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door.g3db"));
-		//		inclinationBombCollisionModel = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door.g3db"));
-		wiresBombCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_1_body_col.g3db"));
-		wiresBombCollisionModelWire1  = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_1_col.g3db"));
-		wiresBombCollisionModelWire2  = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_2_col.g3db"));
-		wiresBombCollisionModelWire3  = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_3_col.g3db"));
-		//		easterEggCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door.g3db"));
+		doorCollisionModel                  = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door_col.g3db"));
+		doorFrameCollisionModel             = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door_frame1_col.g3db"));
+		// combinationBombCollisionModel = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door.g3db"));
+		inclinationBombCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_2_body_col.g3db"));
+		inclinationBombButtonCollisionModel = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/big_btn_col.g3db"));
+		wiresBombCollisionModel             = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_1_body_col.g3db"));
+		wiresBombCollisionModelWire1        = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_1_col.g3db"));
+		wiresBombCollisionModelWire2        = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_2_col.g3db"));
+		wiresBombCollisionModelWire3        = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_3_col.g3db"));
+		// easterEggCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door.g3db"));
 	}
 
 	@Override
@@ -137,10 +141,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// Add bombs.
 		//		parameters.markerCode = 89;
 		//		addBomb(parameters, bomb_type_t.COMBINATION);
-		//
-		//		parameters.markerCode = 90;
-		//		addBomb(parameters, bomb_type_t.INCLINATION);
 
+		parameters.markerCode = 90;
+		addBomb(parameters, bomb_type_t.INCLINATION);
 		parameters.markerCode = 91;
 		addBomb(parameters, bomb_type_t.WIRES);
 
@@ -150,11 +153,11 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 
 		//		parameters.markerCode = 89;
 		//		addDoor(parameters);
-		//		parameters.markerCode = 90;
-		//		addDoor(parameters);
+		parameters.markerCode = 90;
+		addDoor(parameters);
 		parameters.markerCode = 91;
 		addDoor(parameters);
-		
+
 		// TODO: Add easter egg.
 	}
 
@@ -224,7 +227,18 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	}
 
 	private void addBombInclinationButton(EntityParameters parameters, BombComponent bomb){
-		// TODO: Add the button.
+		Entity button;
+
+		button = world.createEntity();
+		button.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		button.addComponent(new EnvironmentComponent(parameters.environment));
+		button.addComponent(new ShaderComponent(parameters.shader));
+		button.addComponent(new RenderModelComponent(inclinationBombButtonModel));
+		button.addComponent(new CollisionModelComponent(inclinationBombButtonCollisionModel));
+		button.addComponent(new BombComponent(bomb));
+		button.addComponent(new VisibilityComponent());
+		button.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		button.addToWorld();
 	}
 
 	private void addBombWires(EntityParameters parameters, BombComponent bomb){

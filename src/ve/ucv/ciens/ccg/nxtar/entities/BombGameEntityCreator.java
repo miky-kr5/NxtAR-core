@@ -70,6 +70,10 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model            doorModel                     = null;
 	private Model            doorFrameModel                = null;
 	private Model            combinationBombModel          = null;
+	private Model            combinationButton1Model       = null;
+	private Model            combinationButton2Model       = null;
+	private Model            combinationButton3Model       = null;
+	private Model            combinationButton4Model       = null;
 	private Model            inclinationBombModel          = null;
 	private Model            inclinationBombButtonModel    = null;
 	private Model            wiresBombModel                = null;
@@ -82,6 +86,10 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model            doorCollisionModel                  = null;
 	private Model            doorFrameCollisionModel             = null;
 	private Model            combinationBombCollisionModel       = null;
+	private Model            combinationButton1CollisionModel    = null;
+	private Model            combinationButton2CollisionModel    = null;
+	private Model            combinationButton3CollisionModel    = null;
+	private Model            combinationButton4CollisionModel    = null;
 	private Model            inclinationBombCollisionModel       = null;
 	private Model            inclinationBombButtonCollisionModel = null;
 	private Model            wiresBombCollisionModel             = null;
@@ -112,9 +120,16 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// Load the render models.
 		doorModel                  = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door.g3db"));
 		doorFrameModel             = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/door_frame1.g3db"));
-		// bombModelCombination = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/"));
+
+		combinationBombModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_3_body.g3db"));
+		combinationButton1Model    = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_3_btn_1.g3db"));
+		combinationButton2Model    = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_3_btn_2.g3db"));
+		combinationButton3Model    = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_3_btn_3.g3db"));
+		combinationButton4Model    = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_3_btn_4.g3db"));
+
 		inclinationBombModel       = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_2_body.g3db"));
 		inclinationBombButtonModel = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/big_btn.g3db"));
+
 		wiresBombModel             = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/bomb_1_body.g3db"));
 		wiresBombModelWire1        = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_1.g3db"));
 		wiresBombModelWire2        = loader.loadModel(Gdx.files.internal("models/render_models/bomb_game/cable_2.g3db"));
@@ -124,9 +139,16 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// Load the collision models.
 		doorCollisionModel                  = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door_col.g3db"));
 		doorFrameCollisionModel             = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door_frame1_col.g3db"));
-		// combinationBombCollisionModel = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/door.g3db"));
+
+		combinationBombCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_3_body_col.g3db"));
+		combinationButton1CollisionModel    = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_3_btn_1_col.g3db"));
+		combinationButton2CollisionModel    = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_3_btn_2_col.g3db"));
+		combinationButton3CollisionModel    = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_3_btn_3_col.g3db"));
+		combinationButton4CollisionModel    = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_3_btn_4_col.g3db"));
+
 		inclinationBombCollisionModel       = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_2_body_col.g3db"));
 		inclinationBombButtonCollisionModel = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/big_btn_col.g3db"));
+
 		wiresBombCollisionModel             = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/bomb_1_body_col.g3db"));
 		wiresBombCollisionModelWire1        = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_1_col.g3db"));
 		wiresBombCollisionModelWire2        = loader.loadModel(Gdx.files.internal("models/collision_models/bomb_game/cable_2_col.g3db"));
@@ -139,8 +161,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// TODO: Add the robot arms.
 
 		// Add bombs.
-		//		parameters.markerCode = 89;
-		//		addBomb(parameters, bomb_type_t.COMBINATION);
+		parameters.markerCode = 89;
+		addBomb(parameters, bomb_type_t.COMBINATION);
 		parameters.markerCode = 90;
 		addBomb(parameters, bomb_type_t.INCLINATION);
 		parameters.markerCode = 91;
@@ -150,8 +172,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		parameters.nextAnimation = 1;
 		parameters.loopAnimation = false;
 
-		//		parameters.markerCode = 89;
-		//		addDoor(parameters);
+		parameters.markerCode = 89;
+		addDoor(parameters);
 		parameters.markerCode = 90;
 		addDoor(parameters);
 		parameters.markerCode = 91;
@@ -165,26 +187,34 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		if(shader != null) shader.dispose();
 
 		// Dispose of the render models.
-		if(doorModel            != null) doorModel.dispose();
-		if(doorFrameModel       != null) doorFrameModel.dispose();
-		if(combinationBombModel != null) combinationBombModel.dispose();
-		if(inclinationBombModel != null) inclinationBombModel.dispose();
-		if(wiresBombModel       != null) wiresBombModel.dispose();
-		if(wiresBombModelWire1  != null) wiresBombModelWire1.dispose();
-		if(wiresBombModelWire2  != null) wiresBombModelWire2.dispose();
-		if(wiresBombModelWire3  != null) wiresBombModelWire3.dispose();
-		if(easterEggModel       != null) easterEggModel.dispose();
+		if(doorModel               != null) doorModel.dispose();
+		if(doorFrameModel          != null) doorFrameModel.dispose();
+		if(combinationBombModel    != null) combinationBombModel.dispose();
+		if(combinationButton1Model != null) combinationButton1Model.dispose();
+		if(combinationButton2Model != null) combinationButton2Model.dispose();
+		if(combinationButton3Model != null) combinationButton3Model.dispose();
+		if(combinationButton4Model != null) combinationButton4Model.dispose();
+		if(inclinationBombModel    != null) inclinationBombModel.dispose();
+		if(wiresBombModel          != null) wiresBombModel.dispose();
+		if(wiresBombModelWire1     != null) wiresBombModelWire1.dispose();
+		if(wiresBombModelWire2     != null) wiresBombModelWire2.dispose();
+		if(wiresBombModelWire3     != null) wiresBombModelWire3.dispose();
+		if(easterEggModel          != null) easterEggModel.dispose();
 
 		// Dispose of the collision models.
-		if(doorCollisionModel            != null) doorCollisionModel.dispose();
-		if(doorFrameCollisionModel       != null) doorFrameCollisionModel.dispose();
-		if(combinationBombCollisionModel != null) combinationBombCollisionModel.dispose();
-		if(inclinationBombCollisionModel != null) inclinationBombCollisionModel.dispose();
-		if(wiresBombCollisionModel       != null) wiresBombCollisionModel.dispose();
-		if(wiresBombCollisionModelWire1  != null) wiresBombCollisionModelWire1.dispose();
-		if(wiresBombCollisionModelWire2  != null) wiresBombCollisionModelWire2.dispose();
-		if(wiresBombCollisionModelWire3  != null) wiresBombCollisionModelWire3.dispose();
-		if(easterEggCollisionModel       != null) easterEggCollisionModel.dispose();
+		if(doorCollisionModel               != null) doorCollisionModel.dispose();
+		if(doorFrameCollisionModel          != null) doorFrameCollisionModel.dispose();
+		if(combinationBombCollisionModel    != null) combinationBombCollisionModel.dispose();
+		if(combinationButton1CollisionModel != null) combinationButton1CollisionModel.dispose();
+		if(combinationButton2CollisionModel != null) combinationButton2CollisionModel.dispose();
+		if(combinationButton3CollisionModel != null) combinationButton3CollisionModel.dispose();
+		if(combinationButton4CollisionModel != null) combinationButton4CollisionModel.dispose();
+		if(inclinationBombCollisionModel    != null) inclinationBombCollisionModel.dispose();
+		if(wiresBombCollisionModel          != null) wiresBombCollisionModel.dispose();
+		if(wiresBombCollisionModelWire1     != null) wiresBombCollisionModelWire1.dispose();
+		if(wiresBombCollisionModelWire2     != null) wiresBombCollisionModelWire2.dispose();
+		if(wiresBombCollisionModelWire3     != null) wiresBombCollisionModelWire3.dispose();
+		if(easterEggCollisionModel          != null) easterEggCollisionModel.dispose();
 	}
 
 	private void addBomb(EntityParameters parameters, bomb_type_t type) throws IllegalArgumentException{
@@ -222,7 +252,19 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	}
 
 	private void addBombCombinationButtons(EntityParameters parameters, BombComponent bomb){
-		// TODO: Add the buttons.
+		Entity button1, button2, button3, button4;
+
+		button1 = addBombParaphernalia(combinationButton1Model, combinationButton1CollisionModel, bomb, parameters);
+		button2 = addBombParaphernalia(combinationButton2Model, combinationButton2CollisionModel, bomb, parameters);
+		button3 = addBombParaphernalia(combinationButton3Model, combinationButton3CollisionModel, bomb, parameters);
+		button4 = addBombParaphernalia(combinationButton4Model, combinationButton4CollisionModel, bomb, parameters);
+
+		// TODO: Add button parameters.
+
+		button1.addToWorld();
+		button2.addToWorld();
+		button3.addToWorld();
+		button4.addToWorld();
 	}
 
 	private void addBombInclinationButton(EntityParameters parameters, BombComponent bomb){

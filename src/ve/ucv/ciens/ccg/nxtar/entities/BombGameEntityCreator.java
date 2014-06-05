@@ -43,8 +43,11 @@ import com.badlogic.gdx.utils.GdxRuntimeException;
 import com.badlogic.gdx.utils.UBJsonReader;
 
 public class BombGameEntityCreator extends EntityCreatorBase{
-	private static final String TAG        = "BOMB_ENTITY_CREATOR";
-	private static final String CLASS_NAME = BombGameEntityCreator.class.getSimpleName();
+	private static final String  TAG                                         = "BOMB_ENTITY_CREATOR";
+	private static final String  CLASS_NAME                                  = BombGameEntityCreator.class.getSimpleName();
+	private static final boolean DEBUG_RENDER_BOMB_COLLISION_MODELS          = false;
+	private static final boolean DEBUG_RENDER_DOOR_COLLISION_MODELS          = false;
+	private static final boolean DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS = false;
 
 	private class EntityParameters{
 		public Environment environment;
@@ -235,14 +238,23 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 			bomb.addComponent(new RenderModelComponent(combinationBombModel));
 			bomb.addComponent(new CollisionModelComponent(combinationBombCollisionModel));
 			addBombCombinationButtons(parameters, bombComponent);
+			if(DEBUG_RENDER_BOMB_COLLISION_MODELS)
+				addDebugCollisionModelRenderingEntity(combinationBombCollisionModel, parameters, false);
+
 		}else if(type == bomb_type_t.INCLINATION){
 			bomb.addComponent(new RenderModelComponent(inclinationBombModel));
 			bomb.addComponent(new CollisionModelComponent(inclinationBombCollisionModel));
 			addBombInclinationButton(parameters, bombComponent);
+			if(DEBUG_RENDER_BOMB_COLLISION_MODELS)
+				addDebugCollisionModelRenderingEntity(inclinationBombCollisionModel, parameters, false);
+
 		}else if(type == bomb_type_t.WIRES){
 			bomb.addComponent(new RenderModelComponent(wiresBombModel));
 			bomb.addComponent(new CollisionModelComponent(wiresBombCollisionModel));
 			addBombWires(parameters, bombComponent);
+			if(DEBUG_RENDER_BOMB_COLLISION_MODELS)
+				addDebugCollisionModelRenderingEntity(wiresBombCollisionModel, parameters, false);
+
 		}else
 			throw new IllegalArgumentException("Unrecognized bomb type: " + Integer.toString(type.getValue()));
 
@@ -304,6 +316,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		thing.addComponent(new VisibilityComponent());
 		thing.addComponent(new MarkerCodeComponent(parameters.markerCode));
 
+		if(DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS)
+			addDebugCollisionModelRenderingEntity(collisionModel, parameters, false);
+
 		return thing;
 	}
 
@@ -332,5 +347,28 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		doorInstance = door.getComponent(RenderModelComponent.class).instance;
 		door.addComponent(new AnimationComponent(doorInstance, parameters.nextAnimation, parameters.loopAnimation));
 		door.addToWorld();
+
+		if(DEBUG_RENDER_DOOR_COLLISION_MODELS){
+			addDebugCollisionModelRenderingEntity(doorFrameCollisionModel, parameters, false);
+			addDebugCollisionModelRenderingEntity(doorCollisionModel, parameters, true);
+		}
+	}
+
+	private void addDebugCollisionModelRenderingEntity(Model collisionModel, EntityParameters parameters, boolean animation){
+		ModelInstance instance;
+		Entity thing;
+
+		thing = world.createEntity();
+		thing.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		thing.addComponent(new EnvironmentComponent(parameters.environment));
+		thing.addComponent(new ShaderComponent(parameters.shader));
+		thing.addComponent(new RenderModelComponent(collisionModel));
+		thing.addComponent(new VisibilityComponent());
+		thing.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		if(animation){
+			instance = thing.getComponent(RenderModelComponent.class).instance;
+			thing.addComponent(new AnimationComponent(instance, parameters.nextAnimation, parameters.loopAnimation));
+		}
+		thing.addToWorld();
 	}
 }

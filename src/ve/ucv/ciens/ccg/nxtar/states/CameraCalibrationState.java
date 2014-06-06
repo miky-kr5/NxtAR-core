@@ -88,6 +88,7 @@ public class CameraCalibrationState extends BaseState{
 	private VideoFrameMonitor frameMonitor;
 
 	private float[][] calibrationSamples;
+	@SuppressWarnings("unused")
 	private boolean takeSample;
 	private int lastSampleTaken;
 
@@ -215,11 +216,6 @@ public class CameraCalibrationState extends BaseState{
 		// Fetch the current video frame.
 		frame = frameMonitor.getCurrentFrame();
 
-		// Apply the undistortion method if the camera has been calibrated already.
-		/*if(core.cvProc.isCameraCalibrated()){
-			frame = core.cvProc.undistortFrame(frame);
-		}*/
-
 		// Find the calibration points in the video frame.
 		CalibrationData data = core.cvProc.findCalibrationPattern(frame);
 
@@ -231,7 +227,7 @@ public class CameraCalibrationState extends BaseState{
 		}
 
 		// If the user requested a sample be taken.
-		if(takeSample && !core.cvProc.isCameraCalibrated() && data.calibrationPoints != null){
+		if(/*takeSample && */!core.cvProc.isCameraCalibrated() && data.calibrationPoints != null){
 			// Disable sample taking.
 			takeSample = false;
 			Gdx.app.log(TAG, CLASS_NAME + ".render(): Sample taken.");
@@ -255,8 +251,8 @@ public class CameraCalibrationState extends BaseState{
 				Gdx.app.log(TAG, CLASS_NAME + "render(): Last sample taken.");
 
 				core.cvProc.calibrateCamera(calibrationSamples, frame);
-				msg = "Camera successfully calibrated";
-				core.toast(msg, true);
+				core.onCameraCalibrated();
+				core.nextState = game_states_t.MAIN_MENU;
 			}
 		}
 
@@ -299,14 +295,14 @@ public class CameraCalibrationState extends BaseState{
 		}
 
 		// Render the user interface.
-		if(!Ouya.runningOnOuya){
+		/*if(!Ouya.runningOnOuya){
 			core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			core.batch.begin();{
 				takeSampleButton.draw(core.batch, 1.0f);
 			}core.batch.end();
 		}else{
 			// TODO: Render OUYA gui.
-		}
+		}*/
 
 		// Save this frame as previous to avoid processing the same frame twice when network latency is high.
 		prevFrame = frame;

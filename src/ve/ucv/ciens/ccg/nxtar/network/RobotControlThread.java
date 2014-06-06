@@ -97,7 +97,7 @@ public class RobotControlThread extends Thread {
 		try{
 			client = server.accept();
 			client.setTcpNoDelay(true);
-			if(netListener != null) netListener.networkStreamConnected(THREAD_NAME);
+			if(netListener != null) netListener.onNetworkStreamConnected(THREAD_NAME);
 			os = new ObjectOutputStream(client.getOutputStream());
 			is = new ObjectInputStream(client.getInputStream());
 

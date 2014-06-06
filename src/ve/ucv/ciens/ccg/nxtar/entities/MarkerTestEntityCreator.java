@@ -51,7 +51,7 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 	private DirectionalLightPerPixelShader ppShader;
 
 	@Override
-	public void createAllEntities() {
+	protected void createAllEntities() {
 		ModelBuilder builder;
 		Entity bomb, box, anim;
 		G3dModelLoader loader;
@@ -108,6 +108,8 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 		bomb.addToWorld();
 		anim.addToWorld();
 		box.addToWorld();
+
+		entitiesCreated = true;
 	}
 
 	@Override
@@ -123,5 +125,13 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 
 		if(ppShader != null)
 			ppShader.dispose();
+	}
+
+	@Override
+	public boolean updateAssetManager(){
+		createAllEntities();
+		if(core != null) core.onAssetsLoaded();
+
+		return true;
 	}
 }

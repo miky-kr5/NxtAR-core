@@ -220,7 +220,7 @@ public class VideoStreamingThread extends Thread{
 			//Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
 			if(netListener != null && !coreNotified && frameMonitor.getCurrentFrame() != null){
 				coreNotified = true;
-				netListener.networkStreamConnected(THREAD_NAME);
+				netListener.onNetworkStreamConnected(THREAD_NAME);
 			}
 			receiveUdp();
 			frames++;

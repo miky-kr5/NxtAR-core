@@ -49,6 +49,8 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	// Helper fields.
 	protected boolean clientConnected;
+	protected boolean cameraCalibrated;
+	protected boolean assetsLoaded;
 	private float u_scaling[];
 
 	// Buttons and other gui components.
@@ -170,7 +172,6 @@ public abstract class MainMenuStateBase extends BaseState{
 		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
-
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
 		touchPointWorldCoords = new Vector2();
 		startButtonTouched = false;
@@ -179,6 +180,8 @@ public abstract class MainMenuStateBase extends BaseState{
 		calibrationButtonTouchPointer = -1;
 
 		clientConnected = false;
+		cameraCalibrated = false;
+		assetsLoaded = false;
 		stateActive = false;
 	}
 
@@ -240,8 +243,22 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	public void onClientConnected(){
 		clientConnected = true;
-		startButton.setDisabled(false);
 		calibrationButton.setDisabled(false);
+	}
+
+	public void onCameraCalibrated(){
+		cameraCalibrated = true;
+		calibrationButton.setDisabled(true);
+		startGame();
+	}
+
+	public void onAssetsLoaded(){
+		assetsLoaded = true;
+		startGame();
+	}
+
+	private void startGame(){
+		startButton.setDisabled(!(cameraCalibrated && assetsLoaded));
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;

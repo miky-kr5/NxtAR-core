@@ -15,12 +15,28 @@
  */
 package ve.ucv.ciens.ccg.nxtar.entities;
 
+import ve.ucv.ciens.ccg.nxtar.NxtARCore;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
+
 import com.artemis.World;
+import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.utils.Disposable;
 
+/**
+ * 
+ */
 public abstract class EntityCreatorBase implements Disposable{
-	protected World world;
+	protected World                     world              = null;
+	protected ApplicationEventsListener core               = null;
+	protected boolean                   entitiesCreated    = false;
+	protected AssetManager              manager            = null;
 
+	/**
+	 * <p>Sets the Artemis {@link World} to use to create entities.</p>
+	 * 
+	 * @param world The Artemis {@link World}.
+	 * @throws IllegalArgumentException if world is null.
+	 */
 	public void setWorld(World world) throws IllegalArgumentException{
 		if(world == null)
 			throw new IllegalArgumentException("World cannot be null.");
@@ -28,7 +44,38 @@ public abstract class EntityCreatorBase implements Disposable{
 		this.world = world;
 	}
 
-	public abstract void createAllEntities();
+	/**
+	 * <p>Sets the application core to listen for asset loading events.</p>
+	 * 
+	 * @param core The application core to be used as listener.
+	 * @throws IllegalArgumentException if core is null.
+	 */
+	public void setCore(NxtARCore core) throws IllegalArgumentException{
+		if(core == null) throw new IllegalArgumentException("Core is null.");
+		this.core = core;
+	}
 
+	/**
+	 * <p> Updates the state of the {@link AssetManager}.</p>
+	 * 
+	 * @return true if the {@link AssetManager} has finished loading.
+	 */
+	public abstract boolean updateAssetManager();
+
+	/**
+	 * <p>Unloads all assets loaded for the scenario.</p>
+	 */
 	public abstract void dispose();
+
+	/**
+	 * @return true if the createAllEntities method has been called.
+	 */
+	public boolean areEntitiesCreated(){
+		return entitiesCreated;
+	}
+
+	/**
+	 * <p>Creates all entities for a game scenario.</p>
+	 */
+	protected abstract void createAllEntities();
 }

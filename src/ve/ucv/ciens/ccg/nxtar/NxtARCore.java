@@ -29,6 +29,7 @@ import ve.ucv.ciens.ccg.nxtar.states.MainMenuStateBase;
 import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.states.PauseState;
 import ve.ucv.ciens.ccg.nxtar.states.TabletMainMenuState;
+import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenEquations;
@@ -121,7 +122,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	/**
 	 * <p>Wrapper around the Operating System methods.</p>
 	 */
-	private ActionResolver osFunction;
+	private ActionResolver actionResolver;
 
 	// Networking related fields.
 	/**
@@ -206,10 +207,10 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 
 		// Check if the concrete application implements all required interfaces.
 		try{
-			this.osFunction = (ActionResolver)concreteApp;
+			this.actionResolver = (ActionResolver)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the Toaster interface. Toasting disabled.");
-			this.osFunction = null;
+			this.actionResolver = null;
 		}
 
 		try{
@@ -229,6 +230,8 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * sets the application states.</p>
 	 */
 	public void create(){
+		GameSettings.initGameSettings(this);
+
 		// Create the state objects.
 		states = new BaseState[game_states_t.getNumStates()];
 		if(Ouya.runningOnOuya)
@@ -268,7 +271,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		// Start networking.
-		osFunction.enableMulticast();
+		actionResolver.enableMulticast();
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
@@ -326,6 +329,10 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 */
 	public void render(){
 		super.render();
+
+		// Load the assets.
+		if(!GameSettings.getEntityCreator().areEntitiesCreated())
+			GameSettings.getEntityCreator().updateAssetManager();
 
 		// If the current state set a value for nextState then switch to that state.
 		if(nextState != null){
@@ -430,6 +437,9 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 			font.dispose();
 		}
 
+		if(GameSettings.getEntityCreator() != null)
+			GameSettings.getEntityCreator().dispose();
+
 		// Dispose screens.
 		for(int i = 0; i < states.length; i++){
 			states[i].dispose();
@@ -440,27 +450,30 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	  ; APPLICATION EVENTS LISTENER INTERFACE METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
-	// TODO: Disable start game button until camera has been sucessfully calibrated.
-	// TODO: Add calibration listener callback.
-
-	/**
-	 * <p>Callback used by the networking threads to notify sucessfull connections
-	 * to the application</p>
-	 * 
-	 * @param streamName The name of the thread notifying a connection.
-	 */
 	@Override
-	public synchronized void networkStreamConnected(String streamName){
+	public synchronized void onNetworkStreamConnected(String streamName){
 		Gdx.app.log(TAG, CLASS_NAME + ".networkStreamConnected() :: Stream " + streamName + " connected.");
 		connections += 1;
 
 		if(connections >= 3){
 			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
 			serviceDiscoveryThread.finish();
-			osFunction.disableMulticast();
-			osFunction.showShortToast("Client connected");
+			if(actionResolver != null) actionResolver.disableMulticast();
+			if(actionResolver != null) actionResolver.showShortToast("Client connected");
 			((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onClientConnected();
 		}
+	}
+
+	@Override
+	public void onAssetsLoaded(){
+		if(actionResolver != null) actionResolver.showShortToast("All assets sucessfully loaded.");
+		((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onAssetsLoaded();
+	}
+
+	@Override
+	public void onCameraCalibrated(){
+		if(actionResolver != null) actionResolver.showShortToast("Camera successfully calibrated.");
+		((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onCameraCalibrated();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;
@@ -474,9 +487,9 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * @param longToast True for a lasting toast. False for a short toast.
 	 */
 	public void toast(String msg, boolean longToast){
-		if(osFunction != null){
-			if(longToast) osFunction.showLongToast(msg);
-			else osFunction.showShortToast(msg);
+		if(actionResolver != null){
+			if(longToast) actionResolver.showLongToast(msg);
+			else actionResolver.showShortToast(msg);
 		}
 	}
 }

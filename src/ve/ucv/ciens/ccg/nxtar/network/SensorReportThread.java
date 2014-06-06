@@ -100,7 +100,7 @@ public class SensorReportThread extends Thread {
 		try{
 			client = server.accept();
 			client.setTcpNoDelay(true);
-			if(netListener != null) netListener.networkStreamConnected(THREAD_NAME);
+			if(netListener != null) netListener.onNetworkStreamConnected(THREAD_NAME);
 			reader = client.getInputStream();
 
 		}catch(IOException io){

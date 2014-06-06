@@ -177,11 +177,7 @@ public class InGameState extends BaseState{
 		frameBufferSprite = null;
 
 		// Set up the game world.
-		gameWorld = new World();
-
-		GameSettings.initGameSettings();
-		GameSettings.entityCreator.setWorld(gameWorld);
-		GameSettings.entityCreator.createAllEntities();
+		gameWorld = GameSettings.getGameWorld();
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new ObjectPositioningSystem(), true);
@@ -361,9 +357,6 @@ public class InGameState extends BaseState{
 	public void dispose(){
 		if(modelBatch != null)
 			modelBatch.dispose();
-
-		if(GameSettings.entityCreator != null)
-			GameSettings.entityCreator.dispose();
 
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();

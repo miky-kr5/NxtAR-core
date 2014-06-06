@@ -15,17 +15,54 @@
  */
 package ve.ucv.ciens.ccg.nxtar.utils;
 
+import com.artemis.World;
+
+import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
 import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
 
 public abstract class GameSettings{
-	public static EntityCreatorBase entityCreator = null;
-	public static GameLogicSystemBase gameLogicSystem = null;
+	private static EntityCreatorBase   entityCreator   = null;
+	private static GameLogicSystemBase gameLogicSystem = null;
+	private static World               gameWorld       = null;
 
-	public static void initGameSettings(){
-		entityCreator = new BombGameEntityCreator();
-		gameLogicSystem = null;
+	public static void initGameSettings(NxtARCore core) throws IllegalArgumentException{
+		if(core == null)
+			throw new IllegalArgumentException("Core is null.");
+
+		if(getGameWorld() == null)
+			gameWorld = new World();
+
+		if(getEntityCreator() == null){
+			entityCreator = new BombGameEntityCreator();
+			entityCreator.setWorld(GameSettings.getGameWorld());
+			entityCreator.setCore(core);
+		}
+
+		if(getGameLogicSystem() == null)
+			gameLogicSystem = null;
 		//gameLogicSystem = new BombGameLogicSystem();
+	}
+
+	/**
+	 * @return the entityCreator
+	 */
+	public static EntityCreatorBase getEntityCreator() {
+		return entityCreator;
+	}
+
+	/**
+	 * @return the gameLogicSystem
+	 */
+	public static GameLogicSystemBase getGameLogicSystem() {
+		return gameLogicSystem;
+	}
+
+	/**
+	 * @return the gameWorld
+	 */
+	public static World getGameWorld() {
+		return gameWorld;
 	}
 }

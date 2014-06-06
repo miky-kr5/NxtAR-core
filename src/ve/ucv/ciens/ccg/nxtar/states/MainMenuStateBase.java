@@ -51,49 +51,46 @@ public abstract class MainMenuStateBase extends BaseState{
 	protected boolean clientConnected;
 	protected boolean cameraCalibrated;
 	protected boolean assetsLoaded;
-	private float u_scaling[];
+	private   float   u_scaling[];
 
 	// Buttons and other gui components.
 	protected TextButton startButton;
-	protected Rectangle startButtonBBox;
-	protected Sprite clientConnectedLedOn;
-	protected Sprite clientConnectedLedOff;
-
+	protected Rectangle  startButtonBBox;
 	protected TextButton calibrationButton;
-	protected Rectangle calibrationButtonBBox;
-	protected Sprite cameraCalibratedLedOn;
-	protected Sprite cameraCalibratedLedOff;
+	protected Rectangle  calibrationButtonBBox;
+	protected Sprite     cameraCalibratedLedOn;
+	protected Sprite     cameraCalibratedLedOff;
+	protected Sprite     assetsLoadedLedOn;
+	protected Sprite     assetsLoadedLedOff;
 
 	protected Sprite background;
 
 	// Graphic data for the start button.
-	private Texture menuButtonEnabledTexture;
-	private Texture menuButtonDisabledTexture;
-	private Texture menuButtonPressedTexture;
-	private NinePatch menuButtonEnabled9p;
-	private NinePatch menuButtonDisabled9p;
-	private NinePatch menuButtonPressed9p;
+	private Texture    menuButtonEnabledTexture;
+	private Texture    menuButtonDisabledTexture;
+	private Texture    menuButtonPressedTexture;
+	private NinePatch  menuButtonEnabled9p;
+	private NinePatch  menuButtonDisabled9p;
+	private NinePatch  menuButtonPressed9p;
 	private BitmapFont font;
 
 	// Other graphics.
-	private Texture cameraCalibratedLedOffTexture;
-	private Texture cameraCalibratedLedOnTexture;
-	private Texture clientConnectedLedOffTexture;
-	private Texture clientConnectedLedOnTexture;
-	private Texture backgroundTexture;
+	private Texture       ledOffTexture;
+	private Texture       ledOnTexture;
+	private Texture       backgroundTexture;
 	private ShaderProgram backgroundShader;
 
 	// Button touch helper fields.
 	protected boolean startButtonTouched;
-	protected int startButtonTouchPointer;
+	protected int     startButtonTouchPointer;
 	protected boolean calibrationButtonTouched;
-	protected int calibrationButtonTouchPointer;
+	protected int     calibrationButtonTouchPointer;
 
 	public MainMenuStateBase(){
-		TextureRegion region;
-		TextButtonStyle tbs;
-		FreeTypeFontGenerator generator;
-		FreeTypeFontParameter param;
+		TextureRegion         region;
+		TextButtonStyle       textButtonStyle;
+		FreeTypeFontGenerator fontGenerator;
+		FreeTypeFontParameter fontParameters;
 
 		this.pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 
@@ -108,49 +105,48 @@ public abstract class MainMenuStateBase extends BaseState{
 		menuButtonPressed9p = new NinePatch(new TextureRegion(menuButtonPressedTexture, 0, 0, menuButtonPressedTexture.getWidth(), menuButtonPressedTexture.getHeight()), 49, 49, 45, 45);
 
 		// Create the start button font.
-		param = new FreeTypeFontParameter();
-		param.characters = ProjectConstants.FONT_CHARS;
-		param.size = ProjectConstants.MENU_BUTTON_FONT_SIZE;
-		param.flip = false;
-		generator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
-		font = generator.generateFont(param);
-		generator.dispose();
+		fontParameters = new FreeTypeFontParameter();
+		fontParameters.characters = ProjectConstants.FONT_CHARS;
+		fontParameters.size = ProjectConstants.MENU_BUTTON_FONT_SIZE;
+		fontParameters.flip = false;
+		fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
+		font = fontGenerator.generateFont(fontParameters);
+		fontGenerator.dispose();
 
 		// Create the start button.
-		tbs = new TextButtonStyle();
-		tbs.font = font;
-		tbs.up = new NinePatchDrawable(menuButtonEnabled9p);
-		tbs.checked = new NinePatchDrawable(menuButtonPressed9p);
-		tbs.disabled = new NinePatchDrawable(menuButtonDisabled9p);
-		tbs.disabledFontColor = new Color(0, 0, 0, 1);
+		textButtonStyle = new TextButtonStyle();
+		textButtonStyle.font = font;
+		textButtonStyle.up = new NinePatchDrawable(menuButtonEnabled9p);
+		textButtonStyle.checked = new NinePatchDrawable(menuButtonPressed9p);
+		textButtonStyle.disabled = new NinePatchDrawable(menuButtonDisabled9p);
+		textButtonStyle.disabledFontColor = new Color(0, 0, 0, 1);
 
-		startButton = new TextButton("Start server", tbs);
+		startButton = new TextButton("Start server", textButtonStyle);
 		startButton.setText("Start game");
 		startButton.setDisabled(true);
 		startButtonBBox = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
 
 		// Create the calibration button.
-		calibrationButton = new TextButton("Calibrate camera", tbs);
+		calibrationButton = new TextButton("Calibrate camera", textButtonStyle);
 		calibrationButton.setText("Calibrate camera");
 		calibrationButton.setDisabled(true);
 		calibrationButtonBBox = new Rectangle(0, 0, calibrationButton.getWidth(), calibrationButton.getHeight());
 
 		// Create the connection leds.
-		clientConnectedLedOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
-		region = new TextureRegion(clientConnectedLedOnTexture);
-		clientConnectedLedOn = new Sprite(region);
+		ledOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
+		ledOffTexture = new Texture("data/gfx/gui/Anonymous_Button_Red.png");
 
-		clientConnectedLedOffTexture = new Texture("data/gfx/gui/Anonymous_Button_Red.png");
-		region = new TextureRegion(clientConnectedLedOffTexture);
-		clientConnectedLedOff = new Sprite(region);
-
-		cameraCalibratedLedOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
-		region = new TextureRegion(cameraCalibratedLedOnTexture);
+		region = new TextureRegion(ledOnTexture);
 		cameraCalibratedLedOn = new Sprite(region);
 
-		cameraCalibratedLedOffTexture = new Texture("data/gfx/gui/Anonymous_Button_Red.png");
-		region = new TextureRegion(cameraCalibratedLedOffTexture);
+		region = new TextureRegion(ledOffTexture);
 		cameraCalibratedLedOff = new Sprite(region);
+
+		region = new TextureRegion(ledOnTexture);
+		assetsLoadedLedOn = new Sprite(region);
+
+		region = new TextureRegion(ledOffTexture);
+		assetsLoadedLedOff = new Sprite(region);
 
 		// Set up the background.
 		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
@@ -189,28 +185,12 @@ public abstract class MainMenuStateBase extends BaseState{
 	public abstract void render(float delta);
 
 	@Override
-	public void resize(int width, int height){ }
-
-	@Override
-	public void show(){ }
-	@Override
-	public void hide(){ }
-
-	@Override
-	public void pause(){ }
-
-	@Override
-	public void resume(){ }
-
-	@Override
 	public void dispose(){
 		menuButtonEnabledTexture.dispose();
 		menuButtonDisabledTexture.dispose();
 		menuButtonPressedTexture.dispose();
-		clientConnectedLedOnTexture.dispose();
-		clientConnectedLedOffTexture.dispose();
-		cameraCalibratedLedOnTexture.dispose();
-		cameraCalibratedLedOffTexture.dispose();
+		ledOnTexture.dispose();
+		ledOffTexture.dispose();
 		backgroundTexture.dispose();
 		if(backgroundShader != null) backgroundShader.dispose();
 		font.dispose();
@@ -248,7 +228,6 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	public void onCameraCalibrated(){
 		cameraCalibrated = true;
-		calibrationButton.setDisabled(true);
 		startGame();
 	}
 

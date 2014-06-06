@@ -187,6 +187,23 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	}
 
 	@Override
+	public boolean updateAssetManager() throws NullPointerException{
+		boolean doneLoading;
+
+		if(core == null)
+			throw new NullPointerException("Core has not been set.");
+
+		doneLoading = manager.update();
+		if(doneLoading){
+			getModels();
+			createAllEntities();
+			core.onAssetsLoaded();
+		}
+
+		return doneLoading;
+	}
+
+	@Override
 	public void dispose() {
 		if(shader != null) shader.dispose();
 		manager.dispose();
@@ -382,22 +399,5 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wiresBombCollisionModelWire2        = manager.get("models/collision_models/bomb_game/cable_2_col.g3db", Model.class);
 		wiresBombCollisionModelWire3        = manager.get("models/collision_models/bomb_game/cable_3_col.g3db", Model.class);
 		// easterEggCollisionModel       = manager.get("models/collision_models/bomb_game/door.g3db", Model.class);
-	}
-
-	@Override
-	public boolean updateAssetManager(){
-		boolean doneLoading;
-
-		if(core == null)
-			throw new NullPointerException("Core has not been set.");
-
-		doneLoading = manager.update();
-		if(doneLoading){
-			getModels();
-			createAllEntities();
-			core.onAssetsLoaded();
-		}
-
-		return doneLoading;
 	}
 }

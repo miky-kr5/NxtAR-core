@@ -15,9 +15,9 @@
  */
 package ve.ucv.ciens.ccg.nxtar;
 
-import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
-import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ActionResolver;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
@@ -27,7 +27,6 @@ import ve.ucv.ciens.ccg.nxtar.states.CameraCalibrationState;
 import ve.ucv.ciens.ccg.nxtar.states.InGameState;
 import ve.ucv.ciens.ccg.nxtar.states.MainMenuStateBase;
 import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
-import ve.ucv.ciens.ccg.nxtar.states.PauseState;
 import ve.ucv.ciens.ccg.nxtar.states.TabletMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -74,7 +73,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * Valid game states.
 	 */
 	public enum game_states_t {
-		MAIN_MENU(0), IN_GAME(1), PAUSED(2), CALIBRATION(3);
+		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2);
 
 		private int value;
 
@@ -239,7 +238,6 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		else
 			states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
 		states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
-		states[game_states_t.PAUSED.getValue()] = new PauseState(this);
 		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
 
 		// Register controller listeners.

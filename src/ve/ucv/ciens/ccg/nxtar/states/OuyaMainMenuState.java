@@ -33,32 +33,35 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	private Sprite ouyaOButton;
 	private boolean oButtonPressed;
 	private int oButtonSelection;
+	private float ledYPos;
 
 	public OuyaMainMenuState(final NxtARCore core){
 		super();
 
 		this.core = core;
 
+		// Set buttons.
 		startButton.setPosition(-(startButton.getWidth() / 2), -(startButton.getHeight() / 2));
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
-
 		calibrationButton.setPosition(-(calibrationButton.getWidth() / 2), (startButton.getY() + startButton.getHeight()) + 10);
 		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
 
-		float ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
-		clientConnectedLedOn.setSize(clientConnectedLedOn.getWidth() * 0.5f, clientConnectedLedOn.getHeight() * 0.5f);
-		clientConnectedLedOn.setPosition(-(clientConnectedLedOn.getWidth() / 2), ledYPos);
+		//Set leds.
+		ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
+		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
+		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
+		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);
+		cameraCalibratedLedOff.setPosition(-cameraCalibratedLedOff.getWidth() - 5, ledYPos);
+		assetsLoadedLedOn.setSize(assetsLoadedLedOn.getWidth() * 0.5f, assetsLoadedLedOn.getHeight() * 0.5f);
+		assetsLoadedLedOn.setPosition(5, ledYPos);
+		assetsLoadedLedOff.setSize(assetsLoadedLedOff.getWidth() * 0.5f, assetsLoadedLedOff.getHeight() * 0.5f);
+		assetsLoadedLedOff.setPosition(5, ledYPos);
 
-		clientConnectedLedOff.setSize(clientConnectedLedOff.getWidth() * 0.5f, clientConnectedLedOff.getHeight() * 0.5f);
-		clientConnectedLedOff.setPosition(-(clientConnectedLedOff.getWidth() / 2), ledYPos);
-
-		// TODO: Set calibration led attributes.
-
+		// Set OUYA's O button.
 		ouyaOButtonTexture = new Texture("data/gfx/gui/OUYA_O.png");
 		TextureRegion region = new TextureRegion(ouyaOButtonTexture, ouyaOButtonTexture.getWidth(), ouyaOButtonTexture.getHeight());
 		ouyaOButton = new Sprite(region);
 		ouyaOButton.setSize(ouyaOButton.getWidth() * 0.6f, ouyaOButton.getHeight() * 0.6f);
-
 		oButtonSelection = 0;
 		oButtonPressed = false;
 	}
@@ -70,21 +73,22 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 
 		core.batch.setProjectionMatrix(pixelPerfectCamera.combined);
 		core.batch.begin();{
+			// Render background.
 			core.batch.disableBlending();
 			drawBackground(core.batch);
 			core.batch.enableBlending();
 
-			if(clientConnected){
-				clientConnectedLedOn.draw(core.batch);
-			}else{
-				clientConnectedLedOff.draw(core.batch);
-			}
+			// Render leds.
+			if(cameraCalibrated) cameraCalibratedLedOn.draw(core.batch);
+			else cameraCalibratedLedOff.draw(core.batch);
+			if(assetsLoaded) assetsLoadedLedOn.draw(core.batch);
+			else assetsLoadedLedOff.draw(core.batch);
 
-			// TODO: Render calibration leds.
-
+			// Render buttons.
 			startButton.draw(core.batch, 1.0f);
 			calibrationButton.draw(core.batch, 1.0f);
 
+			// Render O button.
 			if(oButtonSelection == 0){
 				ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY() + (ouyaOButton.getHeight() / 2));
 			}else if(oButtonSelection == 1){

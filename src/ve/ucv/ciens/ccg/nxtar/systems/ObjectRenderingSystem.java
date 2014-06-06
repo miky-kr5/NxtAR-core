@@ -16,11 +16,9 @@
 package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
-import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
-import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
@@ -35,40 +33,19 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
  * entities to be rendered must have a geometry, shader and mesh component associated.</p>
  */
 public class ObjectRenderingSystem extends EntityProcessingSystem {
-//	@Mapper ComponentMapper<GeometryComponent>     geometryMapper;
 	@Mapper ComponentMapper<ShaderComponent>       shaderMapper;
 	@Mapper ComponentMapper<RenderModelComponent>  modelMapper;
 	@Mapper ComponentMapper<EnvironmentComponent>  environmentMapper;
-	@Mapper ComponentMapper<VisibilityComponent>   visibiltyMapper;
-
-//	/**
-//	 * <p>A matrix representing 3D translations.</p>
-//	 */
-//	private Matrix4 translationMatrix;
-//
-//	/**
-//	 * <p>A matrix representing 3D rotations.</p>
-//	 */
-//	private Matrix4 rotationMatrix;
-//
-//	/**
-//	 * <p>A matrix representing 3D scalings.</p>
-//	 */
-//	private Matrix4 scalingMatrix;
 
 	private PerspectiveCamera camera;
-
 	private ModelBatch batch;
 
 	@SuppressWarnings("unchecked")
 	public ObjectRenderingSystem(ModelBatch batch) {
-		super(Aspect.getAspectForAll(GeometryComponent.class, ShaderComponent.class, RenderModelComponent.class, EnvironmentComponent.class, VisibilityComponent.class).exclude(MarkerCodeComponent.class));
+		super(Aspect.getAspectForAll(ShaderComponent.class, RenderModelComponent.class, EnvironmentComponent.class).exclude(MarkerCodeComponent.class));
 
-		camera            = null;
-		this.batch        = batch;
-//		translationMatrix = new Matrix4().setToTranslation(0.0f, 0.0f, 0.0f);
-//		rotationMatrix    = new Matrix4().idt();
-//		scalingMatrix     = new Matrix4().setToScaling(0.0f, 0.0f, 0.0f);
+		camera     = null;
+		this.batch = batch;
 	}
 
 	public void begin(PerspectiveCamera camera) throws RuntimeException{
@@ -84,37 +61,18 @@ public class ObjectRenderingSystem extends EntityProcessingSystem {
 		camera = null;
 	}
 
-	/**
-	 * <p>Renders the entity passed by parameter, calculating it's corresponding geometric
-	 * transformation and setting and calling it's associated shader program.</p>
-	 * 
-	 * @param e The entity to be processed.
-	 */
 	@Override
 	protected void process(Entity e) {
 		EnvironmentComponent  environment;
-//		GeometryComponent     geometryComponent;
 		ShaderComponent       shaderComponent;
 		RenderModelComponent  renderModelComponent;
-		VisibilityComponent   visibility;
 
 		// Get the necessary components.
-//		geometryComponent    = geometryMapper.get(e);
 		renderModelComponent = modelMapper.get(e);
 		shaderComponent      = shaderMapper.get(e);
 		environment          = environmentMapper.get(e);
-		visibility           = visibiltyMapper.get(e);
 
-		if(visibility.visible){
-			// Calculate the geometric transformation for this entity.
-//			translationMatrix.setToTranslation(geometryComponent.position);
-//			rotationMatrix.set(geometryComponent.rotation);
-//			scalingMatrix.setToScaling(geometryComponent.scaling);
-//			renderModelComponent.instance.transform.idt().mul(translationMatrix).mul(rotationMatrix).mul(scalingMatrix);
-//			renderModelComponent.instance.calculateTransforms();
-
-			// Render this entity.
-			batch.render(renderModelComponent.instance, environment.environment, shaderComponent.shader);
-		}
+		// Render this entity.
+		batch.render(renderModelComponent.instance, environment.environment, shaderComponent.shader);
 	}
 }

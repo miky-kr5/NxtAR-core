@@ -16,6 +16,10 @@
 package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
+import ve.ucv.ciens.ccg.nxtar.factories.products.GamepadUserInput;
+import ve.ucv.ciens.ccg.nxtar.factories.products.KeyboardUserInput;
+import ve.ucv.ciens.ccg.nxtar.factories.products.TouchUserInput;
+import ve.ucv.ciens.ccg.nxtar.factories.products.UserInput;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
@@ -23,22 +27,35 @@ import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
 
-public class ObjectPositioningSystem extends EntityProcessingSystem {
+public class RobotArmPositioningSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
 
+	private UserInput input;
+
 	@SuppressWarnings("unchecked")
-	public ObjectPositioningSystem(){
+	public RobotArmPositioningSystem(){
 		super(Aspect.getAspectForAll(GeometryComponent.class));
 	}
 
-	public void setUserInput(){
-		// TODO: Desing a representation for user input.
-		// TODO: Store user input for processing.
+	public void setUserInput(UserInput input){
+		this.input = input;
 	}
 
 	@Override
 	protected void process(Entity e) {
 		GeometryComponent geometry = geometryMapper.get(e);
-		// TODO: Set the geometry fields based on user input.
+
+		if(input == null) return;
+
+		if(input instanceof TouchUserInput){
+
+		}else if(input instanceof GamepadUserInput){
+
+		}else if(input instanceof KeyboardUserInput){
+
+		}else
+			throw new ClassCastException("Input is not a valid UserInput instance.");
+
+		input = null;
 	}
 }

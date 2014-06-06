@@ -19,6 +19,8 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.factories.UserInputFactory;
+import ve.ucv.ciens.ccg.nxtar.factories.products.UserInput;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
@@ -27,8 +29,8 @@ import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.ObjectPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -74,6 +76,7 @@ public class InGameState extends BaseState{
 	private World                           gameWorld;
 	private MarkerRenderingSystem           markerRenderingSystem;
 	private ObjectRenderingSystem           objectRenderingSystem;
+	private RobotArmPositioningSystem       robotArmPositioningSystem;
 
 	// Cameras.
 	private OrthographicCamera              unitaryOrthoCamera;
@@ -179,8 +182,9 @@ public class InGameState extends BaseState{
 		// Set up the game world.
 		gameWorld = GameSettings.getGameWorld();
 
+		robotArmPositioningSystem = new RobotArmPositioningSystem();
 		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(new ObjectPositioningSystem(), true);
+		gameWorld.setSystem(robotArmPositioningSystem, true);
 		gameWorld.setSystem(new GeometrySystem());
 		gameWorld.setSystem(new AnimationSystem());
 		// TODO: Make and add object-marker collision detection system.
@@ -442,6 +446,7 @@ public class InGameState extends BaseState{
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){
 		MotorEvent event;
+		UserInput input;
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
@@ -529,8 +534,14 @@ public class InGameState extends BaseState{
 					event.setPower((byte)0x00);
 					queue.addEvent(event);
 				}
+
 			}else{
-				// TODO: Send input to the input handler system.
+				input = UserInputFactory.createTouchUserInput();
+
+				// TODO: Calculate movement ray.
+
+				robotArmPositioningSystem.setUserInput(input);
+				robotArmPositioningSystem.process();
 			}
 
 			return true;
@@ -640,8 +651,6 @@ public class InGameState extends BaseState{
 
 				motorButtonsPointers[6] = -1;
 				motorButtonsTouched[6] = false;
-			}else{
-				// TODO: Pass input to the input handler system.
 			}
 
 			return true;
@@ -748,8 +757,6 @@ public class InGameState extends BaseState{
 
 				motorButtonsPointers[6] = -1;
 				motorButtonsTouched[6] = false;
-			}else{
-				// TODO: Pass input to the input handler system.
 			}
 
 			return true;
@@ -846,8 +853,9 @@ public class InGameState extends BaseState{
 				event.setMotor(motor_t.RECENTER);
 				event.setPower((byte)0x00);
 				queue.addEvent(event);
-			}else{
-				// TODO: Pass input to the input handler system.
+
+			}else if(buttonCode == Ouya.BUTTON_A){
+				core.nextState = game_states_t.MAIN_MENU;
 			}
 
 			return true;
@@ -923,8 +931,6 @@ public class InGameState extends BaseState{
 
 			}else if(buttonCode == Ouya.BUTTON_Y){
 				motorGamepadButtonPressed[6] = false;
-			}else{
-				// TODO: Pass input to the input handler system.
 			}
 
 			return true;

@@ -64,62 +64,49 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		}
 	}
 
-	private EntityParameters parameters;
-	private Shader           shader;
-	private int              currentBombId;
+	private Shader shader;
+	private int    currentBombId;
 
 	// Render models.
-	private Model            doorModel                     = null;
-	private Model            doorFrameModel                = null;
-	private Model            combinationBombModel          = null;
-	private Model            combinationButton1Model       = null;
-	private Model            combinationButton2Model       = null;
-	private Model            combinationButton3Model       = null;
-	private Model            combinationButton4Model       = null;
-	private Model            inclinationBombModel          = null;
-	private Model            inclinationBombButtonModel    = null;
-	private Model            wiresBombModel                = null;
-	private Model            wiresBombModelWire1           = null;
-	private Model            wiresBombModelWire2           = null;
-	private Model            wiresBombModelWire3           = null;
-	//	private Model            easterEggModel                = null;
+	private Model  robotArmModel                       = null;
+	private Model  doorModel                           = null;
+	private Model  doorFrameModel                      = null;
+	private Model  combinationBombModel                = null;
+	private Model  combinationButton1Model             = null;
+	private Model  combinationButton2Model             = null;
+	private Model  combinationButton3Model             = null;
+	private Model  combinationButton4Model             = null;
+	private Model  inclinationBombModel                = null;
+	private Model  inclinationBombButtonModel          = null;
+	private Model  wiresBombModel                      = null;
+	private Model  wiresBombModelWire1                 = null;
+	private Model  wiresBombModelWire2                 = null;
+	private Model  wiresBombModelWire3                 = null;
+	private Model  easterEggModel                      = null;
 
 	// Collision models.
-	private Model            doorCollisionModel                  = null;
-	private Model            doorFrameCollisionModel             = null;
-	private Model            combinationBombCollisionModel       = null;
-	private Model            combinationButton1CollisionModel    = null;
-	private Model            combinationButton2CollisionModel    = null;
-	private Model            combinationButton3CollisionModel    = null;
-	private Model            combinationButton4CollisionModel    = null;
-	private Model            inclinationBombCollisionModel       = null;
-	private Model            inclinationBombButtonCollisionModel = null;
-	private Model            wiresBombCollisionModel             = null;
-	private Model            wiresBombCollisionModelWire1        = null;
-	private Model            wiresBombCollisionModelWire2        = null;
-	private Model            wiresBombCollisionModelWire3        = null;
-	//	private Model            easterEggCollisionModel             = null;
+	private Model  robotArmCollisionModel              = null;
+	private Model  doorCollisionModel                  = null;
+	private Model  doorFrameCollisionModel             = null;
+	private Model  combinationBombCollisionModel       = null;
+	private Model  combinationButton1CollisionModel    = null;
+	private Model  combinationButton2CollisionModel    = null;
+	private Model  combinationButton3CollisionModel    = null;
+	private Model  combinationButton4CollisionModel    = null;
+	private Model  inclinationBombCollisionModel       = null;
+	private Model  inclinationBombButtonCollisionModel = null;
+	private Model  wiresBombCollisionModel             = null;
+	private Model  wiresBombCollisionModelWire1        = null;
+	private Model  wiresBombCollisionModelWire2        = null;
+	private Model  wiresBombCollisionModelWire3        = null;
+	private Model  easterEggCollisionModel             = null;
 
 	public BombGameEntityCreator(){
 		currentBombId = 0;
 		manager = new AssetManager();
 
-		// Create and set the lighting.
-		parameters = new EntityParameters();
-		parameters.environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
-		parameters.environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(0, 0, -1)));
-
-		// Load the shader.
-		shader = new DirectionalLightPerPixelShader();
-		try{
-			shader.init();
-		}catch(GdxRuntimeException gdx){
-			Gdx.app.error(TAG, CLASS_NAME + ".BombGameEntityCreator(): Shader failed to load: " + gdx.getMessage());
-			shader = null;
-		}
-		parameters.shader = shader;
-
 		// Load the render models.
+		manager.load("models/render_models/bomb_game/robot_arm.g3db", Model.class);
 		manager.load("models/render_models/bomb_game/door.g3db", Model.class);
 		manager.load("models/render_models/bomb_game/door_frame1.g3db", Model.class);
 
@@ -139,6 +126,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// manager.load("models/render_models/bomb_game/", Model.class);
 
 		// Load the collision models.
+		manager.load("models/collision_models/bomb_game/robot_arm_col.g3db", Model.class);
 		manager.load("models/collision_models/bomb_game/door_col.g3db", Model.class);
 		manager.load("models/collision_models/bomb_game/door_frame1_col.g3db", Model.class);
 
@@ -160,7 +148,24 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 
 	@Override
 	public void createAllEntities(){
-		// TODO: Add the robot arms.
+		EntityParameters parameters;
+
+		// Create and set the lighting.
+		parameters = new EntityParameters();
+		parameters.environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
+		parameters.environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(0, 0, -1)));
+
+		// Load the shader.
+		shader = new DirectionalLightPerPixelShader();
+		try{
+			shader.init();
+		}catch(GdxRuntimeException gdx){
+			Gdx.app.error(TAG, CLASS_NAME + ".BombGameEntityCreator(): Shader failed to load: " + gdx.getMessage());
+			shader = null;
+		}
+		parameters.shader = shader;
+
+		addRobotArm(parameters);
 
 		// Add bombs.
 		parameters.markerCode = 89;
@@ -207,6 +212,17 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	public void dispose() {
 		if(shader != null) shader.dispose();
 		manager.dispose();
+	}
+
+	private void addRobotArm(EntityParameters parameters){
+		Entity robotArm = world.createEntity();
+
+		robotArm.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		robotArm.addComponent(new EnvironmentComponent(parameters.environment));
+		robotArm.addComponent(new ShaderComponent(parameters.shader));
+		robotArm.addComponent(new RenderModelComponent(robotArmModel));
+		robotArm.addComponent(new CollisionModelComponent(robotArmCollisionModel));
+		robotArm.addToWorld();
 	}
 
 	private void addBomb(EntityParameters parameters, bomb_type_t type) throws IllegalArgumentException{
@@ -362,7 +378,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	}
 
 	private void getModels(){
-		// Load the render models.
+		// Get the render models.
+		robotArmModel              = manager.get("models/render_models/bomb_game/robot_arm.g3db", Model.class);
 		doorModel                  = manager.get("models/render_models/bomb_game/door.g3db", Model.class);
 		doorFrameModel             = manager.get("models/render_models/bomb_game/door_frame1.g3db", Model.class);
 
@@ -381,7 +398,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wiresBombModelWire3        = manager.get("models/render_models/bomb_game/cable_3.g3db", Model.class);
 		// easterEggModel       = manager.get("models/render_models/bomb_game/", Model.class);
 
-		// Load the collision models.
+		// Get the collision models.
+		robotArmCollisionModel              = manager.get("models/collision_models/bomb_game/robot_arm_col.g3db", Model.class);
 		doorCollisionModel                  = manager.get("models/collision_models/bomb_game/door_col.g3db", Model.class);
 		doorFrameCollisionModel             = manager.get("models/collision_models/bomb_game/door_frame1_col.g3db", Model.class);
 

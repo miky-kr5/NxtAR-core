@@ -86,7 +86,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		public static int getNumStates(){
-			return 4;
+			return 3;
 		}
 	};
 

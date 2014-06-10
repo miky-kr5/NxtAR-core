@@ -16,8 +16,10 @@
 package ve.ucv.ciens.ccg.nxtar.entities;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
+import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent.bomb_type_t;
+import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
@@ -26,8 +28,10 @@ import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
+import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 
 import com.artemis.Entity;
+import com.artemis.managers.GroupManager;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Color;
@@ -64,8 +68,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		}
 	}
 
-	private Shader shader;
-	private int    currentBombId;
+	private Shader       shader;
+	private int          currentBombId;
+	private GroupManager groupManager;
 
 	// Render models.
 	private Model  robotArmModel                       = null;
@@ -82,7 +87,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model  wiresBombModelWire1                 = null;
 	private Model  wiresBombModelWire2                 = null;
 	private Model  wiresBombModelWire3                 = null;
-	private Model  easterEggModel                      = null;
+	private Model  monkeyModel                      = null;
 
 	// Collision models.
 	private Model  robotArmCollisionModel              = null;
@@ -99,7 +104,6 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model  wiresBombCollisionModelWire1        = null;
 	private Model  wiresBombCollisionModelWire2        = null;
 	private Model  wiresBombCollisionModelWire3        = null;
-	private Model  easterEggCollisionModel             = null;
 
 	public BombGameEntityCreator(){
 		currentBombId = 0;
@@ -123,7 +127,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		manager.load("models/render_models/bomb_game/cable_1.g3db", Model.class);
 		manager.load("models/render_models/bomb_game/cable_2.g3db", Model.class);
 		manager.load("models/render_models/bomb_game/cable_3.g3db", Model.class);
-		// manager.load("models/render_models/bomb_game/", Model.class);
+		manager.load("models/render_models/bomb_game/monkey.g3db", Model.class);
 
 		// Load the collision models.
 		manager.load("models/collision_models/bomb_game/robot_arm_col.g3db", Model.class);
@@ -143,12 +147,14 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		manager.load("models/collision_models/bomb_game/cable_1_col.g3db", Model.class);
 		manager.load("models/collision_models/bomb_game/cable_2_col.g3db", Model.class);
 		manager.load("models/collision_models/bomb_game/cable_3_col.g3db", Model.class);
-		// manager.load("models/collision_models/bomb_game/door.g3db", Model.class);
 	}
 
 	@Override
 	public void createAllEntities(){
 		EntityParameters parameters;
+		Entity monkey;
+
+		groupManager = world.getManager(GroupManager.class);
 
 		// Create and set the lighting.
 		parameters = new EntityParameters();
@@ -186,7 +192,15 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		parameters.markerCode = 91;
 		addDoor(parameters);
 
-		// TODO: Add easter egg.
+		// Add the monkey.
+		monkey = world.createEntity();
+		monkey.addComponent(new RenderModelComponent(monkeyModel));
+		monkey.addComponent(new GeometryComponent());
+		monkey.addComponent(new MarkerCodeComponent(1023));
+		monkey.addComponent(new VisibilityComponent());
+		monkey.addComponent(new ShaderComponent(shader));
+		monkey.addComponent(new EnvironmentComponent(parameters.environment));
+		monkey.addToWorld();
 
 		entitiesCreated = true;
 	}
@@ -217,11 +231,13 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private void addRobotArm(EntityParameters parameters){
 		Entity robotArm = world.createEntity();
 
-		robotArm.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
+		robotArm.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), new Matrix3(), new Vector3(1, 1, 1)));
 		robotArm.addComponent(new EnvironmentComponent(parameters.environment));
 		robotArm.addComponent(new ShaderComponent(parameters.shader));
 		robotArm.addComponent(new RenderModelComponent(robotArmModel));
 		robotArm.addComponent(new CollisionModelComponent(robotArmCollisionModel));
+		robotArm.addComponent(new AutomaticMovementComponent());
+		robotArm.addComponent(new CollisionDetectionComponent());
 		robotArm.addToWorld();
 	}
 
@@ -264,6 +280,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 			throw new IllegalArgumentException("Unrecognized bomb type: " + Integer.toString(type.getValue()));
 
 		// Add the bomb and increase the id for the next one.
+		groupManager.add(bomb, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 		bomb.addToWorld();
 		currentBombId++;
 	}
@@ -320,6 +337,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		thing.addComponent(new BombComponent(bomb));
 		thing.addComponent(new VisibilityComponent());
 		thing.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		groupManager.add(thing, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 
 		if(DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS)
 			addDebugCollisionModelRenderingEntity(collisionModel, parameters, false);
@@ -351,6 +369,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		door.addComponent(new VisibilityComponent());
 		doorInstance = door.getComponent(RenderModelComponent.class).instance;
 		door.addComponent(new AnimationComponent(doorInstance, parameters.nextAnimation, parameters.loopAnimation));
+		groupManager.add(door, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 		door.addToWorld();
 
 		if(DEBUG_RENDER_DOOR_COLLISION_MODELS){
@@ -396,7 +415,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wiresBombModelWire1        = manager.get("models/render_models/bomb_game/cable_1.g3db", Model.class);
 		wiresBombModelWire2        = manager.get("models/render_models/bomb_game/cable_2.g3db", Model.class);
 		wiresBombModelWire3        = manager.get("models/render_models/bomb_game/cable_3.g3db", Model.class);
-		// easterEggModel       = manager.get("models/render_models/bomb_game/", Model.class);
+		monkeyModel             = manager.get("models/render_models/bomb_game/monkey.g3db", Model.class);
 
 		// Get the collision models.
 		robotArmCollisionModel              = manager.get("models/collision_models/bomb_game/robot_arm_col.g3db", Model.class);
@@ -416,6 +435,5 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wiresBombCollisionModelWire1        = manager.get("models/collision_models/bomb_game/cable_1_col.g3db", Model.class);
 		wiresBombCollisionModelWire2        = manager.get("models/collision_models/bomb_game/cable_2_col.g3db", Model.class);
 		wiresBombCollisionModelWire3        = manager.get("models/collision_models/bomb_game/cable_3_col.g3db", Model.class);
-		// easterEggCollisionModel       = manager.get("models/collision_models/bomb_game/door.g3db", Model.class);
 	}
 }

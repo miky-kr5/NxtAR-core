@@ -16,6 +16,7 @@
 package ve.ucv.ciens.ccg.nxtar.utils;
 
 import com.artemis.World;
+import com.artemis.managers.GroupManager;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
@@ -31,8 +32,10 @@ public abstract class GameSettings{
 		if(core == null)
 			throw new IllegalArgumentException("Core is null.");
 
-		if(getGameWorld() == null)
+		if(getGameWorld() == null){
 			gameWorld = new World();
+			gameWorld.setManager(new GroupManager());
+		}
 
 		if(getEntityCreator() == null){
 			entityCreator = new BombGameEntityCreator();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.factories.products;
+package ve.ucv.ciens.ccg.nxtar.input;
 
 public class GamepadUserInput extends UserInput {
 	public float        axisLeftX;

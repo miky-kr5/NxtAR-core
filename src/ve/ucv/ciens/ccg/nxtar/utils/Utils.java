@@ -13,23 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.factories;
+package ve.ucv.ciens.ccg.nxtar.utils;
 
-import ve.ucv.ciens.ccg.nxtar.factories.products.GamepadUserInput;
-import ve.ucv.ciens.ccg.nxtar.factories.products.KeyboardUserInput;
-import ve.ucv.ciens.ccg.nxtar.factories.products.TouchUserInput;
-import ve.ucv.ciens.ccg.nxtar.factories.products.UserInput;
+import com.badlogic.gdx.math.Vector3;
 
-public abstract class UserInputFactory{
-	public static UserInput createTouchUserInput(){
-		return new TouchUserInput();
-	}
-
-	public static UserInput createGamepadUserInput(){
-		return new GamepadUserInput();
-	}
-
-	public static UserInput createKeyboardUserInput(){
-		return new KeyboardUserInput();
+public abstract class Utils{
+	public static String vector2String(Vector3 v){
+		return "(" + Float.toString(v.x) + ", " + Float.toString(v.y) + ", " + Float.toString(v.z) + ")";
 	}
 }

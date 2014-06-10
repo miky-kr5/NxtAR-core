@@ -61,14 +61,11 @@ public class VideoFrameMonitor{
 	public void setNewFrame(byte[] frame){
 		byte[] temp;
 
-		Gdx.app.debug(TAG, CLASS_NAME + ".setNewFrame() :: Loading new frame in frameA.");
 		frameA = frame;
 		temp = frameA;
 		synchronized(frameMonitor){
-			Gdx.app.debug(TAG, CLASS_NAME + ".setNewFrame() :: Swapping frameA and frameB.");
 			frameA = frameB;
 			frameB = temp;
-			Gdx.app.debug(TAG, CLASS_NAME + ".setNewFrame() :: Swapping done.");
 		}
 	}
 
@@ -76,7 +73,6 @@ public class VideoFrameMonitor{
 		byte[] frame;
 
 		synchronized(frameMonitor){
-			//Gdx.app.debug(TAG, CLASS_NAME + ".getCurrentFrame() :: Fetching frameB.");
 			frame = frameB;
 		}
 		return frame;

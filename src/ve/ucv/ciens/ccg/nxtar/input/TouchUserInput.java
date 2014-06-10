@@ -13,14 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.factories.products;
+package ve.ucv.ciens.ccg.nxtar.input;
 
-import com.badlogic.gdx.math.collision.Ray;
+import com.badlogic.gdx.math.Vector3;
 
 public class TouchUserInput extends UserInput {
-	public Ray          movementRay;
+	public Vector3          userTouchEndPoint;
 
 	public TouchUserInput(){
-		movementRay = null;
+		this.userTouchEndPoint = null;
+	}
+
+	public TouchUserInput(Vector3 userTouchEndPoint){
+		this.userTouchEndPoint = new Vector3(userTouchEndPoint);
+	}
+
+	public TouchUserInput(float x, float y, float z){
+		this.userTouchEndPoint = new Vector3(x, y, z);
 	}
 }

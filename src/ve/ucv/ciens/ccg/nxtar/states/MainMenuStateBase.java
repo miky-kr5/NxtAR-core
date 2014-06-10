@@ -312,7 +312,7 @@ public abstract class MainMenuStateBase extends BaseState{
 	@Override
 	public boolean keyDown(int keycode){
 		if(keycode == Input.Keys.BACK){
-			// Ignore.
+			Gdx.app.exit();
 			return true;
 		}
 		return false;

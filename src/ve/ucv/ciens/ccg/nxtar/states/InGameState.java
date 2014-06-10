@@ -19,13 +19,14 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.factories.UserInputFactory;
-import ve.ucv.ciens.ccg.nxtar.factories.products.UserInput;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
+import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
+import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
@@ -60,6 +61,7 @@ public class InGameState extends BaseState{
 	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
 	private static final float   NEAR                   = 0.01f;
 	private static final float   FAR                    = 100.0f;
+	private static final Vector3 TEMP_VEC_3             = new Vector3();
 
 	// Background related fields.
 	private float                           uScaling[];
@@ -79,7 +81,7 @@ public class InGameState extends BaseState{
 	private RobotArmPositioningSystem       robotArmPositioningSystem;
 
 	// Cameras.
-	private OrthographicCamera              unitaryOrthoCamera;
+	private OrthographicCamera              unitaryOrthographicCamera;
 	private OrthographicCamera              pixelPerfectOrthoCamera;
 	private CustomPerspectiveCamera         perspectiveCamera;
 
@@ -118,7 +120,7 @@ public class InGameState extends BaseState{
 
 		// Set up the cameras.
 		pixelPerfectOrthoCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-		unitaryOrthoCamera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
+		unitaryOrthographicCamera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
 
 		if(!Ouya.runningOnOuya) setUpButtons();
 
@@ -183,15 +185,15 @@ public class InGameState extends BaseState{
 		gameWorld = GameSettings.getGameWorld();
 
 		robotArmPositioningSystem = new RobotArmPositioningSystem();
+		markerRenderingSystem     = new MarkerRenderingSystem(modelBatch);
+		objectRenderingSystem     = new ObjectRenderingSystem(modelBatch);
+
 		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(robotArmPositioningSystem, true);
+		gameWorld.setSystem(robotArmPositioningSystem, Ouya.runningOnOuya);
 		gameWorld.setSystem(new GeometrySystem());
 		gameWorld.setSystem(new AnimationSystem());
-		// TODO: Make and add object-marker collision detection system.
+		gameWorld.setSystem(new CollisionDetectionSystem());
 		//gameWorld.setSystem(GameSettings.gameLogicSystem);
-
-		markerRenderingSystem = new MarkerRenderingSystem(modelBatch);
-		objectRenderingSystem = new ObjectRenderingSystem(modelBatch);
 		gameWorld.setSystem(markerRenderingSystem, true);
 		gameWorld.setSystem(objectRenderingSystem, true);
 
@@ -325,7 +327,7 @@ public class InGameState extends BaseState{
 
 			// Set the correct camera for the device.
 			if(!Ouya.runningOnOuya){
-				core.batch.setProjectionMatrix(unitaryOrthoCamera.combined);
+				core.batch.setProjectionMatrix(unitaryOrthographicCamera.combined);
 			}else{
 				core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
 			}
@@ -446,11 +448,11 @@ public class InGameState extends BaseState{
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){
 		MotorEvent event;
-		UserInput input;
+		TouchUserInput input;
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
-			unitaryOrthoCamera.unproject(win2world);
+			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
@@ -536,12 +538,21 @@ public class InGameState extends BaseState{
 				}
 
 			}else{
-				input = UserInputFactory.createTouchUserInput();
+				touchPointWorldCoords.set(win2world.x, win2world.y);
+				if(frameBufferSprite != null && frameBufferSprite.getBoundingRectangle().contains(touchPointWorldCoords)){
+					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point inside framebuffer.");
 
-				// TODO: Calculate movement ray.
+					TEMP_VEC_3.set(screenX, screenY, 1.0f);
+					perspectiveCamera.unproject(TEMP_VEC_3, frameBufferSprite.getX(), frameBufferSprite.getY(), frameBufferSprite.getWidth() * Gdx.graphics.getWidth(), frameBufferSprite.getHeight() * Gdx.graphics.getHeight());
+					TEMP_VEC_3.rotate(Vector3.Z, 90).nor();
+					TEMP_VEC_3.y = -TEMP_VEC_3.y;
+					//Gdx.app.log("TAG", CLASS_NAME + "touchDown(): Unprojected" + Utils.vector2String(TEMP_VEC_3));
 
-				robotArmPositioningSystem.setUserInput(input);
-				robotArmPositioningSystem.process();
+					input = new TouchUserInput(TEMP_VEC_3);
+					robotArmPositioningSystem.setUserInput(input);
+				}else{
+					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point outside framebuffer.");
+				}
 			}
 
 			return true;
@@ -556,7 +567,7 @@ public class InGameState extends BaseState{
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
-			unitaryOrthoCamera.unproject(win2world);
+			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
@@ -665,7 +676,7 @@ public class InGameState extends BaseState{
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
-			unitaryOrthoCamera.unproject(win2world);
+			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
 			if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
@@ -941,7 +952,26 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
-		// TODO: Pass input to the input handler system.
+		GamepadUserInput userInput;
+
+		if(Math.abs(value) > Ouya.STICK_DEADZONE){
+			userInput = new GamepadUserInput();
+			if(axisCode == Ouya.AXIS_LEFT_X){
+				userInput.axisLeftX = value;
+			}else if(axisCode == Ouya.AXIS_LEFT_Y){
+				userInput.axisLeftY = value;
+			}else if(axisCode == Ouya.AXIS_RIGHT_X){
+				userInput.axisRightX = value;
+			}else if(axisCode == Ouya.AXIS_RIGHT_Y){
+				userInput.axisRightY = value;
+			}
+
+			robotArmPositioningSystem.setUserInput(userInput);
+			robotArmPositioningSystem.process();
+
+			return true;
+		}
+
 		return false;
 	}
 }

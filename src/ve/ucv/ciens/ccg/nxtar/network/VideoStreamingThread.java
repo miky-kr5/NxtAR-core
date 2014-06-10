@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Socket;
 
 import ve.ucv.ciens.ccg.networkdata.VideoFrameDataMessage;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
@@ -41,7 +40,6 @@ public class VideoStreamingThread extends Thread{
 	private boolean pause;
 	private boolean coreNotified;
 	private Object protocolPauseMonitor;
-	private Socket client;
 	private VideoFrameMonitor frameMonitor;
 	private long then;
 	private long now;
@@ -234,12 +232,6 @@ public class VideoStreamingThread extends Thread{
 				then = now;
 				delta = 0;
 			}
-		}
-
-		try{
-			client.close();
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error closing client socket.", io);
 		}
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Thread finished.");

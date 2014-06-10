@@ -13,11 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.factories.products;
+package ve.ucv.ciens.ccg.nxtar.components;
 
-import ve.ucv.ciens.ccg.nxtar.factories.UserInputFactory;
+import com.artemis.Component;
 
-/**
- * Tag class for the {@link UserInputFactory} products.
- */
-public abstract class UserInput{}
+public class CollisionDetectionComponent extends Component {
+	public boolean colliding;
+
+	public CollisionDetectionComponent(){
+		this.colliding = false;
+	}
+}

@@ -52,6 +52,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private static final boolean DEBUG_RENDER_BOMB_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_DOOR_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS = false;
+	public static final String   DOORS_GROUP                                  = "DOORS";
 
 	private class EntityParameters{
 		public Environment environment;
@@ -281,7 +282,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 			throw new IllegalArgumentException("Unrecognized bomb type: " + Integer.toString(type.getValue()));
 
 		// Add the bomb and increase the id for the next one.
-		groupManager.add(bomb, CollisionDetectionSystem.COLLIDABLE_OBJECT);
+		//groupManager.add(bomb, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 		bomb.addToWorld();
 		currentBombId++;
 	}
@@ -342,7 +343,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		thing.addComponent(new VisibilityComponent());
 		thing.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		thing.addComponent(new CollisionDetectionComponent());
-		groupManager.add(thing, CollisionDetectionSystem.COLLIDABLE_OBJECT);
+		groupManager.add(thing, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+		groupManager.add(thing, Integer.toString(parameters.markerCode));
 
 		if(DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS)
 			addDebugCollisionModelRenderingEntity(collisionModel, parameters, false);
@@ -358,10 +360,13 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		frame.addComponent(new GeometryComponent(new Vector3(), new Matrix3(), new Vector3(1, 1, 1)));
 		frame.addComponent(new RenderModelComponent(doorFrameModel));
 		frame.addComponent(new CollisionModelComponent(doorFrameCollisionModel));
+		frame.addComponent(new CollisionDetectionComponent());
 		frame.addComponent(new EnvironmentComponent(parameters.environment));
 		frame.addComponent(new ShaderComponent(parameters.shader));
 		frame.addComponent(new VisibilityComponent());
 		frame.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		frame.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.DOOR_FRAME));
+		groupManager.add(frame, Integer.toString(parameters.markerCode));
 		frame.addToWorld();
 
 		door = world.createEntity();
@@ -377,7 +382,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		door.addComponent(new AnimationComponent(doorInstance, parameters.nextAnimation, parameters.loopAnimation, doorColInstance));
 		door.addComponent(new CollisionDetectionComponent());
 		door.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.DOOR));
-		groupManager.add(door, CollisionDetectionSystem.COLLIDABLE_OBJECT);
+		groupManager.add(door, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+		groupManager.add(door, Integer.toString(parameters.markerCode));
+		groupManager.add(door, DOORS_GROUP);
 		door.addToWorld();
 
 		if(DEBUG_RENDER_DOOR_COLLISION_MODELS){

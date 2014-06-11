@@ -20,11 +20,14 @@ import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
+import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
 import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
+import com.artemis.managers.GroupManager;
+import com.artemis.utils.ImmutableBag;
 import com.badlogic.gdx.Gdx;
 
 public class BombGameLogicSystem extends GameLogicSystemBase {
@@ -36,6 +39,9 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	@Mapper ComponentMapper<VisibilityComponent>         visibilityMapper;
 	@Mapper ComponentMapper<MarkerCodeComponent>         markerMapper;
 	@Mapper ComponentMapper<CollisionDetectionComponent> collisionMapper;
+
+	private MarkerCodeComponent         tempMarker;
+	private BombGameObjectTypeComponent tempType;
 
 	@SuppressWarnings("unchecked")
 	public BombGameLogicSystem(){
@@ -56,6 +62,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		case BombGameObjectTypeComponent.BOMB_WIRE_3:
 			break;
 		case BombGameObjectTypeComponent.BIG_BUTTON:
+			processInclinationBomb(e);
 			break;
 		case BombGameObjectTypeComponent.COM_BUTTON_1:
 			break;
@@ -68,9 +75,47 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		case BombGameObjectTypeComponent.DOOR:
 			processDoor(e);
 			break;
+		case BombGameObjectTypeComponent.DOOR_FRAME:
+			break;
 		default:
 			Gdx.app.debug(TAG, CLASS_NAME + ".process(): Unrecognized object type.");
 			break;
+		}
+	}
+
+	private void processInclinationBomb(Entity b){
+		CollisionDetectionComponent collision  = collisionMapper.getSafe(b);
+		MarkerCodeComponent         marker     = markerMapper.getSafe(b);
+		GroupManager                manager    =  world.getManager(GroupManager.class);
+		ImmutableBag<Entity>        related;
+
+		if(marker == null || collision == null ){
+			Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb is missing some components.");
+			return;
+		}
+
+		if(isDoorOpen(marker.code, manager) && marker.enabled && collision.colliding){
+			marker.enabled = false;
+			manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+
+			// Disable all related entities.
+			related = manager.getEntities(Integer.toString(marker.code));
+			for(int i = 0; i < related.size(); i++){
+				tempMarker = markerMapper.getSafe(related.get(i));
+				tempType   = typeMapper.getSafe(related.get(i));
+
+				// Enable collisions with the door frame. Disable collisions with other related objects.
+				if(tempMarker != null) tempMarker.enabled = false;
+				if(tempType != null){
+					if(tempType.type != BombGameObjectTypeComponent.DOOR_FRAME){
+						manager.remove(related.get(i), CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+					}else{
+						manager.add(related.get(i), CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+					}
+				}
+			}
+
+			Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Disabling inclination bomb.");
 		}
 	}
 
@@ -85,12 +130,42 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 			return;
 		}
 
-		if(marker.enabled && visibility.visible && collision.colliding && animation.current != 1){
-			animation.next = 1;
-			animation.loop = false;
-			Gdx.app.log(TAG, CLASS_NAME + ".processDoor(): Animating door.");
+		if(visibility.visible){
+			if(marker.enabled){
+				if(collision.colliding){
+					animation.next = 1;
+					animation.loop = false;
+					collision.colliding = false;
+					world.getManager(GroupManager.class).remove(d, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+					Gdx.app.log(TAG, CLASS_NAME + ".processDoor(): Opening door.");
+				}
+			}else{
+				if(animation.current != 0){
+					animation.next = 0;
+					animation.loop = false;
+					Gdx.app.log(TAG, CLASS_NAME + ".processDoor(): Closing door.");
+				}
+			}
+		}
+	}
+
+	private boolean isDoorOpen(int markerCode, GroupManager manager){
+		AnimationComponent   animation;
+		boolean              doorOpen  = false;
+		ImmutableBag<Entity> doors     = manager.getEntities(BombGameEntityCreator.DOORS_GROUP);
+
+		for(int i = 0; i < doors.size(); i++){
+			tempMarker = markerMapper.getSafe(doors.get(i));
+			animation  = animationMapper.getSafe(doors.get(i));
+
+			if(animation == null || tempMarker == null) return false;
+
+			if(tempMarker.code == markerCode && animation.current == 1 && animation.controller.current.loopCount == 0){
+				doorOpen = true;
+				break;
+			}
 		}
 
-		return;
+		return doorOpen;
 	}
 }

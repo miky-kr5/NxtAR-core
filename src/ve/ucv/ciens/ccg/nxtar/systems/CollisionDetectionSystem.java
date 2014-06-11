@@ -31,7 +31,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class CollisionDetectionSystem extends EntityProcessingSystem {
-	public static final String COLLIDABLE_OBJECT = "COLLIDABLE";
+	public static final String COLLIDABLE_OBJECTS_GROUP = "COLLIDABLE";
 
 	@Mapper ComponentMapper<CollisionModelComponent>     collisionModelMapper;
 	@Mapper ComponentMapper<CollisionDetectionComponent> collisionDetectionMapper;
@@ -63,7 +63,7 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 
 		// Get all other entities this entity can collide with. 
 		groupManager = this.world.getManager(GroupManager.class);
-		collidables = groupManager.getEntities(COLLIDABLE_OBJECT);
+		collidables = groupManager.getEntities(COLLIDABLE_OBJECTS_GROUP);
 
 		for(int i = 0; i < collidables.size(); ++i){
 			// Try to get the necessary components for the collidable entity.

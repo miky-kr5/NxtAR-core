@@ -27,6 +27,7 @@ public class BombGameObjectTypeComponent extends Component {
 	public static final int COM_BUTTON_3 = 32;
 	public static final int COM_BUTTON_4 = 33;
 	public static final int DOOR         = 40;
+	public static final int DOOR_FRAME   = 41;
 
 	public int type;
 

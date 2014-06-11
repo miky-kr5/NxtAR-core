@@ -405,8 +405,6 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	public void pause(){
 		if(videoThread != null)
 			videoThread.pause();
-		// TODO: Ignore pausing paused threads.
-		// TODO: Pause the other threads.
 	}
 
 	/**
@@ -416,8 +414,6 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	public void resume(){
 		if(videoThread != null)
 			videoThread.play();
-		// TODO: Ignore resuming resumed threads.
-		// TODO: Resume the other threads.
 	}
 
 	/**
@@ -429,6 +425,9 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		videoThread.finish();
 		robotThread.finish();
 		sensorThread.finish();
+		videoThread = null;
+		robotThread = null;
+		sensorThread = null;
 		ServiceDiscoveryThread.freeInstance();
 		VideoStreamingThread.freeInstance();
 		RobotControlThread.freeInstance();

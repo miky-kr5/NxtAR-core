@@ -96,6 +96,11 @@ public class RobotControlThread extends Thread {
 
 	public void finish(){
 		done = true;
+		try{
+			server.close();
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error closing client: " + io.getMessage(), io);
+		}
 	}
 
 	@Override
@@ -176,7 +181,6 @@ public class RobotControlThread extends Thread {
 				continue;
 			}
 		}
-
 
 		try{
 			client.close();

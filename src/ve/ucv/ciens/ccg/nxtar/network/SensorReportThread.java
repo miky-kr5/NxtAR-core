@@ -90,6 +90,11 @@ public class SensorReportThread extends Thread {
 
 	public void finish(){
 		done = true;
+		try{
+			server.close();
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: IOException closing sockets: " + io.getMessage(), io);
+		}
 	}
 
 	public byte getLightSensorReading(){
@@ -130,6 +135,14 @@ public class SensorReportThread extends Thread {
 			synchronized (lightReading) {
 				lightReading = reading[0];
 			}
+		}
+
+		try{
+			reader.close();
+			client.close();
+			server.close();
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: IOException closing sockets: " + io.getMessage(), io);
 		}
 	}
 }

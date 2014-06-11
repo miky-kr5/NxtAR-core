@@ -41,6 +41,8 @@ public class AnimationSystem extends EntityProcessingSystem {
 		int                 loopCount  = animation.loop ? -1 : 1;
 
 		if(animation.current != animation.next && animation.next >= 0 && animation.next < animation.animationsIds.size()){
+			animation.current = animation.next;
+
 			if(animation.controller.current == null){
 				animation.controller.setAnimation(animation.animationsIds.get(animation.next), loopCount, 1, null);
 			}else{

@@ -34,9 +34,10 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 
 public class RobotArmPositioningSystem extends EntityProcessingSystem {
-	private static final String TAG        = "ROBOT_ARM_POSITIONING_SYSTEM";
-	private static final String CLASS_NAME = RobotArmPositioningSystem.class.getSimpleName();
-	private static final float  STEP_SIZE  = 0.05f;
+	private static final String  TAG        = "ROBOT_ARM_POSITIONING_SYSTEM";
+	private static final String  CLASS_NAME = RobotArmPositioningSystem.class.getSimpleName();
+	private static final float   STEP_SIZE  = 0.05f;
+	private static final Vector3 END_POINT  = new Vector3(-1.0f, 0.0f, 0.0f);
 
 	@Mapper ComponentMapper<GeometryComponent>           geometryMapper;
 	@Mapper ComponentMapper<AutomaticMovementComponent>  autoMapper;
@@ -81,20 +82,36 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 
 			}else if(input instanceof GamepadUserInput){
 				tempGP = (GamepadUserInput) input;
-				geometry.position.x += !collision.colliding ? tempGP.axisLeftY * STEP_SIZE : 0.0f;
-				geometry.position.y += !collision.colliding ? tempGP.axisLeftX * STEP_SIZE : 0.0f;
-				geometry.position.z += !collision.colliding ? tempGP.axisRightY * STEP_SIZE : 0.0f;
-				clampPosition(geometry);
+
+				if(!collision.colliding && !auto.moving){
+					geometry.position.x += tempGP.axisLeftY * STEP_SIZE;
+					geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
+					geometry.position.z += tempGP.axisRightY * STEP_SIZE;
+					clampPosition(geometry);
+				}else{
+					auto.moving = true;
+					auto.forward = false;
+					auto.startPoint.set(geometry.position);
+					auto.endPoint.set(END_POINT);
+				}
 
 			}else if(input instanceof KeyboardUserInput){
 				tempKey = (KeyboardUserInput) input;
-				geometry.position.x -= tempKey.keyUp && !collision.colliding ? STEP_SIZE : 0.0f;
-				geometry.position.x += tempKey.keyDown && !collision.colliding ? STEP_SIZE : 0.0f;
-				geometry.position.y -= tempKey.keyLeft && !collision.colliding ? STEP_SIZE : 0.0f;
-				geometry.position.y += tempKey.keyRight && !collision.colliding ? STEP_SIZE : 0.0f;
-				geometry.position.z -= tempKey.keyZ && !collision.colliding ? STEP_SIZE : 0.0f;
-				geometry.position.z += tempKey.keyA && !collision.colliding ? STEP_SIZE : 0.0f;
-				clampPosition(geometry);
+
+				if(!collision.colliding && !auto.moving){
+					geometry.position.x -= tempKey.keyUp ? STEP_SIZE : 0.0f;
+					geometry.position.x += tempKey.keyDown ? STEP_SIZE : 0.0f;
+					geometry.position.y -= tempKey.keyLeft ? STEP_SIZE : 0.0f;
+					geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
+					geometry.position.z -= tempKey.keyZ ? STEP_SIZE : 0.0f;
+					geometry.position.z += tempKey.keyA ? STEP_SIZE : 0.0f;
+					clampPosition(geometry);
+				}else{
+					auto.moving = true;
+					auto.forward = false;
+					auto.startPoint.set(geometry.position);
+					auto.endPoint.set(END_POINT);
+				}
 
 			}else
 				throw new ClassCastException("Input is not a valid UserInput instance.");

@@ -38,35 +38,28 @@ import com.badlogic.gdx.Gdx;
  * @author miky
  */
 public class ServiceDiscoveryThread extends Thread {
-	/**
-	 * The name used to identify this thread.
-	 */
-	public static final String THREAD_NAME = "ServiceDiscoveryThread";
-	/**
-	 * Tag used for logging.
-	 */
+	public  static final String THREAD_NAME = "ServiceDiscoveryThread";
 	private static final String TAG = "NXTAR_CORE_UDPTHREAD";
-	/**
-	 * Class name used for logging.
-	 */
 	private static final String CLASS_NAME = ServiceDiscoveryThread.class.getSimpleName();
-	/**
-	 * Maximum number of transmission attempts before ending the thread abruptly.
-	 */
-	private static final int MAX_RETRIES = 5;
+	private static final int    MAX_RETRIES = 5;
+
+	private static int refCount = 0;
 
 	/**
 	 * A semaphore object used to synchronize acces to this thread finish flag.
 	 */
 	private Object semaphore;
+
 	/**
 	 * The finish flag.
 	 */
 	private boolean done;
+
 	/**
 	 * The UDP server socket used for the ad hoc service discovery protocol.
 	 */
 	private DatagramSocket udpServer;
+
 	/**
 	 * Holder for the multicast address used in the protocol.
 	 */
@@ -101,7 +94,7 @@ public class ServiceDiscoveryThread extends Thread {
 	 * Singleton holder for this class.
 	 */
 	private static class SingletonHolder{
-		public static final ServiceDiscoveryThread INSTANCE = new ServiceDiscoveryThread();
+		public static ServiceDiscoveryThread INSTANCE;
 	}
 
 	/**
@@ -110,7 +103,15 @@ public class ServiceDiscoveryThread extends Thread {
 	 * @return The singleton instance.
 	 */
 	public static ServiceDiscoveryThread getInstance(){
+		if(refCount == 0)
+			SingletonHolder.INSTANCE = new ServiceDiscoveryThread();
+		refCount++;
 		return SingletonHolder.INSTANCE;
+	}
+
+	public static void freeInstance(){
+		refCount--;
+		if(refCount == 0) SingletonHolder.INSTANCE = null;
 	}
 
 	/**
@@ -138,6 +139,7 @@ public class ServiceDiscoveryThread extends Thread {
 			// Verify if the thread should end. If that is the case, close the server.
 			synchronized(semaphore){
 				if(done){
+					Gdx.app.log(TAG, CLASS_NAME + ".run(): Closing.");
 					udpServer.close();
 					break;
 				}

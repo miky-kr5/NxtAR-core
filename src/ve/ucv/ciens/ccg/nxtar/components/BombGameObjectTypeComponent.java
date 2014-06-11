@@ -17,19 +17,20 @@ package ve.ucv.ciens.ccg.nxtar.components;
 
 import com.artemis.Component;
 
-public class MarkerCodeComponent extends Component {
-	public int     code;
-	public boolean enabled;
+public class BombGameObjectTypeComponent extends Component {
+	public static final int BOMB_WIRE_1  = 10;
+	public static final int BOMB_WIRE_2  = 11;
+	public static final int BOMB_WIRE_3  = 12;
+	public static final int BIG_BUTTON   = 20;
+	public static final int COM_BUTTON_1 = 30;
+	public static final int COM_BUTTON_2 = 31;
+	public static final int COM_BUTTON_3 = 32;
+	public static final int COM_BUTTON_4 = 33;
+	public static final int DOOR         = 40;
 
-	public MarkerCodeComponent(int code) throws IllegalArgumentException{
-		if(code < 0 || code > 1024)
-			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
-		this.code = code;
-		this.enabled = true;
-	}
+	public int type;
 
-	public MarkerCodeComponent(int code, boolean enabled){
-		this(code);
-		this.enabled = enabled;
+	public BombGameObjectTypeComponent(int type){
+		this.type = type;
 	}
 }

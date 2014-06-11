@@ -19,6 +19,7 @@ import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent.bomb_type_t;
+import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
@@ -182,7 +183,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		addBomb(parameters, bomb_type_t.WIRES);
 
 		// Add doors.
-		parameters.nextAnimation = 1;
+		parameters.nextAnimation = -1;
 		parameters.loopAnimation = false;
 
 		parameters.markerCode = 89;
@@ -293,7 +294,10 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		button3 = addBombParaphernalia(combinationButton3Model, combinationButton3CollisionModel, bomb, parameters);
 		button4 = addBombParaphernalia(combinationButton4Model, combinationButton4CollisionModel, bomb, parameters);
 
-		// TODO: Add button parameters.
+		button1.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.COM_BUTTON_1));
+		button2.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.COM_BUTTON_2));
+		button3.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.COM_BUTTON_3));
+		button4.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.COM_BUTTON_4));
 
 		button1.addToWorld();
 		button2.addToWorld();
@@ -305,9 +309,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		Entity button;
 
 		button = addBombParaphernalia(inclinationBombButtonModel, inclinationBombButtonCollisionModel, bomb, parameters);
-
-		// TODO: Add button parameters.
-
+		button.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.BIG_BUTTON));
 		button.addToWorld();
 	}
 
@@ -318,7 +320,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wire2 = addBombParaphernalia(wiresBombModelWire2, wiresBombCollisionModelWire2, bomb, parameters);
 		wire3 = addBombParaphernalia(wiresBombModelWire3, wiresBombCollisionModelWire3, bomb, parameters);
 
-		// TODO: Add Wire parameters.
+		wire1.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.BOMB_WIRE_1));
+		wire2.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.BOMB_WIRE_2));
+		wire3.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.BOMB_WIRE_3));
 
 		wire1.addToWorld();
 		wire2.addToWorld();
@@ -337,6 +341,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		thing.addComponent(new BombComponent(bomb));
 		thing.addComponent(new VisibilityComponent());
 		thing.addComponent(new MarkerCodeComponent(parameters.markerCode));
+		thing.addComponent(new CollisionDetectionComponent());
 		groupManager.add(thing, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 
 		if(DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS)
@@ -346,7 +351,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	}
 
 	private void addDoor(EntityParameters parameters){
-		ModelInstance doorInstance;
+		ModelInstance doorInstance, doorColInstance;
 		Entity frame, door;
 
 		frame = world.createEntity();
@@ -367,8 +372,11 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		door.addComponent(new ShaderComponent(parameters.shader));
 		door.addComponent(new MarkerCodeComponent(parameters.markerCode));
 		door.addComponent(new VisibilityComponent());
-		doorInstance = door.getComponent(RenderModelComponent.class).instance;
-		door.addComponent(new AnimationComponent(doorInstance, parameters.nextAnimation, parameters.loopAnimation));
+		doorInstance    = door.getComponent(RenderModelComponent.class).instance;
+		doorColInstance = door.getComponent(CollisionModelComponent.class).instance;
+		door.addComponent(new AnimationComponent(doorInstance, parameters.nextAnimation, parameters.loopAnimation, doorColInstance));
+		door.addComponent(new CollisionDetectionComponent());
+		door.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.DOOR));
 		groupManager.add(door, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 		door.addToWorld();
 
@@ -415,7 +423,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wiresBombModelWire1        = manager.get("models/render_models/bomb_game/cable_1.g3db", Model.class);
 		wiresBombModelWire2        = manager.get("models/render_models/bomb_game/cable_2.g3db", Model.class);
 		wiresBombModelWire3        = manager.get("models/render_models/bomb_game/cable_3.g3db", Model.class);
-		monkeyModel             = manager.get("models/render_models/bomb_game/monkey.g3db", Model.class);
+		monkeyModel                = manager.get("models/render_models/bomb_game/monkey.g3db", Model.class);
 
 		// Get the collision models.
 		robotArmCollisionModel              = manager.get("models/collision_models/bomb_game/robot_arm_col.g3db", Model.class);

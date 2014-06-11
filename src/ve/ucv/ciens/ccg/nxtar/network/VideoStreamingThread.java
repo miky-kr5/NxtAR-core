@@ -32,6 +32,7 @@ public class VideoStreamingThread extends Thread{
 	public static final String THREAD_NAME = "VideoStreamingThread";
 	private static final String TAG = "NXTAR_CORE_VIDEOTHREAD";
 	private static final String CLASS_NAME = VideoStreamingThread.class.getSimpleName();
+	private static int refCount = 0;
 
 	private ApplicationEventsListener netListener;
 	private DatagramSocket socket;
@@ -70,11 +71,19 @@ public class VideoStreamingThread extends Thread{
 	}
 
 	private static class SingletonHolder{
-		public static final VideoStreamingThread INSTANCE = new VideoStreamingThread();
+		public static VideoStreamingThread INSTANCE;
 	}
 
 	public static VideoStreamingThread getInstance(){
+		if(refCount == 0)
+			SingletonHolder.INSTANCE = new VideoStreamingThread();
+		refCount++;
 		return SingletonHolder.INSTANCE;
+	}
+
+	public static void freeInstance(){
+		refCount--;
+		if(refCount == 0) SingletonHolder.INSTANCE = null;
 	}
 
 	public void addNetworkConnectionListener(ApplicationEventsListener listener){
@@ -139,6 +148,7 @@ public class VideoStreamingThread extends Thread{
 			//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
 			try{
 				packet = new DatagramPacket(size, size.length);
+				socket.setSoTimeout(1000);
 				socket.receive(packet);
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
@@ -198,7 +208,7 @@ public class VideoStreamingThread extends Thread{
 	public int getFps(){
 		return fps;
 	}
-	
+
 	public int getLostFrames(){
 		return lostFrames;
 	}
@@ -242,7 +252,7 @@ public class VideoStreamingThread extends Thread{
 			pause = true;
 		}
 	}
-	
+
 	public void play(){
 		synchronized (pauseMonitor){
 			pause = false;

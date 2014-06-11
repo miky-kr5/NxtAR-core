@@ -193,7 +193,7 @@ public class InGameState extends BaseState{
 		gameWorld.setSystem(new GeometrySystem());
 		gameWorld.setSystem(new AnimationSystem());
 		gameWorld.setSystem(new CollisionDetectionSystem());
-		//gameWorld.setSystem(GameSettings.gameLogicSystem);
+		//gameWorld.setSystem(GameSettings.getGameLogicSystem());
 		gameWorld.setSystem(markerRenderingSystem, true);
 		gameWorld.setSystem(objectRenderingSystem, true);
 

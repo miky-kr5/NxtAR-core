@@ -15,13 +15,14 @@
  */
 package ve.ucv.ciens.ccg.nxtar.utils;
 
-import com.artemis.World;
-import com.artemis.managers.GroupManager;
-
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
+import ve.ucv.ciens.ccg.nxtar.systems.BombGameLogicSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
+
+import com.artemis.World;
+import com.artemis.managers.GroupManager;
 
 public abstract class GameSettings{
 	private static EntityCreatorBase   entityCreator   = null;
@@ -44,8 +45,7 @@ public abstract class GameSettings{
 		}
 
 		if(getGameLogicSystem() == null)
-			gameLogicSystem = null;
-		//gameLogicSystem = new BombGameLogicSystem();
+			gameLogicSystem = new BombGameLogicSystem();
 	}
 
 	/**

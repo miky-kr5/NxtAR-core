@@ -46,9 +46,20 @@ public class AnimationSystem extends EntityProcessingSystem {
 			}else{
 				animation.controller.animate(animation.animationsIds.get(animation.next), loopCount, 1, null, 0.1f);
 			}
+
+			if(animation.collisionController != null){
+				if(animation.collisionController.current == null){
+					animation.collisionController.setAnimation(animation.animationsIds.get(animation.next), loopCount, 1, null);
+				}else{
+					animation.collisionController.animate(animation.animationsIds.get(animation.next), loopCount, 1, null, 0.1f);
+				}
+			}
 		}
 
-		if(visibility.visible)
+		if(visibility.visible){
 			animation.controller.update(Gdx.graphics.getDeltaTime());
+			if(animation.collisionController != null)
+				animation.collisionController.update(Gdx.graphics.getDeltaTime());
+		}
 	}
 }

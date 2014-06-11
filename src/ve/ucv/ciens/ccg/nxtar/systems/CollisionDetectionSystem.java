@@ -15,6 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
+import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
@@ -35,6 +36,7 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<CollisionModelComponent>     collisionModelMapper;
 	@Mapper ComponentMapper<CollisionDetectionComponent> collisionDetectionMapper;
 	@Mapper ComponentMapper<VisibilityComponent>         visibilityMapper;
+	@Mapper ComponentMapper<BombGameObjectTypeComponent> typeMapper;
 
 	private GroupManager groupManager;
 
@@ -45,12 +47,11 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 
 	@Override
 	protected void process(Entity e) {
-
-
 		VisibilityComponent         visibility;
 		CollisionModelComponent     collision;
 		CollisionModelComponent     target;
 		CollisionDetectionComponent onCollision;
+		CollisionDetectionComponent onCollisionTarget;
 		BoundingBox                 colBB = new BoundingBox();
 		BoundingBox                 targetBB = new BoundingBox();
 		ImmutableBag<Entity>        collidables;
@@ -62,19 +63,22 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 		onCollision = collisionDetectionMapper.get(e);
 
 		for(int i = 0; i < collidables.size(); ++i){
-			target     = collisionModelMapper.getSafe(collidables.get(i));
-			visibility = visibilityMapper.getSafe(collidables.get(i));
+			target            = collisionModelMapper.getSafe(collidables.get(i));
+			visibility        = visibilityMapper.getSafe(collidables.get(i));
+			onCollisionTarget = collisionDetectionMapper.getSafe(collidables.get(i));
 
-			if(target == null || visibility == null) continue;
+			if(target == null || visibility == null || onCollisionTarget == null) continue;
 
 			if(visibility.visible){
 				collision.instance.calculateBoundingBox(colBB);
 				target.instance.calculateBoundingBox(targetBB);
 
 				if(colBB.contains(targetBB)){
-					onCollision.colliding = true;
+					onCollision.colliding       = true;
+					onCollisionTarget.colliding = true;
 				}else{
-					onCollision.colliding = false;
+					onCollision.colliding       = false;
+					onCollisionTarget.colliding = false;
 				}
 			}
 		}

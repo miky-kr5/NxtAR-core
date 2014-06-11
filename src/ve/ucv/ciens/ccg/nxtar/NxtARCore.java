@@ -425,8 +425,14 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 */
 	public void dispose(){
 		// Finish network threads.
+		serviceDiscoveryThread.finish();
 		videoThread.finish();
 		robotThread.finish();
+		sensorThread.finish();
+		ServiceDiscoveryThread.freeInstance();
+		VideoStreamingThread.freeInstance();
+		RobotControlThread.freeInstance();
+		SensorReportThread.freeInstance();
 
 		// Dispose graphic objects.
 		fadeTexture.dispose();

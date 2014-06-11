@@ -49,10 +49,28 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		typeComponent = typeMapper.get(e);
 
 		switch(typeComponent.type){
+		case BombGameObjectTypeComponent.BOMB_WIRE_1:
+			break;
+		case BombGameObjectTypeComponent.BOMB_WIRE_2:
+			break;
+		case BombGameObjectTypeComponent.BOMB_WIRE_3:
+			break;
+		case BombGameObjectTypeComponent.BIG_BUTTON:
+			break;
+		case BombGameObjectTypeComponent.COM_BUTTON_1:
+			break;
+		case BombGameObjectTypeComponent.COM_BUTTON_2:
+			break;
+		case BombGameObjectTypeComponent.COM_BUTTON_3:
+			break;
+		case BombGameObjectTypeComponent.COM_BUTTON_4:
+			break;
 		case BombGameObjectTypeComponent.DOOR:
 			processDoor(e);
 			break;
-		default: break;
+		default:
+			Gdx.app.debug(TAG, CLASS_NAME + ".process(): Unrecognized object type.");
+			break;
 		}
 	}
 

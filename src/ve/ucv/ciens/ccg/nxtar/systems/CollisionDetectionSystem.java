@@ -15,7 +15,6 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
@@ -28,6 +27,7 @@ import com.artemis.annotations.Mapper;
 import com.artemis.managers.GroupManager;
 import com.artemis.systems.EntityProcessingSystem;
 import com.artemis.utils.ImmutableBag;
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.collision.BoundingBox;
 
 public class CollisionDetectionSystem extends EntityProcessingSystem {
@@ -36,13 +36,16 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<CollisionModelComponent>     collisionModelMapper;
 	@Mapper ComponentMapper<CollisionDetectionComponent> collisionDetectionMapper;
 	@Mapper ComponentMapper<VisibilityComponent>         visibilityMapper;
-	@Mapper ComponentMapper<BombGameObjectTypeComponent> typeMapper;
 
 	private GroupManager groupManager;
+	private BoundingBox colBB;
+	private BoundingBox targetBB;
 
 	@SuppressWarnings("unchecked")
 	public CollisionDetectionSystem(){
 		super(Aspect.getAspectForAll(CollisionModelComponent.class, CollisionDetectionComponent.class).exclude(MarkerCodeComponent.class));
+		colBB    = new BoundingBox();
+		targetBB = new BoundingBox();
 	}
 
 	@Override
@@ -52,34 +55,49 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 		CollisionModelComponent     target;
 		CollisionDetectionComponent onCollision;
 		CollisionDetectionComponent onCollisionTarget;
-		BoundingBox                 colBB = new BoundingBox();
-		BoundingBox                 targetBB = new BoundingBox();
 		ImmutableBag<Entity>        collidables;
 
-		groupManager = this.world.getManager(GroupManager.class);
-		collidables = groupManager.getEntities(COLLIDABLE_OBJECT);
-
+		// Get this entity's known necessary components.
 		collision   = collisionModelMapper.get(e);
 		onCollision = collisionDetectionMapper.get(e);
 
+		// Get all other entities this entity can collide with. 
+		groupManager = this.world.getManager(GroupManager.class);
+		collidables = groupManager.getEntities(COLLIDABLE_OBJECT);
+
 		for(int i = 0; i < collidables.size(); ++i){
+			// Try to get the necessary components for the collidable entity.
 			target            = collisionModelMapper.getSafe(collidables.get(i));
 			visibility        = visibilityMapper.getSafe(collidables.get(i));
 			onCollisionTarget = collisionDetectionMapper.getSafe(collidables.get(i));
 
+			// If any of the needed components does not exist then proceed to the next entity.
 			if(target == null || visibility == null || onCollisionTarget == null) continue;
 
+			// Id the target is visible then examine the collision. Else there is no collision possible.
 			if(visibility.visible){
+				// Get the bounding box for both entities.
 				collision.instance.calculateBoundingBox(colBB);
 				target.instance.calculateBoundingBox(targetBB);
 
-				if(colBB.contains(targetBB)){
+				// Apply the model matrix to the bounding boxes.
+				colBB.mul(collision.instance.transform);
+				targetBB.mul(target.instance.transform);
+
+				// If the bounding boxes intersect then there is a collision.
+				if(colBB.intersects(targetBB) || targetBB.intersects(colBB)){
+					Gdx.app.log("TAG", "Collision hit.");
 					onCollision.colliding       = true;
 					onCollisionTarget.colliding = true;
+					break;
 				}else{
+					Gdx.app.log("TAG", "Collision miss.");
 					onCollision.colliding       = false;
 					onCollisionTarget.colliding = false;
 				}
+			}else{
+				onCollision.colliding       = false;
+				onCollisionTarget.colliding = false;
 			}
 		}
 	}

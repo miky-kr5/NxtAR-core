@@ -232,7 +232,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private void addRobotArm(EntityParameters parameters){
 		Entity robotArm = world.createEntity();
 
-		robotArm.addComponent(new GeometryComponent(new Vector3(-1.0f, 0.0f, 0.0f), new Matrix3(), new Vector3(1, 1, 1)));
+		robotArm.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.5f), new Matrix3(), new Vector3(1, 1, 1)));
 		robotArm.addComponent(new EnvironmentComponent(parameters.environment));
 		robotArm.addComponent(new ShaderComponent(parameters.shader));
 		robotArm.addComponent(new RenderModelComponent(robotArmModel));

@@ -141,13 +141,13 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 
 			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Current position: " + Utils.vector2String(geometry.position));
 
-			if(auto.distance >= 1.0f || collision.colliding){
-				auto.forward = false;
-				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going backwards now.");
-			}else if(auto.distance <= 0.0f){
+			if(auto.distance <= 0.0f){
 				auto.forward = true;
 				auto.moving = false;
 				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going forward now.");
+			}else if(auto.distance >= 1.0f || collision.colliding){
+				auto.forward = false;
+				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going backwards now.");
 			}
 
 		}else return;

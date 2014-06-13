@@ -16,7 +16,6 @@
 package ve.ucv.ciens.ccg.nxtar.entities;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
-import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent.bomb_type_t;
 import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
@@ -52,7 +51,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private static final boolean DEBUG_RENDER_BOMB_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_DOOR_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS = false;
-	public static final String   DOORS_GROUP                                  = "DOORS";
+	public static final String   DOORS_GROUP                                 = "DOORS";
 
 	private class EntityParameters{
 		public Environment environment;
@@ -233,12 +232,11 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private void addRobotArm(EntityParameters parameters){
 		Entity robotArm = world.createEntity();
 
-		robotArm.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, 0.5f), new Matrix3(), new Vector3(1, 1, 1)));
+		robotArm.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, -0.5f), new Matrix3(), new Vector3(1, 1, 1)));
 		robotArm.addComponent(new EnvironmentComponent(parameters.environment));
 		robotArm.addComponent(new ShaderComponent(parameters.shader));
 		robotArm.addComponent(new RenderModelComponent(robotArmModel));
 		robotArm.addComponent(new CollisionModelComponent(robotArmCollisionModel));
-		robotArm.addComponent(new AutomaticMovementComponent());
 		robotArm.addComponent(new CollisionDetectionComponent());
 		robotArm.addToWorld();
 	}

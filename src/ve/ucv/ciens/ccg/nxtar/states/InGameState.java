@@ -82,7 +82,7 @@ public class InGameState extends BaseState{
 
 	// Cameras.
 	private OrthographicCamera              unitaryOrthographicCamera;
-	private OrthographicCamera              pixelPerfectOrthoCamera;
+	private OrthographicCamera              pixelPerfectOrthographicCamera;
 	private CustomPerspectiveCamera         perspectiveCamera;
 
 	// Video stream graphics.
@@ -119,7 +119,7 @@ public class InGameState extends BaseState{
 		videoFrame = null;
 
 		// Set up the cameras.
-		pixelPerfectOrthoCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		pixelPerfectOrthographicCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		unitaryOrthographicCamera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
 
 		if(!Ouya.runningOnOuya) setUpButtons();
@@ -217,7 +217,7 @@ public class InGameState extends BaseState{
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
 		// Render the background.
-		core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
+		core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
 		core.batch.begin();{
 			if(backgroundShader != null){
 				core.batch.setShader(backgroundShader);
@@ -293,6 +293,7 @@ public class InGameState extends BaseState{
 				objectRenderingSystem.begin(perspectiveCamera);
 				objectRenderingSystem.process();
 				objectRenderingSystem.end();
+
 			}frameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.
@@ -329,7 +330,7 @@ public class InGameState extends BaseState{
 			if(!Ouya.runningOnOuya){
 				core.batch.setProjectionMatrix(unitaryOrthographicCamera.combined);
 			}else{
-				core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
+				core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
 			}
 
 			// Render the video frame and the frame buffer.
@@ -344,7 +345,7 @@ public class InGameState extends BaseState{
 
 		// Render the interface buttons.
 		if(!Ouya.runningOnOuya){
-			core.batch.setProjectionMatrix(pixelPerfectOrthoCamera.combined);
+			core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
 			core.batch.begin();{
 				motorA.draw(core.batch);
 				motorB.draw(core.batch);
@@ -541,13 +542,6 @@ public class InGameState extends BaseState{
 				touchPointWorldCoords.set(win2world.x, win2world.y);
 				if(frameBufferSprite != null && frameBufferSprite.getBoundingRectangle().contains(touchPointWorldCoords)){
 					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point inside framebuffer.");
-
-					TEMP_VEC_3.set(screenX, screenY, 1.0f);
-					perspectiveCamera.unproject(TEMP_VEC_3, frameBufferSprite.getX(), frameBufferSprite.getY(), frameBufferSprite.getWidth() * Gdx.graphics.getWidth(), frameBufferSprite.getHeight() * Gdx.graphics.getHeight());
-					TEMP_VEC_3.rotate(Vector3.Z, 90).nor();
-					TEMP_VEC_3.y = -TEMP_VEC_3.y;
-					//Gdx.app.log("TAG", CLASS_NAME + "touchDown(): Unprojected" + Utils.vector2String(TEMP_VEC_3));
-
 					input = new TouchUserInput(TEMP_VEC_3);
 					robotArmPositioningSystem.setUserInput(input);
 				}else{

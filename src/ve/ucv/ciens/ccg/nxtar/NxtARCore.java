@@ -447,6 +447,8 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		for(int i = 0; i < states.length; i++){
 			states[i].dispose();
 		}
+
+		GameSettings.clearGameSettings();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

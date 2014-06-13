@@ -15,7 +15,6 @@
  */
 package ve.ucv.ciens.ccg.nxtar.systems;
 
-import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
@@ -23,14 +22,12 @@ import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.UserInput;
-import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
 import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.math.Vector3;
 
 public class RobotArmPositioningSystem extends EntityProcessingSystem {
@@ -38,16 +35,17 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 	private static final String  CLASS_NAME = RobotArmPositioningSystem.class.getSimpleName();
 	private static final float   STEP_SIZE  = 0.05f;
 	private static final Vector3 END_POINT  = new Vector3(-1.0f, 0.0f, 0.0f);
+	private static final float   MAX_Z      = -4.5f;
 
 	@Mapper ComponentMapper<GeometryComponent>           geometryMapper;
-	@Mapper ComponentMapper<AutomaticMovementComponent>  autoMapper;
+//	@Mapper ComponentMapper<AutomaticMovementComponent>  autoMapper;
 	@Mapper ComponentMapper<CollisionDetectionComponent> collisionMapper;
 
 	private UserInput input;
 
 	@SuppressWarnings("unchecked")
 	public RobotArmPositioningSystem(){
-		super(Aspect.getAspectForAll(GeometryComponent.class, AutomaticMovementComponent.class, CollisionDetectionComponent.class).exclude(MarkerCodeComponent.class));
+		super(Aspect.getAspectForAll(GeometryComponent.class, /*AutomaticMovementComponent.class,*/ CollisionDetectionComponent.class).exclude(MarkerCodeComponent.class));
 	}
 
 	public void setUserInput(UserInput input){
@@ -60,58 +58,61 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 		GamepadUserInput            tempGP;
 		KeyboardUserInput           tempKey;
 		GeometryComponent           geometry  = geometryMapper.get(e);
-		AutomaticMovementComponent  auto      = autoMapper.get(e);
+//		AutomaticMovementComponent  auto      = autoMapper.get(e);
 		CollisionDetectionComponent collision = collisionMapper.get(e);
 
 		if(input == null){
-			if(auto.moving) autoMove(geometry, auto, collision);
-			else return;
+			/*if(auto.moving) autoMove(geometry, auto, collision);
+			else */return;
 
 		}else{
 			if(input instanceof TouchUserInput){
-				if(!auto.moving){
-					endPoint = ((TouchUserInput) input).userTouchEndPoint;
-					endPoint.set(endPoint.x, endPoint.y, -4.5f);
-					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(endPoint);
-					auto.moving = true;
-					auto.forward = true;
-
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): Started moving from " + Utils.vector2String(auto.startPoint) + " to " + Utils.vector2String(auto.endPoint));
-				}else autoMove(geometry, auto, collision);
+//				if(!auto.moving){
+//					endPoint = ((TouchUserInput) input).userTouchEndPoint;
+//					endPoint.set(endPoint.x, endPoint.y, MAX_Z);
+//					auto.startPoint.set(geometry.position);
+//					auto.endPoint.set(endPoint);
+//					auto.moving = true;
+//					auto.forward = true;
+//
+//					auto.target.set(endPoint).sub(auto.startPoint);
+//					auto.epsilon = 0.05f;
+//
+//					Gdx.app.log(TAG, CLASS_NAME + ".process(): Started moving from " + Utils.vector2String(auto.startPoint) + " to " + Utils.vector2String(auto.endPoint));
+//				}else autoMove(geometry, auto, collision);
 
 			}else if(input instanceof GamepadUserInput){
-				tempGP = (GamepadUserInput) input;
-
-				if(!collision.colliding && !auto.moving){
-					geometry.position.x += tempGP.axisLeftY * STEP_SIZE;
-					geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
-					geometry.position.z += tempGP.axisRightY * STEP_SIZE;
-					clampPosition(geometry);
-				}else{
-					auto.moving = true;
-					auto.forward = false;
-					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(END_POINT);
-				}
+//				tempGP = (GamepadUserInput) input;
+//
+//				if(!collision.colliding && !auto.moving){
+//					geometry.position.x += tempGP.axisLeftY * STEP_SIZE;
+//					geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
+//					geometry.position.z += tempGP.axisRightY * STEP_SIZE;
+//					clampPosition(geometry);
+//				}else{
+//					auto.moving = true;
+//					auto.forward = false;
+//					auto.startPoint.set(geometry.position);
+//					auto.endPoint.set(END_POINT);
+//				}
 
 			}else if(input instanceof KeyboardUserInput){
-				tempKey = (KeyboardUserInput) input;
-
-				if(!collision.colliding && !auto.moving){
-					geometry.position.x -= tempKey.keyUp ? STEP_SIZE : 0.0f;
-					geometry.position.x += tempKey.keyDown ? STEP_SIZE : 0.0f;
-					geometry.position.y -= tempKey.keyLeft ? STEP_SIZE : 0.0f;
-					geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
-					geometry.position.z -= tempKey.keyZ ? STEP_SIZE : 0.0f;
-					geometry.position.z += tempKey.keyA ? STEP_SIZE : 0.0f;
-					clampPosition(geometry);
-				}else{
-					auto.moving = true;
-					auto.forward = false;
-					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(END_POINT);
-				}
+//				tempKey = (KeyboardUserInput) input;
+//
+//				if(!collision.colliding && !auto.moving){
+//					geometry.position.x -= tempKey.keyUp ? STEP_SIZE : 0.0f;
+//					geometry.position.x += tempKey.keyDown ? STEP_SIZE : 0.0f;
+//					geometry.position.y -= tempKey.keyLeft ? STEP_SIZE : 0.0f;
+//					geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
+//					geometry.position.z -= tempKey.keyZ ? STEP_SIZE : 0.0f;
+//					geometry.position.z += tempKey.keyA ? STEP_SIZE : 0.0f;
+//					clampPosition(geometry);
+//				}else{
+//					auto.moving = true;
+//					auto.forward = false;
+//					auto.startPoint.set(geometry.position);
+//					auto.endPoint.set(END_POINT);
+//				}
 
 			}else
 				throw new ClassCastException("Input is not a valid UserInput instance.");
@@ -120,38 +121,38 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 		input = null;
 	}
 
-	private void autoMove(GeometryComponent geometry, AutomaticMovementComponent auto, CollisionDetectionComponent collision){
-		float step;
-
-		if(auto.moving){
-			if(auto.forward)
-				step = STEP_SIZE;
-			else
-				step = -STEP_SIZE;
-
-			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Step = " + Float.toString(step));
-
-			auto.distance += step;
-
-			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Step = " + Float.toString(auto.distance));
-
-			geometry.position.x = (auto.startPoint.x * (1.0f - auto.distance)) + (auto.endPoint.x * auto.distance);
-			geometry.position.y = (auto.startPoint.y * (1.0f - auto.distance)) + (auto.endPoint.y * auto.distance);
-			geometry.position.z = (auto.startPoint.z * (1.0f - auto.distance)) + (auto.endPoint.z * auto.distance);
-
-			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Current position: " + Utils.vector2String(geometry.position));
-
-			if(auto.distance <= 0.0f){
-				auto.forward = true;
-				auto.moving = false;
-				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going forward now.");
-			}else if(auto.distance >= 1.0f || collision.colliding){
-				auto.forward = false;
-				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going backwards now.");
-			}
-
-		}else return;
-	}
+//	private void autoMove(GeometryComponent geometry, AutomaticMovementComponent auto, CollisionDetectionComponent collision){
+//		float step;
+//
+//		if(auto.moving){
+//			if(auto.forward)
+//				step = STEP_SIZE;
+//			else
+//				step = -STEP_SIZE;
+//
+//			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Step = " + Float.toString(step));
+//
+//			auto.distance += step;
+//
+//			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Step = " + Float.toString(auto.distance));
+//
+//			geometry.position.x = (auto.startPoint.x * (1.0f - auto.distance)) + (auto.endPoint.x * auto.distance);
+//			geometry.position.y = (auto.startPoint.y * (1.0f - auto.distance)) + (auto.endPoint.y * auto.distance);
+//			geometry.position.z = (auto.startPoint.z * (1.0f - auto.distance)) + (auto.endPoint.z * auto.distance);
+//
+//			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Current position: " + Utils.vector2String(geometry.position));
+//
+//			if(auto.distance <= 0.0f){
+//				auto.forward = true;
+//				auto.moving = false;
+//				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going forward now.");
+//			}else if(auto.distance >= 1.0f || collision.colliding){
+//				auto.forward = false;
+//				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going backwards now.");
+//			}
+//
+//		}else return;
+//	}
 
 	private void clampPosition(GeometryComponent geometry){
 		geometry.position.x = geometry.position.x >= -1.0f ? geometry.position.x : -1.0f;

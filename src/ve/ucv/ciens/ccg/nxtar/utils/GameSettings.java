@@ -48,6 +48,12 @@ public abstract class GameSettings{
 			gameLogicSystem = new BombGameLogicSystem();
 	}
 
+	public static void clearGameSettings(){
+		entityCreator = null;
+		gameLogicSystem = null;
+		gameWorld = null;
+	}
+
 	/**
 	 * @return the entityCreator
 	 */

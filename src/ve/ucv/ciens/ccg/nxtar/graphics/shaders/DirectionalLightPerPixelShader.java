@@ -167,7 +167,7 @@ public class DirectionalLightPerPixelShader implements Shader{
 		float         shininess;
 
 		// Get material colors.
-		if(renderable.environment.directionalLights.size >= 1){
+		if(renderable.environment != null && renderable.environment.directionalLights != null && renderable.environment.directionalLights.size >= 1){
 			lightPosition   = renderable.environment.directionalLights.get(0).direction;
 			diffuseLightColor = renderable.environment.directionalLights.get(0).color;
 		}else{
@@ -185,7 +185,7 @@ public class DirectionalLightPerPixelShader implements Shader{
 		else
 			specularColor = Color.BLACK;
 
-		if(renderable.environment.has(ColorAttribute.AmbientLight))
+		if(renderable.environment != null && renderable.environment.has(ColorAttribute.AmbientLight))
 			ambientColor      = ((ColorAttribute)renderable.environment.get(ColorAttribute.AmbientLight)).color;
 		else
 			ambientColor = Color.BLACK;

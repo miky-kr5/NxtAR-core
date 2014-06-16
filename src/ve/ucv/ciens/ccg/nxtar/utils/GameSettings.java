@@ -49,9 +49,11 @@ public abstract class GameSettings{
 	}
 
 	public static void clearGameSettings(){
+		entityCreator.dispose();
 		entityCreator = null;
 		gameLogicSystem = null;
 		gameWorld = null;
+		System.gc();
 	}
 
 	/**

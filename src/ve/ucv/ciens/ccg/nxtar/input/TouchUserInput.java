@@ -21,7 +21,7 @@ public class TouchUserInput extends UserInput {
 	public Vector3          userTouchEndPoint;
 
 	public TouchUserInput(){
-		this.userTouchEndPoint = null;
+		this.userTouchEndPoint = new Vector3();
 	}
 
 	public TouchUserInput(Vector3 userTouchEndPoint){

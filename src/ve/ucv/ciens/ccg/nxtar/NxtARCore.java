@@ -440,9 +440,6 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 			font.dispose();
 		}
 
-		if(GameSettings.getEntityCreator() != null)
-			GameSettings.getEntityCreator().dispose();
-
 		// Dispose screens.
 		for(int i = 0; i < states.length; i++){
 			states[i].dispose();

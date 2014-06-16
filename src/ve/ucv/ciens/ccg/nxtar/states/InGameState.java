@@ -21,7 +21,9 @@ import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
+import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
+import ve.ucv.ciens.ccg.nxtar.input.UserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
@@ -61,11 +63,27 @@ public class InGameState extends BaseState{
 	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
 	private static final float   NEAR                   = 0.01f;
 	private static final float   FAR                    = 100.0f;
-	private static final Vector3 TEMP_VEC_3             = new Vector3();
+
+	/**
+	 * <p>Represents the two possible control modes for the robot.</p>
+	 */
+	private enum robot_control_mode_t{
+		WHEEL_CONTROL(0), ARM_CONTROL(1);
+
+		private int value;
+
+		private robot_control_mode_t(int value){
+			this.value = value;
+		}
+
+		public int getValue(){
+			return this.value;
+		}
+	}
 
 	// Background related fields.
+	private Sprite                        background;
 	private float                           uScaling[];
-	protected Sprite                        background;
 	private Texture                         backgroundTexture;
 	private ShaderProgram                   backgroundShader;
 
@@ -74,11 +92,12 @@ public class InGameState extends BaseState{
 	private FrameBuffer                     frameBuffer;
 	private Sprite                          frameBufferSprite;
 
-	// Game world objects.
+	// Game related fields.
 	private World                           gameWorld;
 	private MarkerRenderingSystem           markerRenderingSystem;
 	private ObjectRenderingSystem           objectRenderingSystem;
 	private RobotArmPositioningSystem       robotArmPositioningSystem;
+	private robot_control_mode_t            controlMode;
 
 	// Cameras.
 	private OrthographicCamera              unitaryOrthographicCamera;
@@ -91,20 +110,24 @@ public class InGameState extends BaseState{
 	private Pixmap                          videoFrame;
 
 	// Interface buttons.
-	private Texture                         buttonTexture;
-	private Texture                         buttonTexture2;
-	private Sprite                          motorA;
-	private Sprite                          motorB;
-	private Sprite                          motorC;
-	private Sprite                          motorD;
-	private Sprite                          headA;
-	private Sprite                          headB;
-	private Sprite                          headC;
+	private Texture                         mainControlButtonTexture;
+	private Texture                         headControlButtonTexture;
+	private Texture                         wheelControlButtonTexture;
+	private Texture                         armControlButtonTexture;
+	private Sprite                          motorAButton;
+	private Sprite                          motorBButton;
+	private Sprite                          motorCButton;
+	private Sprite                          motorDButton;
+	private Sprite                          headAButton;
+	private Sprite                          headBButton;
+	private Sprite                          headCButton;
+	private Sprite                          wheelControlButton;
+	private Sprite                          armControlButton;
 
 	// Button touch helper fields.
-	private boolean[]                       motorButtonsTouched;
-	private int[]                           motorButtonsPointers;
-	private boolean[]                       motorGamepadButtonPressed;
+	private boolean[]                       buttonsTouched;
+	private int[]                           buttonPointers;
+	private boolean[]                       gamepadButtonPressed;
 
 	// Monitors.
 	private VideoFrameMonitor               frameMonitor;
@@ -114,6 +137,7 @@ public class InGameState extends BaseState{
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 		queue = MotorEventQueue.getInstance();
+		controlMode = robot_control_mode_t.WHEEL_CONTROL;
 
 		// Set up rendering fields;
 		videoFrame = null;
@@ -128,32 +152,34 @@ public class InGameState extends BaseState{
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
 		touchPointWorldCoords = new Vector2();
 
-		motorButtonsTouched = new boolean[7];
-		motorButtonsTouched[0] = false;
-		motorButtonsTouched[1] = false;
-		motorButtonsTouched[2] = false;
-		motorButtonsTouched[3] = false;
-		motorButtonsTouched[4] = false;
-		motorButtonsTouched[5] = false;
-		motorButtonsTouched[6] = false;
+		buttonsTouched = new boolean[8];
+		buttonsTouched[0] = false;
+		buttonsTouched[1] = false;
+		buttonsTouched[2] = false;
+		buttonsTouched[3] = false;
+		buttonsTouched[4] = false;
+		buttonsTouched[5] = false;
+		buttonsTouched[6] = false;
+		buttonsTouched[7] = false;
 
-		motorButtonsPointers = new int[7];
-		motorButtonsPointers[0] = -1;
-		motorButtonsPointers[1] = -1;
-		motorButtonsPointers[2] = -1;
-		motorButtonsPointers[3] = -1;
-		motorButtonsPointers[4] = -1;
-		motorButtonsPointers[5] = -1;
-		motorButtonsPointers[6] = -1;
+		buttonPointers = new int[8];
+		buttonPointers[0] = -1;
+		buttonPointers[1] = -1;
+		buttonPointers[2] = -1;
+		buttonPointers[3] = -1;
+		buttonPointers[4] = -1;
+		buttonPointers[5] = -1;
+		buttonPointers[6] = -1;
+		buttonPointers[7] = -1;
 
-		motorGamepadButtonPressed = new boolean[7];
-		motorGamepadButtonPressed[0] = false;
-		motorGamepadButtonPressed[1] = false;
-		motorGamepadButtonPressed[2] = false;
-		motorGamepadButtonPressed[3] = false;
-		motorGamepadButtonPressed[4] = false;
-		motorGamepadButtonPressed[5] = false;
-		motorGamepadButtonPressed[6] = false;
+		gamepadButtonPressed = new boolean[7];
+		gamepadButtonPressed[0] = false;
+		gamepadButtonPressed[1] = false;
+		gamepadButtonPressed[2] = false;
+		gamepadButtonPressed[3] = false;
+		gamepadButtonPressed[4] = false;
+		gamepadButtonPressed[5] = false;
+		gamepadButtonPressed[6] = false;
 
 		// Set up the background.
 		backgroundTexture = new Texture(Gdx.files.internal("data/gfx/textures/tile_aqua.png"));
@@ -347,13 +373,22 @@ public class InGameState extends BaseState{
 		if(!Ouya.runningOnOuya){
 			core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
 			core.batch.begin();{
-				motorA.draw(core.batch);
-				motorB.draw(core.batch);
-				motorC.draw(core.batch);
-				motorD.draw(core.batch);
-				headA.draw(core.batch);
-				headB.draw(core.batch);
-				headC.draw(core.batch);
+				motorAButton.draw(core.batch);
+				motorBButton.draw(core.batch);
+				motorCButton.draw(core.batch);
+				motorDButton.draw(core.batch);
+				headAButton.draw(core.batch);
+				headBButton.draw(core.batch);
+				headCButton.draw(core.batch);
+
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					armControlButton.draw(core.batch);
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					wheelControlButton.draw(core.batch);
+				}else{
+					throw new IllegalStateException("Unrecognized control mode: " + Integer.toString(controlMode.getValue()));
+				}
+
 			}core.batch.end();
 		}
 
@@ -368,13 +403,20 @@ public class InGameState extends BaseState{
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
 
-		if(buttonTexture != null)
-			buttonTexture.dispose();
+		if(mainControlButtonTexture != null)
+			mainControlButtonTexture.dispose();
 
-		if(buttonTexture2 != null)
-			buttonTexture2.dispose();
+		if(headControlButtonTexture != null)
+			headControlButtonTexture.dispose();
 
-		backgroundTexture.dispose();
+		if(wheelControlButtonTexture != null)
+			wheelControlButtonTexture.dispose();
+
+		if(armControlButtonTexture != null)
+			armControlButtonTexture.dispose();
+
+		if(backgroundTexture != null)
+			backgroundTexture.dispose();
 
 		if(backgroundShader != null)
 			backgroundShader.dispose();
@@ -404,42 +446,52 @@ public class InGameState extends BaseState{
 	}
 
 	private void setUpButtons(){
-		buttonTexture = new Texture(Gdx.files.internal("data/gfx/gui/PBCrichton_Flat_Button.png"));
-		buttonTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		// Set the main control buttons.
+		mainControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/PBCrichton_Flat_Button.png"));
+		mainControlButtonTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
-		TextureRegion region = new TextureRegion(buttonTexture, 0, 0, buttonTexture.getWidth(), buttonTexture.getHeight());
+		TextureRegion region = new TextureRegion(mainControlButtonTexture, 0, 0, mainControlButtonTexture.getWidth(), mainControlButtonTexture.getHeight());
 
-		motorA = new Sprite(region);
-		motorA.setSize(motorA.getWidth() * 0.7f, motorA.getHeight() * 0.7f);
+		motorAButton = new Sprite(region);
+		motorAButton.setSize(motorAButton.getWidth() * 0.7f, motorAButton.getHeight() * 0.7f);
+		motorBButton = new Sprite(region);
+		motorBButton.setSize(motorBButton.getWidth() * 0.7f, motorBButton.getHeight() * 0.7f);
+		motorCButton = new Sprite(region);
+		motorCButton.setSize(motorCButton.getWidth() * 0.7f, motorCButton.getHeight() * 0.7f);
+		motorDButton = new Sprite(region);
+		motorDButton.setSize(motorDButton.getWidth() * 0.7f, motorDButton.getHeight() * 0.7f);
 
-		motorB = new Sprite(region);
-		motorB.setSize(motorB.getWidth() * 0.7f, motorB.getHeight() * 0.7f);
+		motorAButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 10, -(Gdx.graphics.getHeight() / 2) + motorBButton.getHeight() + 20);
+		motorBButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 20 + (motorAButton.getWidth() / 2), -(Gdx.graphics.getHeight() / 2) + 10);
+		motorCButton.setPosition((Gdx.graphics.getWidth() / 2) - (1.5f * (motorDButton.getWidth())) - 20, -(Gdx.graphics.getHeight() / 2) + 10);
+		motorDButton.setPosition((Gdx.graphics.getWidth() / 2) - motorDButton.getWidth() - 10, -(Gdx.graphics.getHeight() / 2) + 20 + motorCButton.getHeight());
 
-		motorC = new Sprite(region);
-		motorC.setSize(motorC.getWidth() * 0.7f, motorC.getHeight() * 0.7f);
+		// Set the head control buttons.
+		headControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/orange_glowy_button.png"));
 
-		motorD = new Sprite(region);
-		motorD.setSize(motorD.getWidth() * 0.7f, motorD.getHeight() * 0.7f);
+		headAButton = new Sprite(headControlButtonTexture);
+		headAButton.setSize(headAButton.getWidth() * 0.3f, headAButton.getHeight() * 0.6f);
+		headBButton = new Sprite(headControlButtonTexture);
+		headBButton.setSize(headBButton.getWidth() * 0.3f, headBButton.getHeight() * 0.6f);
 
-		motorA.setPosition(-(Gdx.graphics.getWidth() / 2) + 10, -(Gdx.graphics.getHeight() / 2) + motorB.getHeight() + 20);
-		motorB.setPosition(-(Gdx.graphics.getWidth() / 2) + 20 + (motorA.getWidth() / 2), -(Gdx.graphics.getHeight() / 2) + 10);
-		motorC.setPosition((Gdx.graphics.getWidth() / 2) - (1.5f * (motorD.getWidth())) - 20, -(Gdx.graphics.getHeight() / 2) + 10);
-		motorD.setPosition((Gdx.graphics.getWidth() / 2) - motorD.getWidth() - 10, -(Gdx.graphics.getHeight() / 2) + 20 + motorC.getHeight());
+		headAButton.setPosition(-headAButton.getWidth() - 10, motorAButton.getY() + (headAButton.getHeight() / 2));
+		headBButton.setPosition(10, motorAButton.getY() + (headAButton.getHeight() / 2));
 
-		buttonTexture2 = new Texture(Gdx.files.internal("data/gfx/gui/orange_glowy_button.png"));
+		headCButton = new Sprite(headControlButtonTexture);
+		headCButton.setSize(headCButton.getWidth() * 0.3f, headCButton.getHeight() * 0.6f);
+		headCButton.setPosition(-(headCButton.getWidth() / 2), headAButton.getY() - headAButton.getHeight() - 10);
 
-		headA = new Sprite(buttonTexture2);
-		headA.setSize(headA.getWidth() * 0.3f, headA.getHeight() * 0.6f);
+		// Set the control mode buttons.
+		wheelControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/wheel.png"));
+		armControlButtonTexture   = new Texture(Gdx.files.internal("data/gfx/gui/arm.png"));
 
-		headB = new Sprite(buttonTexture2);
-		headB.setSize(headB.getWidth() * 0.3f, headB.getHeight() * 0.6f);
+		wheelControlButton = new Sprite(wheelControlButtonTexture);
+		wheelControlButton.setSize(wheelControlButton.getWidth() * 0.3f, wheelControlButton.getHeight() * 0.3f);
+		armControlButton = new Sprite(armControlButtonTexture);
+		armControlButton.setSize(armControlButton.getWidth() * 0.3f, armControlButton.getHeight() * 0.3f);
 
-		headA.setPosition(-headA.getWidth() - 10, motorA.getY() + (headA.getHeight() / 2));
-		headB.setPosition(10, motorA.getY() + (headA.getHeight() / 2));
-
-		headC = new Sprite(buttonTexture2);
-		headC.setSize(headC.getWidth() * 0.3f, headC.getHeight() * 0.6f);
-		headC.setPosition(-(headC.getWidth() / 2), headA.getY() - headA.getHeight() - 10);
+		wheelControlButton.setPosition(-(wheelControlButton.getWidth() / 2), headCButton.getY() - headCButton.getHeight() - 15);
+		armControlButton.setPosition(-(armControlButton.getWidth() / 2), headCButton.getY() - headCButton.getHeight() - 15);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -449,7 +501,7 @@ public class InGameState extends BaseState{
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button){
 		MotorEvent event;
-		TouchUserInput input;
+		UserInput input;
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
@@ -459,78 +511,112 @@ public class InGameState extends BaseState{
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-			if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
+			if(motorAButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor A button pressed");
 
-				motorButtonsTouched[0] = true;
-				motorButtonsPointers[0] = pointer;
+				buttonsTouched[0] = true;
+				buttonPointers[0] = pointer;
 
-				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_A);
-				event.setPower((byte)100);
-				queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)100);
+					queue.addEvent(event);
 
-			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+
+					((KeyboardUserInput)input).keyUp = true;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
+				}
+
+			}else if(motorBButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor B button pressed");
 
-				motorButtonsTouched[1] = true;
-				motorButtonsPointers[1] = pointer;
+				buttonsTouched[1] = true;
+				buttonPointers[1] = pointer;
 
-				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_A);
-				event.setPower((byte)-100);
-				queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_A);
+					event.setPower((byte)-100);
+					queue.addEvent(event);
 
-			}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyLeft = true;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
+				}
+
+			}else if(motorCButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor C button pressed");
 
-				motorButtonsTouched[2] = true;
-				motorButtonsPointers[2] = pointer;
+				buttonsTouched[2] = true;
+				buttonPointers[2] = pointer;
 
-				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_C);
-				event.setPower((byte)-100);
-				queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)-100);
+					queue.addEvent(event);
 
-			}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyRight = true;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
+				}
+
+			}else if(motorDButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Motor D button pressed");
 
-				motorButtonsTouched[3] = true;
-				motorButtonsPointers[3] = pointer;
+				buttonsTouched[3] = true;
+				buttonPointers[3] = pointer;
 
-				event = new MotorEvent();
-				event.setMotor(motor_t.MOTOR_C);
-				event.setPower((byte)100);
-				queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					event = new MotorEvent();
+					event.setMotor(motor_t.MOTOR_C);
+					event.setPower((byte)100);
+					queue.addEvent(event);
 
-			}else if(headA.getBoundingRectangle().contains(touchPointWorldCoords)){
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+
+					((KeyboardUserInput)input).keyDown = true;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
+				}
+
+			}else if(headAButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Head A button pressed");
 
-				motorButtonsTouched[4] = true;
-				motorButtonsPointers[4] = pointer;
+				buttonsTouched[4] = true;
+				buttonPointers[4] = pointer;
 
 				event = new MotorEvent();
 				event.setMotor(motor_t.MOTOR_B);
-				event.setPower((byte)-40);
+				event.setPower((byte)-25);
 				queue.addEvent(event);
 
-			}else if(headB.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(headBButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Head B button pressed");
 
-				motorButtonsTouched[5] = true;
-				motorButtonsPointers[5] = pointer;
+				buttonsTouched[5] = true;
+				buttonPointers[5] = pointer;
 
 				event = new MotorEvent();
 				event.setMotor(motor_t.MOTOR_B);
-				event.setPower((byte)40);
+				event.setPower((byte)25);
 				queue.addEvent(event);
 
-			}else if(headC.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(headCButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Head C button pressed");
 
-				if(!motorButtonsTouched[4] && !motorButtonsTouched[5]){
-					motorButtonsTouched[6] = true;
-					motorButtonsPointers[6] = pointer;
+				if(!buttonsTouched[4] && !buttonsTouched[5]){
+					buttonsTouched[6] = true;
+					buttonPointers[6] = pointer;
 
 					event = new MotorEvent();
 					event.setMotor(motor_t.RECENTER);
@@ -538,12 +624,21 @@ public class InGameState extends BaseState{
 					queue.addEvent(event);
 				}
 
+			}else if(wheelControlButton.getBoundingRectangle().contains(touchPointWorldCoords) || armControlButton.getBoundingRectangle().contains(touchPointWorldCoords)){
+
+				buttonsTouched[7] = true;
+				buttonPointers[7] = pointer;
+				controlMode = controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue() ? robot_control_mode_t.ARM_CONTROL : robot_control_mode_t.WHEEL_CONTROL;
+
 			}else{
+
 				touchPointWorldCoords.set(win2world.x, win2world.y);
+
 				if(frameBufferSprite != null && frameBufferSprite.getBoundingRectangle().contains(touchPointWorldCoords)){
 					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point inside framebuffer.");
-					input = new TouchUserInput(TEMP_VEC_3);
+					input = new TouchUserInput();
 					robotArmPositioningSystem.setUserInput(input);
+
 				}else{
 					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point outside framebuffer.");
 				}
@@ -558,6 +653,7 @@ public class InGameState extends BaseState{
 	@Override
 	public boolean touchUp(int screenX, int screenY, int pointer, int button){
 		MotorEvent event;
+		UserInput input;
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
@@ -567,95 +663,131 @@ public class InGameState extends BaseState{
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp(%d, %d, %d, %d)", screenX, screenY, pointer, button));
 			Gdx.app.log(TAG, CLASS_NAME + String.format(".touchUp() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-			if(motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
+			if(motorAButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor A button released");
 
-				motorButtonsPointers[0] = -1;
-				motorButtonsTouched[0] = false;
+				buttonPointers[0] = -1;
+				buttonsTouched[0] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[1]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[1]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_A);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyUp = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(motorBButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor B button released");
 
-				motorButtonsPointers[1] = -1;
-				motorButtonsTouched[1] = false;
+				buttonPointers[1] = -1;
+				buttonsTouched[1] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[0]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[0]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_A);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyLeft = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(motorCButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor C button released");
 
-				motorButtonsPointers[2] = -1;
-				motorButtonsTouched[2] = false;
+				buttonPointers[2] = -1;
+				buttonsTouched[2] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[3]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[3]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_C);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyRight = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(motorDButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Motor D button released");
 
-				motorButtonsPointers[3] = -1;
-				motorButtonsTouched[3] = false;
+				buttonPointers[3] = -1;
+				buttonsTouched[3] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[2]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[2]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_C);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyDown = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(headA.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(headAButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Head A button released");
 
-				motorButtonsPointers[4] = -1;
-				motorButtonsTouched[4] = false;
+				buttonPointers[4] = -1;
+				buttonsTouched[4] = false;
 
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[5]){
+				if(!buttonsTouched[5]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
 
-			}else if(headB.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(headBButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Head B button released");
 
-				motorButtonsPointers[5] = -1;
-				motorButtonsTouched[5] = false;
+				buttonPointers[5] = -1;
+				buttonsTouched[5] = false;
 
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[4]){
+				if(!buttonsTouched[4]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
 
-			}else if(headC.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(headCButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchUp() :: Head C button released");
 
-				motorButtonsPointers[6] = -1;
-				motorButtonsTouched[6] = false;
+				buttonPointers[6] = -1;
+				buttonsTouched[6] = false;
+
+			}else if(wheelControlButton.getBoundingRectangle().contains(touchPointWorldCoords) || armControlButton.getBoundingRectangle().contains(touchPointWorldCoords)){
+				buttonPointers[7] = -1;
+				buttonsTouched[7] = false;
 			}
 
 			return true;
@@ -667,101 +799,138 @@ public class InGameState extends BaseState{
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer){
 		MotorEvent event;
+		UserInput input;
 
 		if(!Ouya.runningOnOuya){
 			win2world.set(screenX, screenY, 0.0f);
 			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
 
-			if(pointer == motorButtonsPointers[0] && !motorA.getBoundingRectangle().contains(touchPointWorldCoords)){
+			if(pointer == buttonPointers[0] && !motorAButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor A button released");
 
-				motorButtonsPointers[0] = -1;
-				motorButtonsTouched[0] = false;
+				buttonPointers[0] = -1;
+				buttonsTouched[0] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[1]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[1]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_A);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyUp = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(pointer == motorButtonsPointers[1] && !motorB.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(pointer == buttonPointers[1] && !motorBButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor B button released");
 
-				motorButtonsPointers[1] = -1;
-				motorButtonsTouched[1] = false;
+				buttonPointers[1] = -1;
+				buttonsTouched[1] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[0]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_A);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[0]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_A);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyLeft = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(pointer == motorButtonsPointers[2] && !motorC.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(pointer == buttonPointers[2] && !motorCButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor C button released");
 
-				motorButtonsPointers[2] = -1;
-				motorButtonsTouched[2] = false;
+				buttonPointers[2] = -1;
+				buttonsTouched[2] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[3]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[3]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_C);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyRight = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(pointer == motorButtonsPointers[3] && !motorD.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(pointer == buttonPointers[3] && !motorDButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Motor D button released");
 
-				motorButtonsPointers[3] = -1;
-				motorButtonsTouched[3] = false;
+				buttonPointers[3] = -1;
+				buttonsTouched[3] = false;
 
-				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[2]){
-					event = new MotorEvent();
-					event.setMotor(motor_t.MOTOR_C);
-					event.setPower((byte) 0);
-					queue.addEvent(event);
+				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
+					// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
+					if(!buttonsTouched[2]){
+						event = new MotorEvent();
+						event.setMotor(motor_t.MOTOR_C);
+						event.setPower((byte) 0);
+						queue.addEvent(event);
+					}
+
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					input = new KeyboardUserInput();
+					((KeyboardUserInput)input).keyDown = false;
+					robotArmPositioningSystem.setUserInput(input);
+					robotArmPositioningSystem.process();
 				}
 
-			}else if(pointer == motorButtonsPointers[4] && !headA.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(pointer == buttonPointers[4] && !headAButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Head A button released");
 
-				motorButtonsPointers[4] = -1;
-				motorButtonsTouched[4] = false;
+				buttonPointers[4] = -1;
+				buttonsTouched[4] = false;
 
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[5]){
+				if(!buttonsTouched[5]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
 
-			}else if(pointer == motorButtonsPointers[5] && !headB.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(pointer == buttonPointers[5] && !headBButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Head B button released");
 
-				motorButtonsPointers[5] = -1;
-				motorButtonsTouched[5] = false;
+				buttonPointers[5] = -1;
+				buttonsTouched[5] = false;
 
 				// Enqueue the event corresponding to releasing this button if the opposing button is not pressed already.
-				if(!motorButtonsTouched[4]){
+				if(!buttonsTouched[4]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte) 0);
 					queue.addEvent(event);
 				}
 
-			}else if(pointer == motorButtonsPointers[6] && !headC.getBoundingRectangle().contains(touchPointWorldCoords)){
+			}else if(pointer == buttonPointers[6] && !headCButton.getBoundingRectangle().contains(touchPointWorldCoords)){
 				Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Head C button released");
 
-				motorButtonsPointers[6] = -1;
-				motorButtonsTouched[6] = false;
+				buttonPointers[6] = -1;
+				buttonsTouched[6] = false;
+
+			}else if(pointer == buttonPointers[7] && !(wheelControlButton.getBoundingRectangle().contains(touchPointWorldCoords) || armControlButton.getBoundingRectangle().contains(touchPointWorldCoords))){
+				buttonPointers[7] = -1;
+				buttonsTouched[7] = false;
 			}
 
 			return true;
@@ -772,12 +941,94 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean keyDown(int keycode){
+		KeyboardUserInput input = null;
+
 		if(keycode == Input.Keys.BACK){
 			core.nextState = game_states_t.MAIN_MENU;
 			return true;
 		}
 
-		return false;
+		switch(keycode){
+		case Input.Keys.LEFT:
+			input = new KeyboardUserInput();
+			input.keyLeft = true;
+			break;
+		case Input.Keys.RIGHT:
+			input = new KeyboardUserInput();
+			input.keyRight = true;
+			break;
+		case Input.Keys.UP:
+			input = new KeyboardUserInput();
+			input.keyUp = true;
+			break;
+		case Input.Keys.DOWN: 
+			input = new KeyboardUserInput();
+			input.keyDown = true;
+			break;
+		case Input.Keys.A: 
+			input = new KeyboardUserInput();
+			input.keyA = true;
+			break;
+		case Input.Keys.Z: 
+			input = new KeyboardUserInput();
+			input.keyZ = true;
+			break;
+		default: 
+			return false;
+		}
+
+		if(input != null){
+			robotArmPositioningSystem.setUserInput(input);
+			robotArmPositioningSystem.process();
+		}
+
+		return true;
+	}
+
+	@Override
+	public boolean keyUp(int keycode){
+		KeyboardUserInput input = null;
+
+		if(keycode == Input.Keys.BACK){
+			core.nextState = game_states_t.MAIN_MENU;
+			return true;
+		}
+
+		switch(keycode){
+		case Input.Keys.LEFT:
+			input = new KeyboardUserInput();
+			input.keyLeft = false;
+			break;
+		case Input.Keys.RIGHT:
+			input = new KeyboardUserInput();
+			input.keyRight = false;
+			break;
+		case Input.Keys.UP:
+			input = new KeyboardUserInput();
+			input.keyUp = false;
+			break;
+		case Input.Keys.DOWN: 
+			input = new KeyboardUserInput();
+			input.keyDown = false;
+			break;
+		case Input.Keys.A: 
+			input = new KeyboardUserInput();
+			input.keyA = false;
+			break;
+		case Input.Keys.Z: 
+			input = new KeyboardUserInput();
+			input.keyZ = false;
+			break;
+		default: 
+			return false;
+		}
+
+		if(input != null){
+			robotArmPositioningSystem.setUserInput(input);
+			robotArmPositioningSystem.process();
+		}
+
+		return true;
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -792,9 +1043,9 @@ public class InGameState extends BaseState{
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
-				motorGamepadButtonPressed[0] = true;
+				gamepadButtonPressed[0] = true;
 
-				if(!motorGamepadButtonPressed[4]){
+				if(!gamepadButtonPressed[4]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)-100);
@@ -802,9 +1053,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_R1){
-				motorGamepadButtonPressed[1] = true;
+				gamepadButtonPressed[1] = true;
 
-				if(!motorGamepadButtonPressed[5]){
+				if(!gamepadButtonPressed[5]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)-100);
@@ -812,9 +1063,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
-				motorGamepadButtonPressed[2] = false;
+				gamepadButtonPressed[2] = false;
 
-				if(!motorGamepadButtonPressed[3]){
+				if(!gamepadButtonPressed[3]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte)-40);
@@ -822,9 +1073,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
-				motorGamepadButtonPressed[3] = false;
+				gamepadButtonPressed[3] = false;
 
-				if(!motorGamepadButtonPressed[2]){
+				if(!gamepadButtonPressed[2]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte)40);
@@ -832,9 +1083,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode ==  Ouya.BUTTON_L2){
-				motorGamepadButtonPressed[4] = false;
+				gamepadButtonPressed[4] = false;
 
-				if(!motorGamepadButtonPressed[0]){
+				if(!gamepadButtonPressed[0]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)100);
@@ -842,9 +1093,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode ==  Ouya.BUTTON_R2){
-				motorGamepadButtonPressed[5] = false;
+				gamepadButtonPressed[5] = false;
 
-				if(!motorGamepadButtonPressed[1]){
+				if(!gamepadButtonPressed[1]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)100);
@@ -852,7 +1103,7 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_Y){
-				motorGamepadButtonPressed[6] = true;
+				gamepadButtonPressed[6] = true;
 
 				event = new MotorEvent();
 				event.setMotor(motor_t.RECENTER);
@@ -877,9 +1128,9 @@ public class InGameState extends BaseState{
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
 
 			if(buttonCode == Ouya.BUTTON_L1){
-				motorGamepadButtonPressed[0] = false;
+				gamepadButtonPressed[0] = false;
 
-				if(!motorGamepadButtonPressed[4]){
+				if(!gamepadButtonPressed[4]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)0);
@@ -887,9 +1138,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_R1){
-				motorGamepadButtonPressed[1] = false;
+				gamepadButtonPressed[1] = false;
 
-				if(!motorGamepadButtonPressed[5]){
+				if(!gamepadButtonPressed[5]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)0);
@@ -897,27 +1148,27 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_DPAD_LEFT){
-				motorGamepadButtonPressed[2] = false;
+				gamepadButtonPressed[2] = false;
 
-				if(!motorGamepadButtonPressed[3]){
+				if(!gamepadButtonPressed[3]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
 			}else if(buttonCode == Ouya.BUTTON_DPAD_RIGHT){
-				motorGamepadButtonPressed[3] = false;
+				gamepadButtonPressed[3] = false;
 
-				if(!motorGamepadButtonPressed[2]){
+				if(!gamepadButtonPressed[2]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
 					event.setPower((byte)0);
 					queue.addEvent(event);
 				}
 			}else if(buttonCode ==  Ouya.BUTTON_L2){
-				motorGamepadButtonPressed[4] = false;
+				gamepadButtonPressed[4] = false;
 
-				if(!motorGamepadButtonPressed[0]){
+				if(!gamepadButtonPressed[0]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_A);
 					event.setPower((byte)0);
@@ -925,9 +1176,9 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode ==  Ouya.BUTTON_R2){
-				motorGamepadButtonPressed[5] = false;
+				gamepadButtonPressed[5] = false;
 
-				if(!motorGamepadButtonPressed[1]){
+				if(!gamepadButtonPressed[1]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_C);
 					event.setPower((byte)0);
@@ -935,7 +1186,7 @@ public class InGameState extends BaseState{
 				}
 
 			}else if(buttonCode == Ouya.BUTTON_Y){
-				motorGamepadButtonPressed[6] = false;
+				gamepadButtonPressed[6] = false;
 			}
 
 			return true;

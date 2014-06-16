@@ -19,6 +19,7 @@ import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
+import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
@@ -38,7 +39,6 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 	private static final String  CLASS_NAME          = RobotArmPositioningSystem.class.getSimpleName();
 	private static final float   INTERPOLATION_STEP  = 0.05f;
 	private static final float   STEP_SIZE           = 0.05f;
-	private static final Vector3 END_POINT           = new Vector3(0.0f, 0.0f, -0.5f);
 	private static final float   MAX_Z               = -4.5f;
 
 	@Mapper ComponentMapper<GeometryComponent>           geometryMapper;
@@ -89,12 +89,11 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 					geometry.position.x += tempGP.axisLeftY * STEP_SIZE;
 					geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
 					geometry.position.z += tempGP.axisRightY * STEP_SIZE;
-					//clampPosition(geometry);
 				}else{
 					auto.moving = true;
 					auto.forward = false;
 					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(END_POINT);
+					auto.endPoint.set(BombGameEntityCreator.ROBOT_ARM_START_POINT);
 				}
 
 			}else if(input instanceof KeyboardUserInput){
@@ -107,12 +106,11 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 					geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
 					geometry.position.z -= tempKey.keyZ ? STEP_SIZE : 0.0f;
 					geometry.position.z += tempKey.keyA ? STEP_SIZE : 0.0f;
-					//clampPosition(geometry);
 				}else{
 					auto.moving = true;
 					auto.forward = false;
 					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(END_POINT);
+					auto.endPoint.set(BombGameEntityCreator.ROBOT_ARM_START_POINT);
 				}
 
 			}else
@@ -154,13 +152,4 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 
 		}else return;
 	}
-
-//	private void clampPosition(GeometryComponent geometry){
-//		geometry.position.x = geometry.position.x >= -1.0f ? geometry.position.x : -1.0f;
-//		geometry.position.x = geometry.position.x <= 1.0f ? geometry.position.x : 1.0f;
-//		geometry.position.y = geometry.position.y >= -1.0f ? geometry.position.y : -1.0f;
-//		geometry.position.y = geometry.position.y <= 1.0f ? geometry.position.y : 1.0f;
-//		geometry.position.z = geometry.position.z >= 0.0f ? geometry.position.z : 0.0f;
-//		geometry.position.z = geometry.position.z <= 6.0f ? geometry.position.z : 6.0f;
-//	}
 }

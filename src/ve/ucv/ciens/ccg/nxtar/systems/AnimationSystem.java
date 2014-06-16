@@ -26,6 +26,8 @@ import com.artemis.systems.EntityProcessingSystem;
 import com.badlogic.gdx.Gdx;
 
 public class AnimationSystem extends EntityProcessingSystem {
+	public static final int NO_ANIMATION = -1;
+
 	@Mapper ComponentMapper<AnimationComponent> animationMapper;
 	@Mapper ComponentMapper<VisibilityComponent> visibilityMapper;
 

@@ -29,6 +29,7 @@ import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
+import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 
 import com.artemis.Entity;
@@ -53,6 +54,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private static final boolean DEBUG_RENDER_DOOR_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS = false;
 	public static final String   DOORS_GROUP                                 = "DOORS";
+	public static final Vector3  ROBOT_ARM_START_POINT                       = new Vector3(0.0f, 0.0f, -1.0f);
+	public static final int      DOOR_OPEN_ANIMATION                         = 1;
+	public static final int      DOOR_CLOSE_ANIMATION                        = 1;
 
 	private class EntityParameters{
 		public Environment environment;
@@ -184,7 +188,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		addBomb(parameters, bomb_type_t.WIRES);
 
 		// Add doors.
-		parameters.nextAnimation = -1;
+		parameters.nextAnimation = AnimationSystem.NO_ANIMATION;
 		parameters.loopAnimation = false;
 
 		parameters.markerCode = 89;
@@ -233,7 +237,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private void addRobotArm(EntityParameters parameters){
 		Entity robotArm = world.createEntity();
 
-		robotArm.addComponent(new GeometryComponent(new Vector3(0.0f, 0.0f, -1.0f), new Matrix3(), new Vector3(1, 1, 1)));
+		robotArm.addComponent(new GeometryComponent(new Vector3(ROBOT_ARM_START_POINT), new Matrix3(), new Vector3(1, 1, 1)));
 		robotArm.addComponent(new EnvironmentComponent(parameters.environment));
 		robotArm.addComponent(new ShaderComponent(parameters.shader));
 		robotArm.addComponent(new RenderModelComponent(robotArmModel));

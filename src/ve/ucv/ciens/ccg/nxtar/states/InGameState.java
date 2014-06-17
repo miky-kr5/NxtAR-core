@@ -29,6 +29,7 @@ import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
@@ -61,6 +62,7 @@ public class InGameState extends BaseState{
 	private static final String  TAG                    = "IN_GAME_STATE";
 	private static final String  CLASS_NAME             = InGameState.class.getSimpleName();
 	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
+	private static final String  ALPHA_SHADER_PREFIX    = "shaders/alphaSprite/alpha";
 	private static final float   NEAR                   = 0.01f;
 	private static final float   FAR                    = 100.0f;
 
@@ -91,12 +93,16 @@ public class InGameState extends BaseState{
 	private ModelBatch                      modelBatch;
 	private FrameBuffer                     frameBuffer;
 	private Sprite                          frameBufferSprite;
+	private FrameBuffer                     robotArmFrameBuffer;
+	private Sprite                          robotArmFrameBufferSprite;
+	private ShaderProgram                   alphaShader;
 
 	// Game related fields.
 	private World                           gameWorld;
 	private MarkerRenderingSystem           markerRenderingSystem;
 	private ObjectRenderingSystem           objectRenderingSystem;
 	private RobotArmPositioningSystem       robotArmPositioningSystem;
+	private FadeEffectRenderingSystem       fadeEffectRenderingSystem;
 	private robot_control_mode_t            controlMode;
 
 	// Cameras.
@@ -114,6 +120,8 @@ public class InGameState extends BaseState{
 	private Texture                         headControlButtonTexture;
 	private Texture                         wheelControlButtonTexture;
 	private Texture                         armControlButtonTexture;
+	private Texture                         correctAngleLedOnTexture;
+	private Texture                         correctAngleLedOffTexture;
 	private Sprite                          motorAButton;
 	private Sprite                          motorBButton;
 	private Sprite                          motorCButton;
@@ -123,6 +131,8 @@ public class InGameState extends BaseState{
 	private Sprite                          headCButton;
 	private Sprite                          wheelControlButton;
 	private Sprite                          armControlButton;
+	private Sprite                          correctAngleLedOnSprite;
+	private Sprite                          correctAngleLedOffSprite;
 
 	// Button touch helper fields.
 	private boolean[]                       buttonsTouched;
@@ -192,7 +202,7 @@ public class InGameState extends BaseState{
 		// Set up the shader.
 		backgroundShader = new ShaderProgram(Gdx.files.internal(BACKGROUND_SHADER_PATH + "_vert.glsl"), Gdx.files.internal(BACKGROUND_SHADER_PATH + "_frag.glsl"));
 		if(!backgroundShader.isCompiled()){
-			Gdx.app.error(TAG, CLASS_NAME + ".MainMenuStateBase() :: Failed to compile the background shader.");
+			Gdx.app.error(TAG, CLASS_NAME + ".InGameState() :: Failed to compile the background shader.");
 			Gdx.app.error(TAG, CLASS_NAME + backgroundShader.getLog());
 			backgroundShader = null;
 		}
@@ -201,11 +211,21 @@ public class InGameState extends BaseState{
 		uScaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
+		// Set up the alpha shader.
+		alphaShader = new ShaderProgram(Gdx.files.internal(ALPHA_SHADER_PREFIX + "_vert.glsl"), Gdx.files.internal(ALPHA_SHADER_PREFIX + "_frag.glsl"));
+		if(!alphaShader.isCompiled()){
+			Gdx.app.error(TAG, CLASS_NAME + ".InGameState() :: Failed to compile the alpha shader.");
+			Gdx.app.error(TAG, CLASS_NAME + alphaShader.getLog());
+			alphaShader = null;
+		}
+
 		// Set up the 3D rendering.
 		modelBatch = new ModelBatch();
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
+		robotArmFrameBuffer = null;
+		robotArmFrameBufferSprite = null;
 
 		// Set up the game world.
 		gameWorld = GameSettings.getGameWorld();
@@ -213,6 +233,7 @@ public class InGameState extends BaseState{
 		robotArmPositioningSystem = new RobotArmPositioningSystem();
 		markerRenderingSystem     = new MarkerRenderingSystem(modelBatch);
 		objectRenderingSystem     = new ObjectRenderingSystem(modelBatch);
+		fadeEffectRenderingSystem = new FadeEffectRenderingSystem();
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(robotArmPositioningSystem, Ouya.runningOnOuya);
@@ -222,6 +243,7 @@ public class InGameState extends BaseState{
 		gameWorld.setSystem(GameSettings.getGameLogicSystem());
 		gameWorld.setSystem(markerRenderingSystem, true);
 		gameWorld.setSystem(objectRenderingSystem, true);
+		gameWorld.setSystem(fadeEffectRenderingSystem, true);
 
 		gameWorld.initialize();
 	}
@@ -262,6 +284,9 @@ public class InGameState extends BaseState{
 		if(perspectiveCamera == null && frameBuffer == null){
 			frameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+
+			robotArmFrameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
+			robotArmFrameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			perspectiveCamera = new CustomPerspectiveCamera(67, w, h);
 			perspectiveCamera.translate(0.0f, 0.0f, 0.0f);
@@ -315,12 +340,19 @@ public class InGameState extends BaseState{
 				markerRenderingSystem.begin(perspectiveCamera);
 				markerRenderingSystem.process();
 				markerRenderingSystem.end();
+			}frameBuffer.end();
 
+			robotArmFrameBuffer.begin();{
+				// Set OpenGL state.
+				Gdx.gl.glClearColor(0, 0, 0, 0);
+				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
+
+				// Call rendering systems.
 				objectRenderingSystem.begin(perspectiveCamera);
 				objectRenderingSystem.process();
 				objectRenderingSystem.end();
-
-			}frameBuffer.end();
+			}robotArmFrameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.
 			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
@@ -332,6 +364,16 @@ public class InGameState extends BaseState{
 			frameBufferSprite.setOrigin(frameBufferSprite.getWidth() / 2, frameBufferSprite.getHeight() / 2);
 			frameBufferSprite.setPosition(0, 0);
 
+			// Set the other frame buffer object texture to a renderable sprite.
+			region = new TextureRegion(robotArmFrameBuffer.getColorBufferTexture(), 0, 0, robotArmFrameBuffer.getWidth(), robotArmFrameBuffer.getHeight());
+			region.flip(false, true);
+			if(robotArmFrameBufferSprite == null)
+				robotArmFrameBufferSprite = new Sprite(region);
+			else
+				robotArmFrameBufferSprite.setRegion(region);
+			robotArmFrameBufferSprite.setOrigin(robotArmFrameBuffer.getWidth() / 2, robotArmFrameBuffer.getHeight() / 2);
+			robotArmFrameBufferSprite.setPosition(0, 0);
+
 			// Set the position and orientation of the renderable video frame and the frame buffer.
 			if(!Ouya.runningOnOuya){
 				renderableVideoFrame.setSize(1.0f, renderableVideoFrame.getHeight() / renderableVideoFrame.getWidth() );
@@ -341,6 +383,10 @@ public class InGameState extends BaseState{
 				frameBufferSprite.setSize(1.0f, frameBufferSprite.getHeight() / frameBufferSprite.getWidth() );
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
+
+				robotArmFrameBufferSprite.setSize(1.0f, robotArmFrameBufferSprite.getHeight() / robotArmFrameBufferSprite.getWidth() );
+				robotArmFrameBufferSprite.rotate90(true);
+				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, 0.5f - robotArmFrameBufferSprite.getHeight());
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (w / h);
 				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
@@ -350,6 +396,10 @@ public class InGameState extends BaseState{
 				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
+
+				robotArmFrameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+				robotArmFrameBufferSprite.rotate90(true);
+				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, -robotArmFrameBufferSprite.getHeight() / 2);
 			}
 
 			// Set the correct camera for the device.
@@ -363,6 +413,13 @@ public class InGameState extends BaseState{
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
 				frameBufferSprite.draw(core.batch);
+
+				if(alphaShader != null){
+					core.batch.setShader(alphaShader);
+				}
+				robotArmFrameBufferSprite.draw(core.batch);
+				if(alphaShader != null) core.batch.setShader(null);
+
 			}core.batch.end();
 
 			// Clear the video frame from memory.
@@ -389,8 +446,15 @@ public class InGameState extends BaseState{
 					throw new IllegalStateException("Unrecognized control mode: " + Integer.toString(controlMode.getValue()));
 				}
 
+				if(Math.abs(Gdx.input.getRoll()) < ProjectConstants.MAX_ABS_ROLL){
+					correctAngleLedOnSprite.draw(core.batch);
+				}else{
+					correctAngleLedOffSprite.draw(core.batch);
+				}
 			}core.batch.end();
 		}
+
+		fadeEffectRenderingSystem.process();
 
 		data = null;
 	}
@@ -421,8 +485,22 @@ public class InGameState extends BaseState{
 		if(backgroundShader != null)
 			backgroundShader.dispose();
 
+		if(alphaShader != null)
+			alphaShader.dispose();
+
 		if(frameBuffer != null)
 			frameBuffer.dispose();
+
+		if(robotArmFrameBuffer != null)
+			robotArmFrameBuffer.dispose();
+
+		if(correctAngleLedOffTexture != null)
+			correctAngleLedOffTexture.dispose();
+
+		if(correctAngleLedOnTexture != null)
+			correctAngleLedOnTexture.dispose();
+
+		fadeEffectRenderingSystem.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;
@@ -454,10 +532,13 @@ public class InGameState extends BaseState{
 
 		motorAButton = new Sprite(region);
 		motorAButton.setSize(motorAButton.getWidth() * 0.7f, motorAButton.getHeight() * 0.7f);
+
 		motorBButton = new Sprite(region);
 		motorBButton.setSize(motorBButton.getWidth() * 0.7f, motorBButton.getHeight() * 0.7f);
+
 		motorCButton = new Sprite(region);
 		motorCButton.setSize(motorCButton.getWidth() * 0.7f, motorCButton.getHeight() * 0.7f);
+
 		motorDButton = new Sprite(region);
 		motorDButton.setSize(motorDButton.getWidth() * 0.7f, motorDButton.getHeight() * 0.7f);
 
@@ -487,11 +568,25 @@ public class InGameState extends BaseState{
 
 		wheelControlButton = new Sprite(wheelControlButtonTexture);
 		wheelControlButton.setSize(wheelControlButton.getWidth() * 0.3f, wheelControlButton.getHeight() * 0.3f);
+
 		armControlButton = new Sprite(armControlButtonTexture);
 		armControlButton.setSize(armControlButton.getWidth() * 0.3f, armControlButton.getHeight() * 0.3f);
 
 		wheelControlButton.setPosition(-(wheelControlButton.getWidth() / 2), headCButton.getY() - headCButton.getHeight() - 15);
 		armControlButton.setPosition(-(armControlButton.getWidth() / 2), headCButton.getY() - headCButton.getHeight() - 15);
+
+		// Set up the correct angle leds.
+		correctAngleLedOnTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Green.png"));
+		correctAngleLedOffTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Red.png"));
+
+		correctAngleLedOnSprite = new Sprite(correctAngleLedOnTexture);
+		correctAngleLedOffSprite = new Sprite(correctAngleLedOffTexture);
+
+		correctAngleLedOnSprite.setSize(correctAngleLedOnSprite.getWidth() * 0.25f, correctAngleLedOnSprite.getHeight() * 0.25f);
+		correctAngleLedOffSprite.setSize(correctAngleLedOffSprite.getWidth() * 0.25f, correctAngleLedOffSprite.getHeight() * 0.25f);
+
+		correctAngleLedOnSprite.setPosition(Gdx.graphics.getWidth() / 2 - correctAngleLedOnSprite.getWidth() - 5, Gdx.graphics.getHeight() / 2 - correctAngleLedOnSprite.getHeight() - 5);
+		correctAngleLedOffSprite.setPosition(Gdx.graphics.getWidth() / 2 - correctAngleLedOffSprite.getWidth() - 5, Gdx.graphics.getHeight() / 2 - correctAngleLedOffSprite.getHeight() - 5);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;

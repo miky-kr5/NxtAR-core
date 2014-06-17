@@ -390,10 +390,11 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 			batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			batch.begin();{
 				// Draw the FPS overlay.
-				font.draw(batch, String.format("Render FPS:        %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
-				font.draw(batch, String.format("Total  stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
-				font.draw(batch, String.format("Lost   stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
+				font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
+				font.draw(batch, String.format("Total stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
+				font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
 				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
+				font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
 			}batch.end();
 		}
 	}

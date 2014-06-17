@@ -147,6 +147,7 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going forward now.");
 			}else if(auto.distance >= 1.0f || collision.colliding){
 				auto.forward = false;
+				auto.startPoint.set(BombGameEntityCreator.ROBOT_ARM_START_POINT);
 				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going backwards now.");
 			}
 

@@ -18,41 +18,65 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
+import ve.ucv.ciens.ccg.nxtar.components.FadeEffectComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
 import com.artemis.Entity;
+import com.artemis.World;
 import com.artemis.annotations.Mapper;
 import com.artemis.managers.GroupManager;
 import com.artemis.utils.ImmutableBag;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Peripheral;
 
 public class BombGameLogicSystem extends GameLogicSystemBase {
 	private static final String TAG        = "BOMB_GAME_LOGIC";
 	private static final String CLASS_NAME = BombGameLogicSystem.class.getSimpleName();
+
+	private enum combination_button_state_t{
+		CORRECT(0), INCORRECT(1), DISABLED(2);
+
+		private int value;
+
+		private combination_button_state_t(int value){
+			this.value = value;
+		}
+
+		public int getValue(){
+			return this.value;
+		}
+	}
 
 	@Mapper ComponentMapper<BombGameObjectTypeComponent> typeMapper;
 	@Mapper ComponentMapper<AnimationComponent>          animationMapper;
 	@Mapper ComponentMapper<VisibilityComponent>         visibilityMapper;
 	@Mapper ComponentMapper<MarkerCodeComponent>         markerMapper;
 	@Mapper ComponentMapper<CollisionDetectionComponent> collisionMapper;
+	@Mapper ComponentMapper<FadeEffectComponent>         fadeMapper;
 
 	private MarkerCodeComponent         tempMarker;
 	private BombGameObjectTypeComponent tempType;
 	private GroupManager                manager;
+	private int                       then;
 
 	@SuppressWarnings("unchecked")
 	public BombGameLogicSystem(){
 		super(Aspect.getAspectForAll(BombGameObjectTypeComponent.class));
-		manager =  world.getManager(GroupManager.class);
+		manager = null;
+		then = 0;
 	}
 
 	@Override
 	protected void process(Entity e){
 		BombGameObjectTypeComponent typeComponent;
+
+		if(manager == null)
+			manager = world.getManager(GroupManager.class);
 
 		typeComponent = typeMapper.get(e);
 
@@ -78,6 +102,10 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 			processDoor(e);
 			break;
 
+		case BombGameObjectTypeComponent.FADE_EFFECT:
+			processFade(e);
+			break;
+
 		default:
 			break;
 		}
@@ -89,11 +117,9 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	 * @param b An Artemis {@link Entity} that possibly represents any of a Wire Bomb's wires.
 	 */
 	private void processWireBomb(Entity b){
-		int                         relatedWires = 0;
 		CollisionDetectionComponent collision;
 		MarkerCodeComponent         marker;
 		BombGameObjectTypeComponent wireType;
-		ImmutableBag<Entity>        related;
 
 		// Get this wire's parameters.
 		collision  = collisionMapper.getSafe(b);
@@ -107,27 +133,22 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		}
 
 		// If this bomb is still enabled and it's door is already open then process it.
-		if(marker.enabled && isDoorOpen(marker.code, manager) && collision.colliding){
-			manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
-			manager.remove(b, Integer.toString(marker.code));
-			b.deleteFromWorld();
-			related = manager.getEntities(Integer.toString(marker.code));
+		try{
+			if(marker.enabled && isDoorOpen(marker.code, manager) && collision.colliding){
+				manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+				manager.remove(b, Integer.toString(marker.code));
+				b.deleteFromWorld();
 
-			// Check the state of the other wires associated with this bomb.
-			for(int i = 0; i < related.size(); i++){
-				tempType = typeMapper.getSafe(related.get(i));
-
-				if(tempType == null) continue;
-
-				if(tempType.type >= BombGameObjectTypeComponent.BOMB_WIRE_1 && tempType.type <= BombGameObjectTypeComponent.BOMB_WIRE_3){
-					if(tempType.type != wireType.type){
-						relatedWires++;
-					}
+				if(wireType.type != BombGameObjectTypeComponent.BOMB_WIRE_1){
+					Gdx.app.log(TAG, CLASS_NAME + ".processWireBomb(): Wire bomb exploded.");
+					createFadeOutEffect();
 				}
-			}
 
-			if(relatedWires == 0)
 				disableBomb(marker.code);
+				Gdx.app.log(TAG, CLASS_NAME + ".processWireBomb(): Wire bomb disabled.");
+			}
+		}catch(IllegalArgumentException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".processWireBomb(): IllegalArgumentException caught: " + e.getMessage());
 		}
 	}
 
@@ -137,16 +158,15 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	 * @param b An Artemis {@link Entity} that possibly represents any of a Combination Bomb's buttons.
 	 */
 	private void processCombinationBomb(Entity b){
-		int                         relatedButtons = 0;
+		combination_button_state_t  state;
 		CollisionDetectionComponent collision;
 		MarkerCodeComponent         marker;
 		BombGameObjectTypeComponent buttonType;
-		ImmutableBag<Entity>        related;
 
 		// Get this wire's parameters.
 		collision  = collisionMapper.getSafe(b);
 		marker     = markerMapper.getSafe(b);
-		buttonType   = typeMapper.getSafe(b);
+		buttonType = typeMapper.getSafe(b);
 
 		// if any of the parameters is missing then skip.
 		if(marker == null || collision == null || buttonType == null){
@@ -155,27 +175,27 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		}
 
 		// If this bomb is still enabled and it's door is already open then process it.
-		if(marker.enabled && isDoorOpen(marker.code, manager) && collision.colliding){
-			manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
-			manager.remove(b, Integer.toString(marker.code));
-			b.deleteFromWorld();
-			related = manager.getEntities(Integer.toString(marker.code));
+		try{
+			if(marker.enabled && isDoorOpen(marker.code, manager) && collision.colliding){
+				manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+				manager.remove(b, Integer.toString(marker.code));
+				b.deleteFromWorld();
 
-			// Check the state of the other wires associated with this bomb.
-			for(int i = 0; i < related.size(); i++){
-				tempType = typeMapper.getSafe(related.get(i));
+				// Check the state of the other buttons associated with this bomb.
 
-				if(tempType == null) continue;
+				state = checkCombinationBombButtons(buttonType.type, marker.code);
 
-				if(tempType.type >= BombGameObjectTypeComponent.COM_BUTTON_1 && tempType.type <= BombGameObjectTypeComponent.COM_BUTTON_4){
-					if(tempType.type != buttonType.type){
-						relatedButtons++;
-					}
+				if(state.getValue() == combination_button_state_t.INCORRECT.getValue()){
+					Gdx.app.log(TAG, CLASS_NAME + ".processCombinationBomb(): Combination bomb exploded.");
+					createFadeOutEffect();
+					disableBomb(marker.code);
+				}else if(state.getValue() == combination_button_state_t.DISABLED.getValue()){
+					Gdx.app.log(TAG, CLASS_NAME + ".processCombinationBomb(): Combination bomb disabled.");
+					disableBomb(marker.code);
 				}
 			}
-
-			if(relatedButtons == 0)
-				disableBomb(marker.code);
+		}catch(IllegalArgumentException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".processCombinationBomb(): IllegalArgumentException caught: " + e.getMessage());
 		}
 	}
 
@@ -188,6 +208,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		// Get the components of the big button.
 		CollisionDetectionComponent collision  = collisionMapper.getSafe(b);
 		MarkerCodeComponent         marker     = markerMapper.getSafe(b);
+		float angle;
 
 		// If any of the components is missing, skip this entity.
 		if(marker == null || collision == null ){
@@ -196,17 +217,29 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		}
 
 		// If this bomb is still enabled and it's door is already open then process it.
-		if(marker.enabled && isDoorOpen(marker.code, manager) && collision.colliding){
-			// Disable the bomb and remove it from collision detection.
-			marker.enabled = false;
-			manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
-			manager.remove(b, Integer.toString(marker.code));
-			b.deleteFromWorld();
+		try{
+			if(marker.enabled && isDoorOpen(marker.code, manager) && collision.colliding){
+				// Disable the bomb and remove it from collision detection.
+				marker.enabled = false;
+				manager.remove(b, CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+				manager.remove(b, Integer.toString(marker.code));
+				b.deleteFromWorld();
 
-			// Disable all related entities.
-			disableBomb(marker.code);
+				angle = Gdx.input.getRoll();
+				Gdx.app.log("ROTATION", "Roll: " + Float.toString(angle));
 
-			Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb disabled.");
+				if(Gdx.input.isPeripheralAvailable(Peripheral.Accelerometer) && Math.abs(angle) > ProjectConstants.MAX_ABS_ROLL){
+					Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb exploded.");
+					createFadeOutEffect();
+				}
+
+				// Disable all related entities.
+				disableBomb(marker.code);
+
+				Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb disabled.");
+			}
+		}catch(IllegalArgumentException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".processInclinationBomb(): IllegalArgumentException caught: " + e.getMessage());
 		}
 	}
 
@@ -241,7 +274,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				}
 			}else{
 				// If the door is disabled and open, then set it's closing animation.
-				if(animation.current != 0){
+				if(animation.current != BombGameEntityCreator.DOOR_CLOSE_ANIMATION){
 					animation.next = BombGameEntityCreator.DOOR_CLOSE_ANIMATION;
 					animation.loop = false;
 					Gdx.app.log(TAG, CLASS_NAME + ".processDoor(): Closing door.");
@@ -256,11 +289,15 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	 * @param markerCode The code of the door to check. Must be between 0 and 1023.
 	 * @param manager An Artemis {@link GroupManager} to use to get all related entities.
 	 * @return true if the opening animation of the door has finished playing.
+	 * @throws IllegalArgumentException If marker code is not in the range [0, 1023], inclusive.
 	 */
-	private boolean isDoorOpen(int markerCode, GroupManager manager){
+	private boolean isDoorOpen(int markerCode, GroupManager manager) throws IllegalArgumentException{
 		AnimationComponent   animation;
 		boolean              doorOpen  = false;
 		ImmutableBag<Entity> doors     = manager.getEntities(BombGameEntityCreator.DOORS_GROUP);
+
+		if(markerCode < 0 || markerCode > 1023)
+			throw new IllegalArgumentException("Marker code is not within range [0, 1023]: " + Integer.toString(markerCode));
 
 		// For every door.
 		for(int i = 0; i < doors.size(); i++){
@@ -283,9 +320,13 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	 * <p>Disables all entities associated with the corresponding marker code.</p>
 	 * 
 	 * @param markerCode
+	 * @throws IllegalArgumentException If marker code is not in the range [0, 1023], inclusive.
 	 */
-	private void disableBomb(int markerCode){
+	private void disableBomb(int markerCode) throws IllegalArgumentException{
 		ImmutableBag<Entity> related = manager.getEntities(Integer.toString(markerCode));
+
+		if(markerCode < 0 || markerCode > 1023)
+			throw new IllegalArgumentException("Marker code is not within range [0, 1023]: " + Integer.toString(markerCode));
 
 		// Disable every entity sharing this marker code except for the corresponding door frame.
 		for(int i = 0; i < related.size(); i++){
@@ -295,12 +336,122 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 			// Enable collisions with the corresponding door frame entity. Disable collisions with other related entities.
 			if(tempMarker != null) tempMarker.enabled = false;
 			if(tempType != null){
-				if(tempType.type != BombGameObjectTypeComponent.DOOR_FRAME){
+				if(tempType.type != BombGameObjectTypeComponent.DOOR_FRAME && tempType.type != BombGameObjectTypeComponent.DOOR){
 					manager.remove(related.get(i), CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
 					manager.remove(related.get(i), Integer.toString(markerCode));
-					related.get(i).deleteFromWorld();
-				}else{
+				}else if(tempType.type != BombGameObjectTypeComponent.DOOR_FRAME){
 					manager.add(related.get(i), CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
+				}
+			}
+		}
+	}
+
+	/**
+	 * <p>Checks if a combination bomb is being disabled in the correct sequence.</p>
+	 * 
+	 * @param buttonType A number between {@link BombGameObjectTypeComponent.COM_BUTTON_1} and {@link BombGameObjectTypeComponent.COM_BUTTON_4}.
+	 * @param markerCode A marker code between [0, 1023], inclusive.
+	 * @return The current state of the bomb.
+	 * @throws IllegalArgumentException If marker code is not in range or if buttonType is not valid.
+	 */
+	private combination_button_state_t checkCombinationBombButtons(int buttonType, int markerCode) throws IllegalArgumentException{
+		combination_button_state_t state;
+		boolean                    correctSequence  = true;
+		int                        remainingButtons = 0;
+		ImmutableBag<Entity>       related;
+
+		if(buttonType < BombGameObjectTypeComponent.COM_BUTTON_1 || buttonType > BombGameObjectTypeComponent.COM_BUTTON_4)
+			throw new IllegalArgumentException("Button is not a valid combination bomb button: " + Integer.toString(buttonType));
+
+		if(markerCode < 0 || markerCode > 1023)
+			throw new IllegalArgumentException("Marker code is not within range [0, 1023]: " + Integer.toString(markerCode));
+
+		related = manager.getEntities(Integer.toString(markerCode));
+
+		// Check the state of the other buttons associated with this bomb.
+		for(int i = 0; i < related.size(); i++){
+			tempType = typeMapper.getSafe(related.get(i));
+
+			if(tempType == null) continue;
+
+			if(tempType.type >= BombGameObjectTypeComponent.COM_BUTTON_1 && tempType.type <= BombGameObjectTypeComponent.COM_BUTTON_4){
+				if(tempType.type >= buttonType){
+					// If this remaining button is a correct one then skip it.
+					remainingButtons++;
+					continue;
+				}else{
+					// If this remaining button is an incorrect one then the sequence is wrong.
+					correctSequence = false;
+					break;
+				}
+			}else continue;
+		}
+
+		if(!correctSequence)
+			state = combination_button_state_t.INCORRECT;
+		else
+			if(remainingButtons == 0)
+				state = combination_button_state_t.DISABLED;
+			else
+				state = combination_button_state_t.CORRECT;
+
+		return state;
+	}
+
+	/**
+	 * <p>Adds a new fade out entity to the {@link World}.</p>
+	 */
+	private void createFadeOutEffect(){
+		Entity effect = world.createEntity();
+		effect.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.FADE_EFFECT));
+		effect.addComponent(new FadeEffectComponent(false));
+		effect.addToWorld();
+	}
+
+	/**
+	 * <p>Adds a new fade in entity to the {@link World}.</p>
+	 */
+	private void createFadeInEffect(){
+		Entity effect = world.createEntity();
+		effect.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.FADE_EFFECT));
+		effect.addComponent(new FadeEffectComponent(true));
+		effect.addToWorld();
+	}
+
+	/**
+	 * <p>Updates a fade effect entity.</p>
+	 * 
+	 * @param f An Artemis {@link Entity} possibly referencing a fade effect.
+	 */
+	private void processFade(Entity f){
+		FadeEffectComponent fade = fadeMapper.getSafe(f);
+
+		if(fade != null){
+			if(!fade.isEffectStarted())
+				fade.startEffect();
+
+			if(!fade.isEffectFinished()){
+				// If the fade has not finished then just update it.
+				Gdx.app.log(TAG, CLASS_NAME + ".processFade(): Updating fade.");
+				fade.update(Gdx.graphics.getDeltaTime());
+			}else{
+				// If the fade finished.
+				if(fade.isEffectFadeIn()){
+					// If the effect was a fade in then just remove it.
+					Gdx.app.log(TAG, CLASS_NAME + ".processFade(): deleting fade in.");
+					f.deleteFromWorld();
+				}else{
+					// If the effect was a fade out then wait for one second and then remove it and start a fade in.
+					then += (int)(Gdx.graphics.getDeltaTime() * 1000.0f);
+					if(then >= 1500){
+						Gdx.app.log(TAG, CLASS_NAME + ".processFade(): Deleting fade out.");
+						f.deleteFromWorld();
+						Gdx.app.log(TAG, CLASS_NAME + ".processFade(): Creating fade in.");
+						createFadeInEffect();
+						then = 0;
+					}else{
+						Gdx.app.log(TAG, CLASS_NAME + ".processFade(): Waiting after fade out: " + Integer.toString(then));
+					}
 				}
 			}
 		}

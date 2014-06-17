@@ -56,7 +56,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	public static final String   DOORS_GROUP                                 = "DOORS";
 	public static final Vector3  ROBOT_ARM_START_POINT                       = new Vector3(0.0f, 0.0f, -1.0f);
 	public static final int      DOOR_OPEN_ANIMATION                         = 1;
-	public static final int      DOOR_CLOSE_ANIMATION                        = 1;
+	public static final int      DOOR_CLOSE_ANIMATION                        = 0;
 
 	private class EntityParameters{
 		public Environment environment;

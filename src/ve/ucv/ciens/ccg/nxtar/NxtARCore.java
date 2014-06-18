@@ -255,17 +255,15 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		ShaderProgram.pedantic = false;
 
 		// Set up the overlay font.
-		if(ProjectConstants.DEBUG){
-			overlayX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
-			overlayY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
+		overlayX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
+		overlayY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
 
-			font = new BitmapFont();
-			font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
-			if(!Ouya.runningOnOuya){
-				font.setScale(1.0f);
-			}else{
-				font.setScale(2.5f);
-			}
+		font = new BitmapFont();
+		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
+		if(!Ouya.runningOnOuya){
+			font.setScale(1.0f);
+		}else{
+			font.setScale(2.5f);
 		}
 
 		// Start networking.
@@ -386,17 +384,15 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		// Render the debug overlay.
-		if(ProjectConstants.DEBUG){
-			batch.setProjectionMatrix(pixelPerfectCamera.combined);
-			batch.begin();{
-				// Draw the FPS overlay.
-				font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
-				font.draw(batch, String.format("Total stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
-				font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
-				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
-				font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
-			}batch.end();
-		}
+		batch.setProjectionMatrix(pixelPerfectCamera.combined);
+		batch.begin();{
+			// Draw the FPS overlay.
+			font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
+			font.draw(batch, String.format("Total stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
+			font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
+			font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
+			font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
+		}batch.end();
 	}
 
 	/**
@@ -437,9 +433,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		// Dispose graphic objects.
 		fadeTexture.dispose();
 		batch.dispose();
-		if(ProjectConstants.DEBUG){
-			font.dispose();
-		}
+		font.dispose();
 
 		// Dispose screens.
 		for(int i = 0; i < states.length; i++){
@@ -484,8 +478,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	  ;;;;;;;;;;;;;;;;;;*/
 
 	/**
-	 * <p>Show a toast message on screen using the O.S. functionality
-	 * provider.</p>
+	 * <p>Show a toast message on screen using the {@link ActionResolver}.</p>
 	 * @param msg The message to show.
 	 * @param longToast True for a lasting toast. False for a short toast.
 	 */

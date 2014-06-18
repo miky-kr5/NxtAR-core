@@ -40,7 +40,7 @@ public abstract class GameSettings{
 
 		if(getEntityCreator() == null){
 			entityCreator = new BombGameEntityCreator();
-			entityCreator.setWorld(GameSettings.getGameWorld());
+			entityCreator.setWorld(gameWorld);
 			entityCreator.setCore(core);
 		}
 

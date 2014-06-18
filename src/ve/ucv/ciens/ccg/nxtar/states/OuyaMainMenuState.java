@@ -111,8 +111,6 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){
-		// TODO: Test this.
-
 		if(stateActive){
 			if(buttonCode == Ouya.BUTTON_O){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): O button pressed.");
@@ -148,8 +146,6 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 
 	@Override
 	public boolean buttonUp(Controller controller, int buttonCode){
-		// TODO: Test this.
-
 		if(stateActive){
 			if(buttonCode == Ouya.BUTTON_O){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): O button released.");

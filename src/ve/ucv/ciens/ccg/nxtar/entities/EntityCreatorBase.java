@@ -37,7 +37,7 @@ public abstract class EntityCreatorBase implements Disposable{
 	 * @param world The Artemis {@link World}.
 	 * @throws IllegalArgumentException if world is null.
 	 */
-	public void setWorld(World world) throws IllegalArgumentException{
+	public final void setWorld(World world) throws IllegalArgumentException{
 		if(world == null)
 			throw new IllegalArgumentException("World cannot be null.");
 
@@ -50,7 +50,7 @@ public abstract class EntityCreatorBase implements Disposable{
 	 * @param core The application core to be used as listener.
 	 * @throws IllegalArgumentException if core is null.
 	 */
-	public void setCore(NxtARCore core) throws IllegalArgumentException{
+	public final void setCore(NxtARCore core) throws IllegalArgumentException{
 		if(core == null) throw new IllegalArgumentException("Core is null.");
 		this.core = core;
 	}

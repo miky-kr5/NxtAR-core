@@ -93,7 +93,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Model  wiresBombModelWire1                 = null;
 	private Model  wiresBombModelWire2                 = null;
 	private Model  wiresBombModelWire3                 = null;
-	private Model  monkeyModel                      = null;
+	private Model  monkeyModel                         = null;
 
 	// Collision models.
 	private Model  robotArmCollisionModel              = null;

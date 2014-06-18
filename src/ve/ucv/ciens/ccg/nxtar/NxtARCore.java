@@ -417,11 +417,17 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * <p>Clear graphic resources</p> 
 	 */
 	public void dispose(){
+		// Dispose screens.
+		for(int i = 0; i < states.length; i++){
+			states[i].dispose();
+		}
+
 		// Finish network threads.
 		serviceDiscoveryThread.finish();
 		videoThread.finish();
 		robotThread.finish();
 		sensorThread.finish();
+		serviceDiscoveryThread = null;
 		videoThread = null;
 		robotThread = null;
 		sensorThread = null;
@@ -434,11 +440,6 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		fadeTexture.dispose();
 		batch.dispose();
 		font.dispose();
-
-		// Dispose screens.
-		for(int i = 0; i < states.length; i++){
-			states[i].dispose();
-		}
 
 		GameSettings.clearGameSettings();
 	}

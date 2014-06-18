@@ -25,6 +25,7 @@ import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.UserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
+import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
@@ -84,7 +85,7 @@ public class InGameState extends BaseState{
 	}
 
 	// Background related fields.
-	private Sprite                        background;
+	private Sprite                          background;
 	private float                           uScaling[];
 	private Texture                         backgroundTexture;
 	private ShaderProgram                   backgroundShader;
@@ -122,6 +123,7 @@ public class InGameState extends BaseState{
 	private Texture                         armControlButtonTexture;
 	private Texture                         correctAngleLedOnTexture;
 	private Texture                         correctAngleLedOffTexture;
+	private Texture                         crossSectionFloorTexture;
 	private Sprite                          motorAButton;
 	private Sprite                          motorBButton;
 	private Sprite                          motorCButton;
@@ -133,6 +135,9 @@ public class InGameState extends BaseState{
 	private Sprite                          armControlButton;
 	private Sprite                          correctAngleLedOnSprite;
 	private Sprite                          correctAngleLedOffSprite;
+	private Sprite                          crossSectionFloorLed;
+	private Sprite                          normalFloorLed;
+	private Sprite                          itemNearbyFloorLed;
 
 	// Button touch helper fields.
 	private boolean[]                       buttonsTouched;
@@ -142,12 +147,14 @@ public class InGameState extends BaseState{
 	// Monitors.
 	private VideoFrameMonitor               frameMonitor;
 	private MotorEventQueue                 queue;
+	private SensorReportThread              sensorThread;
 
 	public InGameState(final NxtARCore core){
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 		queue = MotorEventQueue.getInstance();
 		controlMode = robot_control_mode_t.WHEEL_CONTROL;
+		sensorThread = SensorReportThread.getInstance();
 
 		// Set up rendering fields;
 		videoFrame = null;
@@ -155,8 +162,6 @@ public class InGameState extends BaseState{
 		// Set up the cameras.
 		pixelPerfectOrthographicCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		unitaryOrthographicCamera = new OrthographicCamera(1.0f, Gdx.graphics.getHeight() / Gdx.graphics.getWidth());
-
-		if(!Ouya.runningOnOuya) setUpButtons();
 
 		// Set up input handling support fields.
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
@@ -226,6 +231,26 @@ public class InGameState extends BaseState{
 		frameBufferSprite = null;
 		robotArmFrameBuffer = null;
 		robotArmFrameBufferSprite = null;
+
+		// Set up floor leds and possibly the buttons.
+		correctAngleLedOnTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Green.png"));
+		correctAngleLedOffTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Red.png"));
+		crossSectionFloorTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Cyan.png"));
+
+		crossSectionFloorLed = new Sprite(crossSectionFloorTexture);
+		normalFloorLed = new Sprite(correctAngleLedOffTexture);
+		itemNearbyFloorLed = new Sprite(correctAngleLedOnTexture);
+
+		crossSectionFloorLed.setSize(crossSectionFloorLed.getWidth() * 0.25f, crossSectionFloorLed.getHeight() * 0.25f);
+		normalFloorLed.setSize(normalFloorLed.getWidth() * 0.25f, normalFloorLed.getHeight() * 0.25f);
+		itemNearbyFloorLed.setSize(itemNearbyFloorLed.getWidth() * 0.25f, itemNearbyFloorLed.getHeight() * 0.25f);
+
+		crossSectionFloorLed.setPosition(-(crossSectionFloorLed.getWidth() / 2), Gdx.graphics.getHeight() / 2 - crossSectionFloorLed.getHeight() - 5);
+		normalFloorLed.setPosition(-(normalFloorLed.getWidth() / 2), Gdx.graphics.getHeight() / 2 - normalFloorLed.getHeight() - 5);
+		itemNearbyFloorLed.setPosition(-(itemNearbyFloorLed.getWidth() / 2), Gdx.graphics.getHeight() / 2 - itemNearbyFloorLed.getHeight() - 5);
+
+		if(!Ouya.runningOnOuya)
+			setUpButtons();
 
 		// Set up the game world.
 		gameWorld = GameSettings.getGameWorld();
@@ -454,6 +479,17 @@ public class InGameState extends BaseState{
 			}core.batch.end();
 		}
 
+		core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
+		core.batch.begin();{
+			if(sensorThread.getLightSensorReading() < 40){
+				normalFloorLed.draw(core.batch);
+			}else if(sensorThread.getLightSensorReading() >= 40 && sensorThread.getLightSensorReading() <= 80){
+				itemNearbyFloorLed.draw(core.batch);
+			}else{
+				crossSectionFloorLed.draw(core.batch);
+			}
+		}core.batch.end();
+
 		fadeEffectRenderingSystem.process();
 
 		data = null;
@@ -461,6 +497,9 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void dispose(){
+		SensorReportThread.freeInstance();
+		sensorThread = null;
+
 		if(modelBatch != null)
 			modelBatch.dispose();
 
@@ -481,6 +520,9 @@ public class InGameState extends BaseState{
 
 		if(backgroundTexture != null)
 			backgroundTexture.dispose();
+
+		if(crossSectionFloorTexture != null)
+			crossSectionFloorTexture.dispose();
 
 		if(backgroundShader != null)
 			backgroundShader.dispose();
@@ -576,9 +618,6 @@ public class InGameState extends BaseState{
 		armControlButton.setPosition(-(armControlButton.getWidth() / 2), headCButton.getY() - headCButton.getHeight() - 15);
 
 		// Set up the correct angle leds.
-		correctAngleLedOnTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Green.png"));
-		correctAngleLedOffTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Red.png"));
-
 		correctAngleLedOnSprite = new Sprite(correctAngleLedOnTexture);
 		correctAngleLedOffSprite = new Sprite(correctAngleLedOffTexture);
 

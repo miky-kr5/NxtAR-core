@@ -15,4 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar.input;
 
+/**
+ * Tag class for different user interaction wrapper classes.
+ */
 public abstract class UserInput{ }

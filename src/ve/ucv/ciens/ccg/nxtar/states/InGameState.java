@@ -25,7 +25,6 @@ import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.UserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
-import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
@@ -38,6 +37,7 @@ import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
+import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.artemis.World;
 import com.badlogic.gdx.Gdx;
@@ -63,7 +63,7 @@ public class InGameState extends BaseState{
 	private static final String  TAG                    = "IN_GAME_STATE";
 	private static final String  CLASS_NAME             = InGameState.class.getSimpleName();
 	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
-	private static final String  ALPHA_SHADER_PREFIX    = "shaders/alphaSprite/alpha";
+	//	private static final String  ALPHA_SHADER_PREFIX    = "shaders/alphaSprite/alpha";
 	private static final float   NEAR                   = 0.01f;
 	private static final float   FAR                    = 100.0f;
 
@@ -94,9 +94,9 @@ public class InGameState extends BaseState{
 	private ModelBatch                      modelBatch;
 	private FrameBuffer                     frameBuffer;
 	private Sprite                          frameBufferSprite;
-	private FrameBuffer                     robotArmFrameBuffer;
-	private Sprite                          robotArmFrameBufferSprite;
-	private ShaderProgram                   alphaShader;
+	//	private FrameBuffer                     robotArmFrameBuffer;
+	//	private Sprite                          robotArmFrameBufferSprite;
+	//	private ShaderProgram                   alphaShader;
 
 	// Game related fields.
 	private World                           gameWorld;
@@ -116,18 +116,27 @@ public class InGameState extends BaseState{
 	private Sprite                          renderableVideoFrame;
 	private Pixmap                          videoFrame;
 
-	// Interface buttons.
-	private Texture                         mainControlButtonTexture;
+	// Gui textures.
+	private Texture                         upControlButtonTexture;
+	private Texture                         downControlButtonTexture;
+	private Texture                         leftControlButtonTexture;
+	private Texture                         rightControlButtonTexture;
 	private Texture                         headControlButtonTexture;
 	private Texture                         wheelControlButtonTexture;
 	private Texture                         armControlButtonTexture;
 	private Texture                         correctAngleLedOnTexture;
 	private Texture                         correctAngleLedOffTexture;
 	private Texture                         crossSectionFloorTexture;
+
+	// Gui renderable sprites.
 	private Sprite                          motorAButton;
 	private Sprite                          motorBButton;
 	private Sprite                          motorCButton;
 	private Sprite                          motorDButton;
+	private Sprite                          armAButton;
+	private Sprite                          armBButton;
+	private Sprite                          armCButton;
+	private Sprite                          armDButton;
 	private Sprite                          headAButton;
 	private Sprite                          headBButton;
 	private Sprite                          headCButton;
@@ -147,14 +156,14 @@ public class InGameState extends BaseState{
 	// Monitors.
 	private VideoFrameMonitor               frameMonitor;
 	private MotorEventQueue                 queue;
-	private SensorReportThread              sensorThread;
+	//	private SensorReportThread              sensorThread;
 
 	public InGameState(final NxtARCore core){
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 		queue = MotorEventQueue.getInstance();
 		controlMode = robot_control_mode_t.WHEEL_CONTROL;
-		sensorThread = SensorReportThread.getInstance();
+		//		sensorThread = SensorReportThread.getInstance();
 
 		// Set up rendering fields;
 		videoFrame = null;
@@ -217,20 +226,20 @@ public class InGameState extends BaseState{
 		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
 		// Set up the alpha shader.
-		alphaShader = new ShaderProgram(Gdx.files.internal(ALPHA_SHADER_PREFIX + "_vert.glsl"), Gdx.files.internal(ALPHA_SHADER_PREFIX + "_frag.glsl"));
-		if(!alphaShader.isCompiled()){
-			Gdx.app.error(TAG, CLASS_NAME + ".InGameState() :: Failed to compile the alpha shader.");
-			Gdx.app.error(TAG, CLASS_NAME + alphaShader.getLog());
-			alphaShader = null;
-		}
+		//		alphaShader = new ShaderProgram(Gdx.files.internal(ALPHA_SHADER_PREFIX + "_vert.glsl"), Gdx.files.internal(ALPHA_SHADER_PREFIX + "_frag.glsl"));
+		//		if(!alphaShader.isCompiled()){
+		//			Gdx.app.error(TAG, CLASS_NAME + ".InGameState() :: Failed to compile the alpha shader.");
+		//			Gdx.app.error(TAG, CLASS_NAME + alphaShader.getLog());
+		//			alphaShader = null;
+		//		}
 
 		// Set up the 3D rendering.
 		modelBatch = new ModelBatch();
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
-		robotArmFrameBuffer = null;
-		robotArmFrameBufferSprite = null;
+		//		robotArmFrameBuffer = null;
+		//		robotArmFrameBufferSprite = null;
 
 		// Set up floor leds and possibly the buttons.
 		correctAngleLedOnTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Green.png"));
@@ -245,9 +254,9 @@ public class InGameState extends BaseState{
 		normalFloorLed.setSize(normalFloorLed.getWidth() * 0.25f, normalFloorLed.getHeight() * 0.25f);
 		itemNearbyFloorLed.setSize(itemNearbyFloorLed.getWidth() * 0.25f, itemNearbyFloorLed.getHeight() * 0.25f);
 
-		crossSectionFloorLed.setPosition(-(crossSectionFloorLed.getWidth() / 2), Gdx.graphics.getHeight() / 2 - crossSectionFloorLed.getHeight() - 5);
-		normalFloorLed.setPosition(-(normalFloorLed.getWidth() / 2), Gdx.graphics.getHeight() / 2 - normalFloorLed.getHeight() - 5);
-		itemNearbyFloorLed.setPosition(-(itemNearbyFloorLed.getWidth() / 2), Gdx.graphics.getHeight() / 2 - itemNearbyFloorLed.getHeight() - 5);
+		crossSectionFloorLed.setPosition(-(crossSectionFloorLed.getWidth() / 2), (Utils.getScreenHeight() / 2) - crossSectionFloorLed.getHeight() - 5);
+		normalFloorLed.setPosition(-(normalFloorLed.getWidth() / 2), (Utils.getScreenHeight() / 2) - normalFloorLed.getHeight() - 5);
+		itemNearbyFloorLed.setPosition(-(itemNearbyFloorLed.getWidth() / 2), (Utils.getScreenHeight() / 2) - itemNearbyFloorLed.getHeight() - 5);
 
 		if(!Ouya.runningOnOuya)
 			setUpButtons();
@@ -310,8 +319,8 @@ public class InGameState extends BaseState{
 			frameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
-			robotArmFrameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
-			robotArmFrameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
+			//			robotArmFrameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
+			//			robotArmFrameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			perspectiveCamera = new CustomPerspectiveCamera(67, w, h);
 			perspectiveCamera.translate(0.0f, 0.0f, 0.0f);
@@ -365,19 +374,25 @@ public class InGameState extends BaseState{
 				markerRenderingSystem.begin(perspectiveCamera);
 				markerRenderingSystem.process();
 				markerRenderingSystem.end();
+
+				if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue() || Ouya.runningOnOuya){
+					objectRenderingSystem.begin(perspectiveCamera);
+					objectRenderingSystem.process();
+					objectRenderingSystem.end();
+				}
 			}frameBuffer.end();
 
-			robotArmFrameBuffer.begin();{
-				// Set OpenGL state.
-				Gdx.gl.glClearColor(0, 0, 0, 0);
-				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
-
-				// Call rendering systems.
-				objectRenderingSystem.begin(perspectiveCamera);
-				objectRenderingSystem.process();
-				objectRenderingSystem.end();
-			}robotArmFrameBuffer.end();
+			//			robotArmFrameBuffer.begin();{
+			//				// Set OpenGL state.
+			//				Gdx.gl.glClearColor(0, 0, 0, 0);
+			//				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+			//				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
+			//
+			//				// Call rendering systems.
+			//				objectRenderingSystem.begin(perspectiveCamera);
+			//				objectRenderingSystem.process();
+			//				objectRenderingSystem.end();
+			//			}robotArmFrameBuffer.end();
 
 			// Set the frame buffer object texture to a renderable sprite.
 			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
@@ -390,14 +405,14 @@ public class InGameState extends BaseState{
 			frameBufferSprite.setPosition(0, 0);
 
 			// Set the other frame buffer object texture to a renderable sprite.
-			region = new TextureRegion(robotArmFrameBuffer.getColorBufferTexture(), 0, 0, robotArmFrameBuffer.getWidth(), robotArmFrameBuffer.getHeight());
-			region.flip(false, true);
-			if(robotArmFrameBufferSprite == null)
-				robotArmFrameBufferSprite = new Sprite(region);
-			else
-				robotArmFrameBufferSprite.setRegion(region);
-			robotArmFrameBufferSprite.setOrigin(robotArmFrameBuffer.getWidth() / 2, robotArmFrameBuffer.getHeight() / 2);
-			robotArmFrameBufferSprite.setPosition(0, 0);
+			//			region = new TextureRegion(robotArmFrameBuffer.getColorBufferTexture(), 0, 0, robotArmFrameBuffer.getWidth(), robotArmFrameBuffer.getHeight());
+			//			region.flip(false, true);
+			//			if(robotArmFrameBufferSprite == null)
+			//				robotArmFrameBufferSprite = new Sprite(region);
+			//			else
+			//				robotArmFrameBufferSprite.setRegion(region);
+			//			robotArmFrameBufferSprite.setOrigin(robotArmFrameBuffer.getWidth() / 2, robotArmFrameBuffer.getHeight() / 2);
+			//			robotArmFrameBufferSprite.setPosition(0, 0);
 
 			// Set the position and orientation of the renderable video frame and the frame buffer.
 			if(!Ouya.runningOnOuya){
@@ -409,22 +424,22 @@ public class InGameState extends BaseState{
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
 
-				robotArmFrameBufferSprite.setSize(1.0f, robotArmFrameBufferSprite.getHeight() / robotArmFrameBufferSprite.getWidth() );
-				robotArmFrameBufferSprite.rotate90(true);
-				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, 0.5f - robotArmFrameBufferSprite.getHeight());
+				//				robotArmFrameBufferSprite.setSize(1.0f, robotArmFrameBufferSprite.getHeight() / robotArmFrameBufferSprite.getWidth() );
+				//				robotArmFrameBufferSprite.rotate90(true);
+				//				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, 0.5f - robotArmFrameBufferSprite.getHeight());
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (w / h);
-				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
 
-				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
 
-				robotArmFrameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
-				robotArmFrameBufferSprite.rotate90(true);
-				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, -robotArmFrameBufferSprite.getHeight() / 2);
+				//				robotArmFrameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+				//				robotArmFrameBufferSprite.rotate90(true);
+				//				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, -robotArmFrameBufferSprite.getHeight() / 2);
 			}
 
 			// Set the correct camera for the device.
@@ -439,11 +454,14 @@ public class InGameState extends BaseState{
 				renderableVideoFrame.draw(core.batch);
 				frameBufferSprite.draw(core.batch);
 
-				if(alphaShader != null){
-					core.batch.setShader(alphaShader);
-				}
-				robotArmFrameBufferSprite.draw(core.batch);
-				if(alphaShader != null) core.batch.setShader(null);
+				// Render the robot arm only when in the corresponding control mode. Always render it on the OUYA.
+				//				if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue() || Ouya.runningOnOuya){
+				//					if(alphaShader != null){
+				//						core.batch.setShader(alphaShader);
+				//					}
+				//					robotArmFrameBufferSprite.draw(core.batch);
+				//					if(alphaShader != null) core.batch.setShader(null);
+				//				}
 
 			}core.batch.end();
 
@@ -455,40 +473,39 @@ public class InGameState extends BaseState{
 		if(!Ouya.runningOnOuya){
 			core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
 			core.batch.begin();{
-				motorAButton.draw(core.batch);
-				motorBButton.draw(core.batch);
-				motorCButton.draw(core.batch);
-				motorDButton.draw(core.batch);
-				headAButton.draw(core.batch);
-				headBButton.draw(core.batch);
-				headCButton.draw(core.batch);
-
+				// Draw control mode button.
 				if(controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue()){
-					armControlButton.draw(core.batch);
-				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					// Draw motor control buttons.
+					motorAButton.draw(core.batch);
+					motorBButton.draw(core.batch);
+					motorCButton.draw(core.batch);
+					motorDButton.draw(core.batch);
 					wheelControlButton.draw(core.batch);
+				}else if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue()){
+					// Draw arm control buttons.
+					armAButton.draw(core.batch);
+					armBButton.draw(core.batch);
+					armCButton.draw(core.batch);
+					armDButton.draw(core.batch);
+					armControlButton.draw(core.batch);
 				}else{
 					throw new IllegalStateException("Unrecognized control mode: " + Integer.toString(controlMode.getValue()));
 				}
 
-				if(Math.abs(Gdx.input.getRoll()) < ProjectConstants.MAX_ABS_ROLL){
+				headAButton.draw(core.batch);
+				headBButton.draw(core.batch);
+				headCButton.draw(core.batch);
+
+				// Draw device rotation led.
+				if(Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) < ProjectConstants.MAX_ABS_ROLL){
 					correctAngleLedOnSprite.draw(core.batch);
 				}else{
 					correctAngleLedOffSprite.draw(core.batch);
 				}
+
+				// TODO: Draw rotation slider.
 			}core.batch.end();
 		}
-
-		core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
-		core.batch.begin();{
-			if(sensorThread.getLightSensorReading() < 40){
-				normalFloorLed.draw(core.batch);
-			}else if(sensorThread.getLightSensorReading() >= 40 && sensorThread.getLightSensorReading() <= 80){
-				itemNearbyFloorLed.draw(core.batch);
-			}else{
-				crossSectionFloorLed.draw(core.batch);
-			}
-		}core.batch.end();
 
 		fadeEffectRenderingSystem.process();
 
@@ -497,17 +514,23 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void dispose(){
-		SensorReportThread.freeInstance();
-		sensorThread = null;
-
 		if(modelBatch != null)
 			modelBatch.dispose();
 
 		if(videoFrameTexture != null)
 			videoFrameTexture.dispose();
 
-		if(mainControlButtonTexture != null)
-			mainControlButtonTexture.dispose();
+		if(upControlButtonTexture != null)
+			upControlButtonTexture.dispose();
+
+		if(downControlButtonTexture != null)
+			downControlButtonTexture.dispose();
+
+		if(leftControlButtonTexture != null)
+			leftControlButtonTexture.dispose();
+
+		if(rightControlButtonTexture != null)
+			rightControlButtonTexture.dispose();
 
 		if(headControlButtonTexture != null)
 			headControlButtonTexture.dispose();
@@ -527,14 +550,11 @@ public class InGameState extends BaseState{
 		if(backgroundShader != null)
 			backgroundShader.dispose();
 
-		if(alphaShader != null)
-			alphaShader.dispose();
-
 		if(frameBuffer != null)
 			frameBuffer.dispose();
 
-		if(robotArmFrameBuffer != null)
-			robotArmFrameBuffer.dispose();
+		//		if(robotArmFrameBuffer != null)
+		//			robotArmFrameBuffer.dispose();
 
 		if(correctAngleLedOffTexture != null)
 			correctAngleLedOffTexture.dispose();
@@ -567,27 +587,46 @@ public class InGameState extends BaseState{
 
 	private void setUpButtons(){
 		// Set the main control buttons.
-		mainControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/PBCrichton_Flat_Button.png"));
-		mainControlButtonTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+		upControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/up_button.png"));
+		downControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/down_button.png"));
+		leftControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/left_button.png"));
+		rightControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/right_button.png"));
 
-		TextureRegion region = new TextureRegion(mainControlButtonTexture, 0, 0, mainControlButtonTexture.getWidth(), mainControlButtonTexture.getHeight());
-
-		motorAButton = new Sprite(region);
+		// Set the motor control buttons.
+		motorAButton = new Sprite(upControlButtonTexture);
 		motorAButton.setSize(motorAButton.getWidth() * 0.7f, motorAButton.getHeight() * 0.7f);
 
-		motorBButton = new Sprite(region);
+		motorBButton = new Sprite(downControlButtonTexture);
 		motorBButton.setSize(motorBButton.getWidth() * 0.7f, motorBButton.getHeight() * 0.7f);
 
-		motorCButton = new Sprite(region);
+		motorCButton = new Sprite(downControlButtonTexture);
 		motorCButton.setSize(motorCButton.getWidth() * 0.7f, motorCButton.getHeight() * 0.7f);
 
-		motorDButton = new Sprite(region);
+		motorDButton = new Sprite(upControlButtonTexture);
 		motorDButton.setSize(motorDButton.getWidth() * 0.7f, motorDButton.getHeight() * 0.7f);
 
 		motorAButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 10, -(Gdx.graphics.getHeight() / 2) + motorBButton.getHeight() + 20);
 		motorBButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 20 + (motorAButton.getWidth() / 2), -(Gdx.graphics.getHeight() / 2) + 10);
 		motorCButton.setPosition((Gdx.graphics.getWidth() / 2) - (1.5f * (motorDButton.getWidth())) - 20, -(Gdx.graphics.getHeight() / 2) + 10);
 		motorDButton.setPosition((Gdx.graphics.getWidth() / 2) - motorDButton.getWidth() - 10, -(Gdx.graphics.getHeight() / 2) + 20 + motorCButton.getHeight());
+
+		// Set up robot arm control buttons.
+		armAButton = new Sprite(upControlButtonTexture);
+		armAButton.setSize(armAButton.getWidth() * 0.7f, armAButton.getHeight() * 0.7f);
+
+		armBButton = new Sprite(leftControlButtonTexture);
+		armBButton.setSize(armBButton.getWidth() * 0.7f, armBButton.getHeight() * 0.7f);
+
+		armCButton = new Sprite(rightControlButtonTexture);
+		armCButton.setSize(armCButton.getWidth() * 0.7f, armCButton.getHeight() * 0.7f);
+
+		armDButton = new Sprite(downControlButtonTexture);
+		armDButton.setSize(armDButton.getWidth() * 0.7f, armDButton.getHeight() * 0.7f);
+
+		armAButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 10, -(Gdx.graphics.getHeight() / 2) + armBButton.getHeight() + 20);
+		armBButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 20 + (armAButton.getWidth() / 2), -(Gdx.graphics.getHeight() / 2) + 10);
+		armCButton.setPosition((Gdx.graphics.getWidth() / 2) - (1.5f * (armDButton.getWidth())) - 20, -(Gdx.graphics.getHeight() / 2) + 10);
+		armDButton.setPosition((Gdx.graphics.getWidth() / 2) - armDButton.getWidth() - 10, -(Gdx.graphics.getHeight() / 2) + 20 + armCButton.getHeight());
 
 		// Set the head control buttons.
 		headControlButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/orange_glowy_button.png"));
@@ -624,8 +663,8 @@ public class InGameState extends BaseState{
 		correctAngleLedOnSprite.setSize(correctAngleLedOnSprite.getWidth() * 0.25f, correctAngleLedOnSprite.getHeight() * 0.25f);
 		correctAngleLedOffSprite.setSize(correctAngleLedOffSprite.getWidth() * 0.25f, correctAngleLedOffSprite.getHeight() * 0.25f);
 
-		correctAngleLedOnSprite.setPosition(Gdx.graphics.getWidth() / 2 - correctAngleLedOnSprite.getWidth() - 5, Gdx.graphics.getHeight() / 2 - correctAngleLedOnSprite.getHeight() - 5);
-		correctAngleLedOffSprite.setPosition(Gdx.graphics.getWidth() / 2 - correctAngleLedOffSprite.getWidth() - 5, Gdx.graphics.getHeight() / 2 - correctAngleLedOffSprite.getHeight() - 5);
+		correctAngleLedOnSprite.setPosition((Gdx.graphics.getWidth() / 2) - correctAngleLedOnSprite.getWidth() - 5, (Gdx.graphics.getHeight() / 2) - correctAngleLedOnSprite.getHeight() - 5);
+		correctAngleLedOffSprite.setPosition((Gdx.graphics.getWidth() / 2) - correctAngleLedOffSprite.getWidth() - 5, (Gdx.graphics.getHeight() / 2) - correctAngleLedOffSprite.getHeight() - 5);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -1099,13 +1138,9 @@ public class InGameState extends BaseState{
 			input = new KeyboardUserInput();
 			input.keyDown = true;
 			break;
-		case Input.Keys.A: 
+		case Input.Keys.SPACE: 
 			input = new KeyboardUserInput();
-			input.keyA = true;
-			break;
-		case Input.Keys.Z: 
-			input = new KeyboardUserInput();
-			input.keyZ = true;
+			input.keySpace = true;
 			break;
 		default: 
 			return false;
@@ -1145,13 +1180,9 @@ public class InGameState extends BaseState{
 			input = new KeyboardUserInput();
 			input.keyDown = false;
 			break;
-		case Input.Keys.A: 
+		case Input.Keys.SPACE: 
 			input = new KeyboardUserInput();
-			input.keyA = false;
-			break;
-		case Input.Keys.Z: 
-			input = new KeyboardUserInput();
-			input.keyZ = false;
+			input.keySpace = false;
 			break;
 		default: 
 			return false;
@@ -1171,7 +1202,8 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){
-		MotorEvent event;
+		MotorEvent       event;
+		GamepadUserInput userInput;
 
 		if(stateActive){
 			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
@@ -1243,6 +1275,12 @@ public class InGameState extends BaseState{
 				event.setMotor(motor_t.RECENTER);
 				event.setPower((byte)0x00);
 				queue.addEvent(event);
+
+			}else if(buttonCode == Ouya.BUTTON_O){
+				userInput = new GamepadUserInput();
+				userInput.oButton = true;
+				robotArmPositioningSystem.setUserInput(userInput);
+				robotArmPositioningSystem.process();
 
 			}else if(buttonCode == Ouya.BUTTON_A){
 				core.nextState = game_states_t.MAIN_MENU;

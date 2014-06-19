@@ -43,7 +43,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 public abstract class MainMenuStateBase extends BaseState{
 	protected static final String TAG = "MAIN_MENU";
 	private static final String CLASS_NAME = MainMenuStateBase.class.getSimpleName();
-	private static final String SHADER_PATH = "shaders/bckg/bckg";
+	private static final String SHADER_PATH = "shaders/movingBckg/movingBckg";
 
 	protected final int NUM_MENU_BUTTONS = 2;
 
@@ -52,6 +52,7 @@ public abstract class MainMenuStateBase extends BaseState{
 	protected boolean cameraCalibrated;
 	protected boolean assetsLoaded;
 	private   float   u_scaling[];
+	private   float   u_displacement;
 
 	// Buttons and other gui components.
 	protected TextButton startButton;
@@ -168,6 +169,8 @@ public abstract class MainMenuStateBase extends BaseState{
 		u_scaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		u_scaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
+		u_displacement = 1.0f;
+
 		win2world = new Vector3(0.0f, 0.0f, 0.0f);
 		touchPointWorldCoords = new Vector2();
 		startButtonTouched = false;
@@ -200,9 +203,11 @@ public abstract class MainMenuStateBase extends BaseState{
 		if(backgroundShader != null){
 			batch.setShader(backgroundShader);
 			backgroundShader.setUniform2fv("u_scaling", u_scaling, 0, 2);
+			backgroundShader.setUniformf("u_displacement", u_displacement);
 		}
 		background.draw(batch);
 		if(backgroundShader != null) batch.setShader(null);
+		u_displacement = u_displacement < 0.0f ? 1.0f : u_displacement - 0.0005f;
 	}
 
 	@Override

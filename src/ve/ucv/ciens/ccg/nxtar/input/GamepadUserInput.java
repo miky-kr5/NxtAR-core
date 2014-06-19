@@ -20,11 +20,13 @@ public class GamepadUserInput extends UserInput {
 	public float        axisLeftY;
 	public float        axisRightX;
 	public float        axisRightY;
+	public boolean      oButton;
 
 	public GamepadUserInput(){
 		this.axisLeftX   = 0.0f;
 		this.axisLeftY   = 0.0f;
 		this.axisRightX  = 0.0f;
 		this.axisRightY  = 0.0f;
+		this.oButton     = false;
 	}
 }

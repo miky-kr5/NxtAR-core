@@ -19,7 +19,6 @@ import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
-import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.TouchUserInput;
@@ -40,6 +39,7 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 	private static final float   INTERPOLATION_STEP  = 0.05f;
 	private static final float   STEP_SIZE           = 0.05f;
 	private static final float   MAX_Z               = -4.5f;
+	private static final float   MIN_Z               = -1.0f;
 
 	@Mapper ComponentMapper<GeometryComponent>           geometryMapper;
 	@Mapper ComponentMapper<AutomaticMovementComponent>  autoMapper;
@@ -73,7 +73,7 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 			if(input instanceof TouchUserInput){
 				if(!auto.moving){
 					endPoint = ((TouchUserInput) input).userTouchEndPoint;
-					endPoint.set(endPoint.x, endPoint.y, MAX_Z);
+					endPoint.set(geometry.position.x, geometry.position.y, MAX_Z);
 					auto.startPoint.set(geometry.position);
 					auto.endPoint.set(endPoint);
 					auto.moving = true;
@@ -85,33 +85,36 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 			}else if(input instanceof GamepadUserInput){
 				tempGP = (GamepadUserInput) input;
 
-				if(!collision.colliding){
-					geometry.position.x += tempGP.axisLeftY * STEP_SIZE;
-					geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
-					geometry.position.z += tempGP.axisRightY * STEP_SIZE;
-				}else{
-					auto.moving = true;
-					auto.forward = false;
-					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(BombGameEntityCreator.ROBOT_ARM_START_POINT);
-				}
+				if(!auto.moving){
+					if(!tempGP.oButton){
+						geometry.position.x += -tempGP.axisLeftY * STEP_SIZE;
+						geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
+					}else{
+						endPoint = new Vector3(geometry.position.x, geometry.position.y, MAX_Z);
+						auto.startPoint.set(geometry.position);
+						auto.endPoint.set(endPoint);
+						auto.moving = true;
+						auto.forward = true;
+					}
+				}else autoMove(geometry, auto, collision);
 
 			}else if(input instanceof KeyboardUserInput){
 				tempKey = (KeyboardUserInput) input;
 
-				if(!collision.colliding){
-					geometry.position.x += tempKey.keyUp ? STEP_SIZE : 0.0f;
-					geometry.position.x -= tempKey.keyDown ? STEP_SIZE : 0.0f;
-					geometry.position.y -= tempKey.keyLeft ? STEP_SIZE : 0.0f;
-					geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
-					geometry.position.z -= tempKey.keyZ ? STEP_SIZE : 0.0f;
-					geometry.position.z += tempKey.keyA ? STEP_SIZE : 0.0f;
-				}else{
-					auto.moving = true;
-					auto.forward = false;
-					auto.startPoint.set(geometry.position);
-					auto.endPoint.set(BombGameEntityCreator.ROBOT_ARM_START_POINT);
-				}
+				if(!auto.moving){
+					if(!tempKey.keySpace){
+						geometry.position.x += tempKey.keyUp ? STEP_SIZE : 0.0f;
+						geometry.position.x -= tempKey.keyDown ? STEP_SIZE : 0.0f;
+						geometry.position.y -= tempKey.keyLeft ? STEP_SIZE : 0.0f;
+						geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
+					}else{
+						endPoint = new Vector3(geometry.position.x, geometry.position.y, MAX_Z);
+						auto.startPoint.set(geometry.position);
+						auto.endPoint.set(endPoint);
+						auto.moving = true;
+						auto.forward = true;
+					}
+				}else autoMove(geometry, auto, collision);
 
 			}else
 				throw new ClassCastException("Input is not a valid UserInput instance.");
@@ -141,13 +144,18 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 
 			Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Current position: " + Utils.vector2String(geometry.position));
 
-			if(auto.distance <= 0.0f){
+			if(auto.distance <= 0.0f || geometry.position.z >= MIN_Z){
+				geometry.position.x = auto.startPoint.x;
+				geometry.position.y = auto.startPoint.y;
+				geometry.position.z = MIN_Z;
+
 				auto.forward = true;
 				auto.moving = false;
+
 				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going forward now.");
+
 			}else if(auto.distance >= 1.0f || collision.colliding){
 				auto.forward = false;
-				auto.startPoint.set(BombGameEntityCreator.ROBOT_ARM_START_POINT);
 				Gdx.app.log(TAG, CLASS_NAME + ".autoMove(): Going backwards now.");
 			}
 

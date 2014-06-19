@@ -134,4 +134,7 @@ public class MarkerTestEntityCreator extends EntityCreatorBase {
 
 		return true;
 	}
+
+	@Override
+	public void resetAllEntities() { }
 }

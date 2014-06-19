@@ -15,10 +15,28 @@
  */
 package ve.ucv.ciens.ccg.nxtar.utils;
 
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Peripheral;
 import com.badlogic.gdx.math.Vector3;
 
 public abstract class Utils{
 	public static String vector2String(Vector3 v){
 		return "(" + Float.toString(v.x) + ", " + Float.toString(v.y) + ", " + Float.toString(v.z) + ")";
+	}
+
+	public static int getScreenWidth(){
+		return (int)(Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN);
+	}
+
+	public static int getScreenHeight(){
+		return (int)(Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
+	}
+
+	public static boolean isDeviceRollValid(){
+		boolean rollValid = Gdx.input.isPeripheralAvailable(Peripheral.Accelerometer) && Gdx.input.isPeripheralAvailable(Peripheral.Compass);
+
+		// TODO: Check device orientation for limits.
+
+		return rollValid;
 	}
 }

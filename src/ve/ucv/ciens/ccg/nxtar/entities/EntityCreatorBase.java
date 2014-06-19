@@ -78,4 +78,9 @@ public abstract class EntityCreatorBase implements Disposable{
 	 * <p>Creates all entities for a game scenario.</p>
 	 */
 	protected abstract void createAllEntities();
+
+	/**
+	 * <p>Recreates all entities in the game.</p>
+	 */
+	public abstract void resetAllEntities();
 }

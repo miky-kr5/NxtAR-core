@@ -15,11 +15,15 @@
  */
 package ve.ucv.ciens.ccg.nxtar.entities;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombComponent.bomb_type_t;
 import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
+import ve.ucv.ciens.ccg.nxtar.components.BombGamePlayerComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
@@ -57,6 +61,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	public static final Vector3  ROBOT_ARM_START_POINT                       = new Vector3(0.0f, 0.0f, -1.0f);
 	public static final int      DOOR_OPEN_ANIMATION                         = 1;
 	public static final int      DOOR_CLOSE_ANIMATION                        = 0;
+	public static       int      NUM_BOMBS                                   = 0;
 
 	private class EntityParameters{
 		public Environment environment;
@@ -77,6 +82,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private Shader       shader;
 	private int          currentBombId;
 	private GroupManager groupManager;
+	private List<Entity> entities;
+	private Entity       player;
 
 	// Render models.
 	private Model  robotArmModel                       = null;
@@ -114,6 +121,17 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	public BombGameEntityCreator(){
 		currentBombId = 0;
 		manager = new AssetManager();
+		entities = new LinkedList<Entity>();
+		player = null;
+
+		// Load the shader.
+		shader = new DirectionalLightPerPixelShader();
+		try{
+			shader.init();
+		}catch(GdxRuntimeException gdx){
+			Gdx.app.error(TAG, CLASS_NAME + ".BombGameEntityCreator(): Shader failed to load: " + gdx.getMessage());
+			shader = null;
+		}
 
 		// Load the render models.
 		manager.load("models/render_models/bomb_game/robot_arm.g3db", Model.class);
@@ -166,15 +184,6 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		parameters = new EntityParameters();
 		parameters.environment.set(new ColorAttribute(ColorAttribute.AmbientLight, 0.3f, 0.3f, 0.3f, 1.0f));
 		parameters.environment.add(new DirectionalLight().set(new Color(1, 1, 1, 1), new Vector3(0, 0, -1)));
-
-		// Load the shader.
-		shader = new DirectionalLightPerPixelShader();
-		try{
-			shader.init();
-		}catch(GdxRuntimeException gdx){
-			Gdx.app.error(TAG, CLASS_NAME + ".BombGameEntityCreator(): Shader failed to load: " + gdx.getMessage());
-			shader = null;
-		}
 		parameters.shader = shader;
 
 		addRobotArm(parameters);
@@ -207,6 +216,16 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		monkey.addComponent(new ShaderComponent(shader));
 		monkey.addComponent(new EnvironmentComponent(parameters.environment));
 		monkey.addToWorld();
+		entities.add(monkey);
+
+		// Create the player.
+		if(player == null){
+			player = world.createEntity();
+			player.addComponent(new BombGamePlayerComponent(3));
+			player.addToWorld();
+		}else{
+			player.getComponent(BombGamePlayerComponent.class).reset();
+		}
 
 		entitiesCreated = true;
 	}
@@ -245,6 +264,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		robotArm.addComponent(new CollisionDetectionComponent());
 		robotArm.addComponent(new AutomaticMovementComponent());
 		robotArm.addToWorld();
+		entities.add(robotArm);
 	}
 
 	private void addBomb(EntityParameters parameters, bomb_type_t type) throws IllegalArgumentException{
@@ -288,7 +308,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		// Add the bomb and increase the id for the next one.
 		//groupManager.add(bomb, CollisionDetectionSystem.COLLIDABLE_OBJECT);
 		bomb.addToWorld();
+		entities.add(bomb);
 		currentBombId++;
+		NUM_BOMBS++;
 	}
 
 	private void addBombCombinationButtons(EntityParameters parameters, BombComponent bomb){
@@ -353,6 +375,8 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		if(DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS)
 			addDebugCollisionModelRenderingEntity(collisionModel, parameters, false);
 
+		entities.add(thing);
+
 		return thing;
 	}
 
@@ -391,6 +415,9 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		groupManager.add(door, DOORS_GROUP);
 		door.addToWorld();
 
+		entities.add(frame);
+		entities.add(door);
+
 		if(DEBUG_RENDER_DOOR_COLLISION_MODELS){
 			addDebugCollisionModelRenderingEntity(doorFrameCollisionModel, parameters, false);
 			addDebugCollisionModelRenderingEntity(doorCollisionModel, parameters, true);
@@ -413,6 +440,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 			thing.addComponent(new AnimationComponent(instance, parameters.nextAnimation, parameters.loopAnimation));
 		}
 		thing.addToWorld();
+		entities.add(thing);
 	}
 
 	private void getModels(){
@@ -454,5 +482,20 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		wiresBombCollisionModelWire1        = manager.get("models/collision_models/bomb_game/cable_1_col.g3db", Model.class);
 		wiresBombCollisionModelWire2        = manager.get("models/collision_models/bomb_game/cable_2_col.g3db", Model.class);
 		wiresBombCollisionModelWire3        = manager.get("models/collision_models/bomb_game/cable_3_col.g3db", Model.class);
+	}
+
+	@Override
+	public void resetAllEntities() {
+		for(Entity entity : entities){
+			try{
+				if(entity.isActive())
+					entity.deleteFromWorld();
+			}catch(NullPointerException n){
+				Gdx.app.error(TAG, CLASS_NAME + ".resetAllEntities(): Null pointer exception while deleting entity.");
+			}
+		}
+		entities.clear();
+		NUM_BOMBS = 0;
+		createAllEntities();
 	}
 }

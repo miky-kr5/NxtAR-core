@@ -17,6 +17,7 @@ package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.controllers.Controller;
@@ -47,7 +48,7 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
 
 		//Set leds.
-		ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
+		ledYPos = (-(Utils.getScreenHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
 		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
 		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
 		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);
@@ -118,6 +119,8 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 				if(oButtonSelection == 0){
 					if(!clientConnected){
 						core.toast("Can't start the game. No client is connected.", true);
+					}else if(!core.cvProc.isCameraCalibrated()){
+						core.toast("Can't start the game. Camera is not calibrated.", true);
 					}else{
 						oButtonPressed = true;
 						startButton.setChecked(true);
@@ -158,7 +161,7 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 						core.nextState = game_states_t.IN_GAME;
 					}else if(oButtonSelection == 1){
 						calibrationButton.setChecked(false);
-						core.nextState = game_states_t.IN_GAME;
+						core.nextState = game_states_t.CALIBRATION;
 					}
 				}
 			}

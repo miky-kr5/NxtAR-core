@@ -16,6 +16,7 @@
 package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
+import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
@@ -35,7 +36,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
 
 		// Set leds.
-		ledYPos = (-(Gdx.graphics.getHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
+		ledYPos = (-(Utils.getScreenHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
 		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
 		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
 		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);

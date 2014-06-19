@@ -13,22 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.input;
+package ve.ucv.ciens.ccg.nxtar.components;
 
-import com.badlogic.gdx.math.Vector3;
+import com.artemis.Component;
 
-public class TouchUserInput extends UserInput {
-	public Vector3 userTouchEndPoint;
+/**
+ * Tag class.
+ */
+public abstract class PlayerComponentBase extends Component {
+	public static final String PLAYER_GROUP = "PLAYER";
 
-	public TouchUserInput(){
-		this.userTouchEndPoint = new Vector3();
+	public boolean gameFinished;
+	public boolean victory;
+
+	public PlayerComponentBase(){
+		this.gameFinished = false;
+		this.victory = false;
 	}
 
-	public TouchUserInput(Vector3 userTouchEndPoint){
-		this.userTouchEndPoint = new Vector3(userTouchEndPoint);
-	}
-
-	public TouchUserInput(float x, float y, float z){
-		this.userTouchEndPoint = new Vector3(x, y, z);
+	public void reset(){
+		this.gameFinished = false;
+		this.victory = false;
 	}
 }

@@ -20,15 +20,13 @@ public class KeyboardUserInput extends UserInput {
 	public boolean      keyRight;
 	public boolean      keyUp;
 	public boolean      keyDown;
-	public boolean      keyA;
-	public boolean      keyZ;
-	
+	public boolean      keySpace;
+
 	public KeyboardUserInput(){
 		this.keyLeft     = false;
 		this.keyRight    = false;
 		this.keyUp       = false;
 		this.keyDown     = false;
-		this.keyA        = false;
-		this.keyZ        = false;
+		this.keySpace    = false;
 	}
 }

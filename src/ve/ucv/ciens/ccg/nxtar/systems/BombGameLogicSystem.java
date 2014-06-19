@@ -23,6 +23,7 @@ import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
+import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.artemis.Aspect;
 import com.artemis.ComponentMapper;
@@ -32,7 +33,6 @@ import com.artemis.annotations.Mapper;
 import com.artemis.managers.GroupManager;
 import com.artemis.utils.ImmutableBag;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.Input.Peripheral;
 
 public class BombGameLogicSystem extends GameLogicSystemBase {
 	private static final String TAG        = "BOMB_GAME_LOGIC";
@@ -208,7 +208,6 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		// Get the components of the big button.
 		CollisionDetectionComponent collision  = collisionMapper.getSafe(b);
 		MarkerCodeComponent         marker     = markerMapper.getSafe(b);
-		float angle;
 
 		// If any of the components is missing, skip this entity.
 		if(marker == null || collision == null ){
@@ -225,10 +224,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				manager.remove(b, Integer.toString(marker.code));
 				b.deleteFromWorld();
 
-				angle = Gdx.input.getRoll();
-				Gdx.app.log("ROTATION", "Roll: " + Float.toString(angle));
-
-				if(Gdx.input.isPeripheralAvailable(Peripheral.Accelerometer) && Math.abs(angle) > ProjectConstants.MAX_ABS_ROLL){
+				if(Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) > ProjectConstants.MAX_ABS_ROLL){
 					Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb exploded.");
 					createFadeOutEffect();
 				}

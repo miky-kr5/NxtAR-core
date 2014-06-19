@@ -30,6 +30,7 @@ import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.states.TabletMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
+import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenEquations;
 import aurelienribon.tweenengine.primitives.MutableFloat;
@@ -51,7 +52,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 /**
  * <p>Core of the application.</p>
  * 
- * <p>This class has three basic resposibilities:</p>
+ * <p>This class has three basic responsibilities:</p>
  * <ul>
  *     <li> Handling the main game loop.</li>
  *     <li> Starting and destroying the networking threads.</li>
@@ -255,8 +256,8 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		ShaderProgram.pedantic = false;
 
 		// Set up the overlay font.
-		overlayX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
-		overlayY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
+		overlayX = -(Utils.getScreenWidth() / 2) + 10;
+		overlayY = (Utils.getScreenHeight() / 2) - 10;
 
 		font = new BitmapFont();
 		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
@@ -392,6 +393,8 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 			font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
 			font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
 			font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
+			font.draw(batch, String.format("Device pitch: %f", Gdx.input.getPitch()), overlayX, overlayY - (5 * font.getCapHeight()) - 25);
+			font.draw(batch, String.format("Device azimuth: %f", Gdx.input.getAzimuth()), overlayX, overlayY - (6 * font.getCapHeight()) - 30);
 		}batch.end();
 	}
 

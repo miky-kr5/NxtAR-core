@@ -26,6 +26,10 @@ import com.artemis.ComponentMapper;
 import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.math.Matrix3;
+import com.badlogic.gdx.math.Matrix4;
+import com.badlogic.gdx.math.Quaternion;
 
 public class MarkerPositioningSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<MarkerCodeComponent> markerMapper;
@@ -33,12 +37,18 @@ public class MarkerPositioningSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<VisibilityComponent> visibilityMapper;
 
 	private MarkerData markers;
+	private Quaternion qAux;
+	private Matrix4    correctedRotation;
+	private Matrix3    mAux;
 
 	@SuppressWarnings("unchecked")
 	public MarkerPositioningSystem(){
 		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, VisibilityComponent.class));
 
 		markers = null;
+		qAux = new Quaternion();
+		mAux = new Matrix3();
+		correctedRotation = new Matrix4();
 	}
 
 	public void setMarkerData(MarkerData markers){
@@ -61,8 +71,25 @@ public class MarkerPositioningSystem extends EntityProcessingSystem {
 		for(int i = 0; i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
 			if(markers.markerCodes[i] != 1){
 				if(markers.markerCodes[i] == marker.code){
+
+					qAux.setFromMatrix(markers.rotationMatrices[i]).nor();
+
+					if(Math.abs(qAux.getRoll()) > 10.0f){
+//						qAux.setEulerAngles(qAux.getYaw(), qAux.getPitch(), 0.0f);
+//						qAux.toMatrix(correctedRotation.val);
+//						mAux.set(correctedRotation);
+						mAux.set(markers.rotationMatrices[i]);
+
+						Gdx.app.log("ROTATION", "YAW  : " + Float.toString(qAux.getYaw()));
+						Gdx.app.log("ROTATION", "PITCH: " + Float.toString(qAux.getPitch()));
+						Gdx.app.log("ROTATION", "ROLL : " + Float.toString(qAux.getRoll()));
+						Gdx.app.log("ROTATION", "------------------------------------------");
+					}else{
+						mAux.set(markers.rotationMatrices[i]);
+					}
+
 					geometry.position.set(markers.translationVectors[i]);
-					geometry.rotation.set(markers.rotationMatrices[i]);
+					geometry.rotation.set(mAux);
 					visibility.visible = true;
 					break;
 				}else{

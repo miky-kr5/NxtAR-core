@@ -17,9 +17,11 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
+import ve.ucv.ciens.ccg.nxtar.components.BombGamePlayerComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.FadeEffectComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
+import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -62,7 +64,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	private MarkerCodeComponent         tempMarker;
 	private BombGameObjectTypeComponent tempType;
 	private GroupManager                manager;
-	private int                       then;
+	private int                         then;
 
 	@SuppressWarnings("unchecked")
 	public BombGameLogicSystem(){
@@ -142,6 +144,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				if(wireType.type != BombGameObjectTypeComponent.BOMB_WIRE_1){
 					Gdx.app.log(TAG, CLASS_NAME + ".processWireBomb(): Wire bomb exploded.");
 					createFadeOutEffect();
+					reducePlayerLivesByOne();
 				}
 
 				disableBomb(marker.code);
@@ -189,6 +192,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 					Gdx.app.log(TAG, CLASS_NAME + ".processCombinationBomb(): Combination bomb exploded.");
 					createFadeOutEffect();
 					disableBomb(marker.code);
+					reducePlayerLivesByOne();
 				}else if(state.getValue() == combination_button_state_t.DISABLED.getValue()){
 					Gdx.app.log(TAG, CLASS_NAME + ".processCombinationBomb(): Combination bomb disabled.");
 					disableBomb(marker.code);
@@ -227,6 +231,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				if(Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) > ProjectConstants.MAX_ABS_ROLL){
 					Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb exploded.");
 					createFadeOutEffect();
+					reducePlayerLivesByOne();
 				}
 
 				// Disable all related entities.
@@ -310,6 +315,30 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		}
 
 		return doorOpen;
+	}
+
+	/**
+	 * <p>Updates the player's lives count.</p>
+	 */
+	private void reducePlayerLivesByOne(){
+		Entity                  player;
+		BombGamePlayerComponent playerComponent;
+		ImmutableBag<Entity>    players;
+
+		players = manager.getEntities(PlayerComponentBase.PLAYER_GROUP);
+		if(players !=  null && players.size() > 0 && players.get(0) != null){
+			player = players.get(0);
+			playerComponent = player.getComponent(BombGamePlayerComponent.class);
+
+			if(playerComponent != null){
+				playerComponent.lives -= 1;
+			}else{
+				Gdx.app.log(TAG, CLASS_NAME + ".reducePlayerLivesByOne(): Players is missing required components.");
+			}
+
+		}else{
+			Gdx.app.log(TAG, CLASS_NAME + ".reducePlayerLivesByOne(): No players found.");
+		}
 	}
 
 	/**
@@ -400,7 +429,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	private void createFadeOutEffect(){
 		Entity effect = world.createEntity();
 		effect.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.FADE_EFFECT));
-		effect.addComponent(new FadeEffectComponent(false));
+		effect.addComponent(new FadeEffectComponent());
 		effect.addToWorld();
 	}
 

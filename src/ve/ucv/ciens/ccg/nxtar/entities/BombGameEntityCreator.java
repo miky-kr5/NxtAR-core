@@ -29,6 +29,7 @@ import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
+import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
 import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
@@ -57,11 +58,11 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 	private static final boolean DEBUG_RENDER_BOMB_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_DOOR_COLLISION_MODELS          = false;
 	private static final boolean DEBUG_RENDER_PARAPHERNALIA_COLLISION_MODELS = false;
-	public static final String   DOORS_GROUP                                 = "DOORS";
-	public static final Vector3  ROBOT_ARM_START_POINT                       = new Vector3(0.0f, 0.0f, -1.0f);
-	public static final int      DOOR_OPEN_ANIMATION                         = 1;
-	public static final int      DOOR_CLOSE_ANIMATION                        = 0;
-	public static       int      NUM_BOMBS                                   = 0;
+	public static  final String  DOORS_GROUP                                 = "DOORS";
+	public static  final Vector3 ROBOT_ARM_START_POINT                       = new Vector3(0.0f, 0.0f, -1.0f);
+	public static  final int     DOOR_OPEN_ANIMATION                         = 1;
+	public static  final int     DOOR_CLOSE_ANIMATION                        = 0;
+	public static        int     NUM_BOMBS                                   = 0;
 
 	private class EntityParameters{
 		public Environment environment;
@@ -222,6 +223,7 @@ public class BombGameEntityCreator extends EntityCreatorBase{
 		if(player == null){
 			player = world.createEntity();
 			player.addComponent(new BombGamePlayerComponent(3));
+			groupManager.add(player, PlayerComponentBase.PLAYER_GROUP);
 			player.addToWorld();
 		}else{
 			player.getComponent(BombGamePlayerComponent.class).reset();

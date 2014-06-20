@@ -45,11 +45,16 @@ public class FadeEffectRenderingSystem extends EntityProcessingSystem implements
 
 	@Override
 	protected void process(Entity e) {
+		float r, g, b;
 		FadeEffectComponent fade = fadeMapper.get(e);
+
+		r = fade.color.r;
+		g = fade.color.g;
+		b = fade.color.b;
 
 		this.batch.setProjectionMatrix(this.camera.combined);
 		this.batch.begin();{
-			this.batch.setColor(1, 1, 1, fade.getFloatValue());
+			this.batch.setColor(r, g, b, fade.getFloatValue());
 			this.batch.draw(fadeTexture, -(Gdx.graphics.getWidth() / 2), -(Gdx.graphics.getHeight() / 2));
 			this.batch.setColor(1, 1, 1, 1);
 		}this.batch.end();

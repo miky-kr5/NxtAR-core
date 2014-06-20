@@ -238,7 +238,15 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 			states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
 		else
 			states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
-		states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
+
+		try{
+			states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
+		}catch(IllegalStateException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state: " + e.getMessage());
+			Gdx.app.exit();
+			return;
+		}
+
 		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
 
 		// Register controller listeners.

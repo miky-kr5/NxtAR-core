@@ -20,12 +20,19 @@ import aurelienribon.tweenengine.TweenEquations;
 import aurelienribon.tweenengine.primitives.MutableFloat;
 
 import com.artemis.Component;
+import com.badlogic.gdx.graphics.Color;
 
 public class FadeEffectComponent extends Component{
 	private MutableFloat alpha;
 	private Tween fadeIn;
 	private Tween fadeOut;
+	public  Color color;
 
+	/**
+	 * <p>Creates a fade to/from white depending on the parameter.</p>
+	 * 
+	 * @param fadeIn True to create a fade FROM white, false for a fade TO white.
+	 */
 	public FadeEffectComponent(boolean fadeIn){
 		if(fadeIn){
 			this.alpha = new MutableFloat(1.0f);
@@ -36,12 +43,50 @@ public class FadeEffectComponent extends Component{
 			this.fadeOut = Tween.to(alpha, 0, 2.5f).target(1.0f).ease(TweenEquations.easeInQuint);
 			this.fadeIn = null;
 		}
+		color = new Color(Color.WHITE);
 	}
 
+	/**
+	 * <p>Creates a fade effect with the desired parameters.</p>
+	 * 
+	 * @param fadeIn True to create a fade FROM color, false for a fade TO color.
+	 * @param color The color of the effect.
+	 */
+	public FadeEffectComponent(boolean fadeIn, Color color){
+		this(fadeIn);
+		this.color.set(color);
+	}
+
+	/**
+	 * <p>Creates a fade out effect of the desired color.</p>
+	 * 
+	 * @param color The color of the effect.
+	 */
+	public FadeEffectComponent(Color color){
+		this(false, color);
+	}
+
+	/**
+	 * <p>Creates a white fade out effect.</p>
+	 */
+	public FadeEffectComponent(){
+		this(false);
+	}
+
+	/**
+	 * <p>The current transparency of the effect.</p>
+	 * 
+	 * @return The transparency.
+	 */
 	public float getFloatValue(){
 		return alpha.floatValue();
 	}
 
+	/**
+	 * <p>Interpolates the transparency of the effect by the given delta time in seconds.</p>
+	 * 
+	 * @param delta
+	 */
 	public void update(float delta){
 		if(fadeIn != null)
 			fadeIn.update(delta);
@@ -50,6 +95,9 @@ public class FadeEffectComponent extends Component{
 			fadeOut.update(delta);
 	}
 
+	/**
+	 * <p>Initializes the effect.</p>
+	 */
 	public void startEffect(){
 		if(fadeIn != null)
 			fadeIn.start();
@@ -58,14 +106,23 @@ public class FadeEffectComponent extends Component{
 			fadeOut.start();
 	}
 
+	/**
+	 * @return True if the effect has been initialized. False otherwise.
+	 */
 	public boolean isEffectStarted(){
 		return fadeIn != null ? fadeIn.isStarted() : fadeOut.isStarted();
 	}
 
+	/**
+	 * @return True if this effect is a fade in. False if it is a fade out.
+	 */
 	public boolean isEffectFadeIn(){
 		return fadeIn != null;
 	}
 
+	/**
+	 * @return True if the effect's interpolation is over. False otherwise.
+	 */
 	public boolean isEffectFinished(){
 		return fadeIn != null ? fadeIn.isFinished() : fadeOut.isFinished();
 	}

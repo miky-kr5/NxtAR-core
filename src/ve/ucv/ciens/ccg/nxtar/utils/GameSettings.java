@@ -18,20 +18,37 @@ package ve.ucv.ciens.ccg.nxtar.utils;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
+import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.BombGameLogicSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
+import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
+import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
 
+import com.artemis.EntitySystem;
 import com.artemis.World;
 import com.artemis.managers.GroupManager;
+import com.artemis.utils.ImmutableBag;
+import com.badlogic.gdx.controllers.mappings.Ouya;
+import com.badlogic.gdx.graphics.g3d.ModelBatch;
+import com.badlogic.gdx.utils.Disposable;
 
 public abstract class GameSettings{
 	private static EntityCreatorBase   entityCreator   = null;
 	private static GameLogicSystemBase gameLogicSystem = null;
 	private static World               gameWorld       = null;
+	private static ModelBatch          modelBatch      = null;
 
 	public static void initGameSettings(NxtARCore core) throws IllegalArgumentException{
 		if(core == null)
 			throw new IllegalArgumentException("Core is null.");
+
+		if(modelBatch == null)
+			modelBatch = new ModelBatch();
 
 		if(getGameWorld() == null){
 			gameWorld = new World();
@@ -46,9 +63,29 @@ public abstract class GameSettings{
 
 		if(getGameLogicSystem() == null)
 			gameLogicSystem = new BombGameLogicSystem();
+
+		gameWorld.setSystem(new MarkerPositioningSystem());
+		gameWorld.setSystem(new RobotArmPositioningSystem(), Ouya.runningOnOuya);
+		gameWorld.setSystem(new GeometrySystem());
+		gameWorld.setSystem(new AnimationSystem());
+		gameWorld.setSystem(new CollisionDetectionSystem());
+		gameWorld.setSystem(gameLogicSystem);
+		gameWorld.setSystem(new MarkerRenderingSystem(modelBatch), true);
+		gameWorld.setSystem(new ObjectRenderingSystem(modelBatch), true);
+		gameWorld.setSystem(new FadeEffectRenderingSystem(), true);
+
+		gameWorld.initialize();
 	}
 
 	public static void clearGameSettings(){
+		ImmutableBag<EntitySystem> systems = gameWorld.getSystems();
+
+		for(int i = 0; i < systems.size(); i++){
+			if(systems.get(i) instanceof Disposable){
+				((Disposable)systems.get(i)).dispose();
+			}
+		}
+
 		entityCreator.dispose();
 		entityCreator = null;
 		gameLogicSystem = null;

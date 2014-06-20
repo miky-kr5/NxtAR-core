@@ -27,10 +27,7 @@ import ve.ucv.ciens.ccg.nxtar.input.UserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
-import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
@@ -94,9 +91,6 @@ public class InGameState extends BaseState{
 	private ModelBatch                      modelBatch;
 	private FrameBuffer                     frameBuffer;
 	private Sprite                          frameBufferSprite;
-	//	private FrameBuffer                     robotArmFrameBuffer;
-	//	private Sprite                          robotArmFrameBufferSprite;
-	//	private ShaderProgram                   alphaShader;
 
 	// Game related fields.
 	private World                           gameWorld;
@@ -126,7 +120,7 @@ public class InGameState extends BaseState{
 	private Texture                         armControlButtonTexture;
 	private Texture                         correctAngleLedOnTexture;
 	private Texture                         correctAngleLedOffTexture;
-	private Texture                         crossSectionFloorTexture;
+	private Texture                         orientationSliderTexture;
 
 	// Gui renderable sprites.
 	private Sprite                          motorAButton;
@@ -144,9 +138,7 @@ public class InGameState extends BaseState{
 	private Sprite                          armControlButton;
 	private Sprite                          correctAngleLedOnSprite;
 	private Sprite                          correctAngleLedOffSprite;
-	private Sprite                          crossSectionFloorLed;
-	private Sprite                          normalFloorLed;
-	private Sprite                          itemNearbyFloorLed;
+	private Sprite                          orientationSlider;
 
 	// Button touch helper fields.
 	private boolean[]                       buttonsTouched;
@@ -156,14 +148,12 @@ public class InGameState extends BaseState{
 	// Monitors.
 	private VideoFrameMonitor               frameMonitor;
 	private MotorEventQueue                 queue;
-	//	private SensorReportThread              sensorThread;
 
-	public InGameState(final NxtARCore core){
+	public InGameState(final NxtARCore core) throws IllegalStateException{
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 		queue = MotorEventQueue.getInstance();
 		controlMode = robot_control_mode_t.WHEEL_CONTROL;
-		//		sensorThread = SensorReportThread.getInstance();
 
 		// Set up rendering fields;
 		videoFrame = null;
@@ -225,61 +215,26 @@ public class InGameState extends BaseState{
 		uScaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
-		// Set up the alpha shader.
-		//		alphaShader = new ShaderProgram(Gdx.files.internal(ALPHA_SHADER_PREFIX + "_vert.glsl"), Gdx.files.internal(ALPHA_SHADER_PREFIX + "_frag.glsl"));
-		//		if(!alphaShader.isCompiled()){
-		//			Gdx.app.error(TAG, CLASS_NAME + ".InGameState() :: Failed to compile the alpha shader.");
-		//			Gdx.app.error(TAG, CLASS_NAME + alphaShader.getLog());
-		//			alphaShader = null;
-		//		}
-
 		// Set up the 3D rendering.
 		modelBatch = new ModelBatch();
 		frameBuffer = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
-		//		robotArmFrameBuffer = null;
-		//		robotArmFrameBufferSprite = null;
 
-		// Set up floor leds and possibly the buttons.
-		correctAngleLedOnTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Green.png"));
-		correctAngleLedOffTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Red.png"));
-		crossSectionFloorTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Cyan.png"));
-
-		crossSectionFloorLed = new Sprite(crossSectionFloorTexture);
-		normalFloorLed = new Sprite(correctAngleLedOffTexture);
-		itemNearbyFloorLed = new Sprite(correctAngleLedOnTexture);
-
-		crossSectionFloorLed.setSize(crossSectionFloorLed.getWidth() * 0.25f, crossSectionFloorLed.getHeight() * 0.25f);
-		normalFloorLed.setSize(normalFloorLed.getWidth() * 0.25f, normalFloorLed.getHeight() * 0.25f);
-		itemNearbyFloorLed.setSize(itemNearbyFloorLed.getWidth() * 0.25f, itemNearbyFloorLed.getHeight() * 0.25f);
-
-		crossSectionFloorLed.setPosition(-(crossSectionFloorLed.getWidth() / 2), (Utils.getScreenHeight() / 2) - crossSectionFloorLed.getHeight() - 5);
-		normalFloorLed.setPosition(-(normalFloorLed.getWidth() / 2), (Utils.getScreenHeight() / 2) - normalFloorLed.getHeight() - 5);
-		itemNearbyFloorLed.setPosition(-(itemNearbyFloorLed.getWidth() / 2), (Utils.getScreenHeight() / 2) - itemNearbyFloorLed.getHeight() - 5);
-
+		// Set up he buttons.
 		if(!Ouya.runningOnOuya)
 			setUpButtons();
 
 		// Set up the game world.
 		gameWorld = GameSettings.getGameWorld();
 
-		robotArmPositioningSystem = new RobotArmPositioningSystem();
-		markerRenderingSystem     = new MarkerRenderingSystem(modelBatch);
-		objectRenderingSystem     = new ObjectRenderingSystem(modelBatch);
-		fadeEffectRenderingSystem = new FadeEffectRenderingSystem();
+		robotArmPositioningSystem = gameWorld.getSystem(RobotArmPositioningSystem.class);
+		markerRenderingSystem     = gameWorld.getSystem(MarkerRenderingSystem.class);
+		objectRenderingSystem     = gameWorld.getSystem(ObjectRenderingSystem.class);
+		fadeEffectRenderingSystem = gameWorld.getSystem(FadeEffectRenderingSystem.class);
 
-		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(robotArmPositioningSystem, Ouya.runningOnOuya);
-		gameWorld.setSystem(new GeometrySystem());
-		gameWorld.setSystem(new AnimationSystem());
-		gameWorld.setSystem(new CollisionDetectionSystem());
-		gameWorld.setSystem(GameSettings.getGameLogicSystem());
-		gameWorld.setSystem(markerRenderingSystem, true);
-		gameWorld.setSystem(objectRenderingSystem, true);
-		gameWorld.setSystem(fadeEffectRenderingSystem, true);
-
-		gameWorld.initialize();
+		if(robotArmPositioningSystem == null || markerRenderingSystem == null || objectRenderingSystem == null || fadeEffectRenderingSystem == null)
+			throw new IllegalStateException("One or more essential systems are null.");
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;
@@ -288,7 +243,10 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void render(float delta){
+		final float MIN_SLIDER_X = correctAngleLedOnSprite != null ? -(Utils.getScreenWidth() / 2) + 5 + correctAngleLedOnSprite.getWidth() : -(Utils.getScreenWidth() / 2) + 5;
+		final float MAX_SLIDER_X = correctAngleLedOnSprite != null ? (Utils.getScreenWidth() / 2) - 5 - correctAngleLedOnSprite.getWidth(): (Utils.getScreenWidth() / 2) - 5;
 		int w, h;
+		float t, xSliderPos;
 		byte[] frame;
 		MarkerData data;
 		TextureRegion region;
@@ -318,9 +276,6 @@ public class InGameState extends BaseState{
 		if(perspectiveCamera == null && frameBuffer == null){
 			frameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
 			frameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
-
-			//			robotArmFrameBuffer = new FrameBuffer(Format.RGBA8888, w, h, true);
-			//			robotArmFrameBuffer.getColorBufferTexture().setFilter(TextureFilter.Linear, TextureFilter.Linear);
 
 			perspectiveCamera = new CustomPerspectiveCamera(67, w, h);
 			perspectiveCamera.translate(0.0f, 0.0f, 0.0f);
@@ -382,18 +337,6 @@ public class InGameState extends BaseState{
 				}
 			}frameBuffer.end();
 
-			//			robotArmFrameBuffer.begin();{
-			//				// Set OpenGL state.
-			//				Gdx.gl.glClearColor(0, 0, 0, 0);
-			//				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-			//				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
-			//
-			//				// Call rendering systems.
-			//				objectRenderingSystem.begin(perspectiveCamera);
-			//				objectRenderingSystem.process();
-			//				objectRenderingSystem.end();
-			//			}robotArmFrameBuffer.end();
-
 			// Set the frame buffer object texture to a renderable sprite.
 			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
 			region.flip(false, true);
@@ -403,16 +346,6 @@ public class InGameState extends BaseState{
 				frameBufferSprite.setRegion(region);
 			frameBufferSprite.setOrigin(frameBufferSprite.getWidth() / 2, frameBufferSprite.getHeight() / 2);
 			frameBufferSprite.setPosition(0, 0);
-
-			// Set the other frame buffer object texture to a renderable sprite.
-			//			region = new TextureRegion(robotArmFrameBuffer.getColorBufferTexture(), 0, 0, robotArmFrameBuffer.getWidth(), robotArmFrameBuffer.getHeight());
-			//			region.flip(false, true);
-			//			if(robotArmFrameBufferSprite == null)
-			//				robotArmFrameBufferSprite = new Sprite(region);
-			//			else
-			//				robotArmFrameBufferSprite.setRegion(region);
-			//			robotArmFrameBufferSprite.setOrigin(robotArmFrameBuffer.getWidth() / 2, robotArmFrameBuffer.getHeight() / 2);
-			//			robotArmFrameBufferSprite.setPosition(0, 0);
 
 			// Set the position and orientation of the renderable video frame and the frame buffer.
 			if(!Ouya.runningOnOuya){
@@ -424,9 +357,6 @@ public class InGameState extends BaseState{
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
 
-				//				robotArmFrameBufferSprite.setSize(1.0f, robotArmFrameBufferSprite.getHeight() / robotArmFrameBufferSprite.getWidth() );
-				//				robotArmFrameBufferSprite.rotate90(true);
-				//				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, 0.5f - robotArmFrameBufferSprite.getHeight());
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (w / h);
 				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
@@ -436,10 +366,6 @@ public class InGameState extends BaseState{
 				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
-
-				//				robotArmFrameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
-				//				robotArmFrameBufferSprite.rotate90(true);
-				//				robotArmFrameBufferSprite.translate(-robotArmFrameBufferSprite.getWidth() / 2, -robotArmFrameBufferSprite.getHeight() / 2);
 			}
 
 			// Set the correct camera for the device.
@@ -453,16 +379,6 @@ public class InGameState extends BaseState{
 			core.batch.begin();{
 				renderableVideoFrame.draw(core.batch);
 				frameBufferSprite.draw(core.batch);
-
-				// Render the robot arm only when in the corresponding control mode. Always render it on the OUYA.
-				//				if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue() || Ouya.runningOnOuya){
-				//					if(alphaShader != null){
-				//						core.batch.setShader(alphaShader);
-				//					}
-				//					robotArmFrameBufferSprite.draw(core.batch);
-				//					if(alphaShader != null) core.batch.setShader(null);
-				//				}
-
 			}core.batch.end();
 
 			// Clear the video frame from memory.
@@ -497,13 +413,21 @@ public class InGameState extends BaseState{
 				headCButton.draw(core.batch);
 
 				// Draw device rotation led.
-				if(Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) < ProjectConstants.MAX_ABS_ROLL){
-					correctAngleLedOnSprite.draw(core.batch);
+				if(Utils.isDeviceRollValid()){
+					if(Math.abs(Gdx.input.getRoll()) < ProjectConstants.MAX_ABS_ROLL)
+						correctAngleLedOnSprite.draw(core.batch);
+					else
+						correctAngleLedOffSprite.draw(core.batch);
+
+					t = (Gdx.input.getRoll() + 60.0f) / 120.0f;
+					xSliderPos = (MIN_SLIDER_X * t) + (MAX_SLIDER_X * (1.0f - t));
+					xSliderPos = xSliderPos < MIN_SLIDER_X ? MIN_SLIDER_X : (xSliderPos > MAX_SLIDER_X ? MAX_SLIDER_X : xSliderPos);
+					orientationSlider.setPosition(xSliderPos, orientationSlider.getY());
+					orientationSlider.draw(core.batch);
 				}else{
 					correctAngleLedOffSprite.draw(core.batch);
+					orientationSlider.draw(core.batch);
 				}
-
-				// TODO: Draw rotation slider.
 			}core.batch.end();
 		}
 
@@ -544,8 +468,8 @@ public class InGameState extends BaseState{
 		if(backgroundTexture != null)
 			backgroundTexture.dispose();
 
-		if(crossSectionFloorTexture != null)
-			crossSectionFloorTexture.dispose();
+		if(orientationSliderTexture != null)
+			orientationSliderTexture.dispose();
 
 		if(backgroundShader != null)
 			backgroundShader.dispose();
@@ -553,16 +477,11 @@ public class InGameState extends BaseState{
 		if(frameBuffer != null)
 			frameBuffer.dispose();
 
-		//		if(robotArmFrameBuffer != null)
-		//			robotArmFrameBuffer.dispose();
-
 		if(correctAngleLedOffTexture != null)
 			correctAngleLedOffTexture.dispose();
 
 		if(correctAngleLedOnTexture != null)
 			correctAngleLedOnTexture.dispose();
-
-		fadeEffectRenderingSystem.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;
@@ -657,6 +576,9 @@ public class InGameState extends BaseState{
 		armControlButton.setPosition(-(armControlButton.getWidth() / 2), headCButton.getY() - headCButton.getHeight() - 15);
 
 		// Set up the correct angle leds.
+		correctAngleLedOnTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Green.png"));
+		correctAngleLedOffTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Button_Red.png"));
+
 		correctAngleLedOnSprite = new Sprite(correctAngleLedOnTexture);
 		correctAngleLedOffSprite = new Sprite(correctAngleLedOffTexture);
 
@@ -665,6 +587,12 @@ public class InGameState extends BaseState{
 
 		correctAngleLedOnSprite.setPosition((Gdx.graphics.getWidth() / 2) - correctAngleLedOnSprite.getWidth() - 5, (Gdx.graphics.getHeight() / 2) - correctAngleLedOnSprite.getHeight() - 5);
 		correctAngleLedOffSprite.setPosition((Gdx.graphics.getWidth() / 2) - correctAngleLedOffSprite.getWidth() - 5, (Gdx.graphics.getHeight() / 2) - correctAngleLedOffSprite.getHeight() - 5);
+
+		// Set up orientation slider.
+		orientationSliderTexture = new Texture(Gdx.files.internal("data/gfx/gui/slider_black.png"));
+		orientationSlider = new Sprite(orientationSliderTexture);
+		orientationSlider.setSize(orientationSlider.getWidth() * 0.25f, orientationSlider.getHeight() * 0.25f);
+		orientationSlider.setPosition(-(orientationSlider.getWidth() / 2), (Utils.getScreenHeight() / 2) - orientationSlider.getHeight() - 5);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;

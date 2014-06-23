@@ -13,17 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.systems;
+package ve.ucv.ciens.ccg.nxtar.game.bombgame;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
-import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.BombGamePlayerComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.FadeEffectComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
 import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
-import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 

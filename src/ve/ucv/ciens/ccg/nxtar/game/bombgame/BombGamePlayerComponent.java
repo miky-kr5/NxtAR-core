@@ -13,7 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+
+import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
 
 public class BombGamePlayerComponent extends PlayerComponentBase {
 	public static final int MIN_LIVES = 1;

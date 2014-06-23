@@ -45,7 +45,7 @@ public abstract class MainMenuStateBase extends BaseState{
 	private static final String CLASS_NAME = MainMenuStateBase.class.getSimpleName();
 	private static final String SHADER_PATH = "shaders/movingBckg/movingBckg";
 
-	protected final int NUM_MENU_BUTTONS = 2;
+	protected final int NUM_MENU_BUTTONS = 3;
 
 	// Helper fields.
 	protected boolean clientConnected;
@@ -59,6 +59,8 @@ public abstract class MainMenuStateBase extends BaseState{
 	protected Rectangle  startButtonBBox;
 	protected TextButton calibrationButton;
 	protected Rectangle  calibrationButtonBBox;
+	protected TextButton autoButton;
+	protected Rectangle  autoButtonBBox;
 	protected Sprite     cameraCalibratedLedOn;
 	protected Sprite     cameraCalibratedLedOff;
 	protected Sprite     assetsLoadedLedOn;
@@ -86,6 +88,8 @@ public abstract class MainMenuStateBase extends BaseState{
 	protected int     startButtonTouchPointer;
 	protected boolean calibrationButtonTouched;
 	protected int     calibrationButtonTouchPointer;
+	protected boolean autoButtonTouched;
+	protected int     autoButtonTouchPointer;
 
 	public MainMenuStateBase(){
 		TextureRegion         region;
@@ -120,10 +124,12 @@ public abstract class MainMenuStateBase extends BaseState{
 		textButtonStyle.up = new NinePatchDrawable(menuButtonEnabled9p);
 		textButtonStyle.checked = new NinePatchDrawable(menuButtonPressed9p);
 		textButtonStyle.disabled = new NinePatchDrawable(menuButtonDisabled9p);
-		textButtonStyle.disabledFontColor = new Color(0, 0, 0, 1);
+		textButtonStyle.fontColor = new Color(Color.BLACK);
+		textButtonStyle.downFontColor = new Color(Color.WHITE);
+		textButtonStyle.disabledFontColor = new Color(Color.BLACK);
 
-		startButton = new TextButton("Start server", textButtonStyle);
-		startButton.setText("Start game");
+		startButton = new TextButton("Manual control", textButtonStyle);
+		startButton.setText("Manual control");
 		startButton.setDisabled(true);
 		startButtonBBox = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
 
@@ -132,6 +138,11 @@ public abstract class MainMenuStateBase extends BaseState{
 		calibrationButton.setText("Calibrate camera");
 		calibrationButton.setDisabled(true);
 		calibrationButtonBBox = new Rectangle(0, 0, calibrationButton.getWidth(), calibrationButton.getHeight());
+
+		autoButton = new TextButton("Automatic action", textButtonStyle);
+		autoButton.setText("Automatic action");
+		autoButton.setDisabled(true);
+		autoButtonBBox = new Rectangle(0, 0, autoButton.getWidth(), autoButton.getHeight());
 
 		// Create the connection leds.
 		ledOnTexture = new Texture("data/gfx/gui/Anonymous_Button_Green.png");
@@ -177,6 +188,8 @@ public abstract class MainMenuStateBase extends BaseState{
 		startButtonTouchPointer = -1;
 		calibrationButtonTouched = false;
 		calibrationButtonTouchPointer = -1;
+		autoButtonTouched = false;
+		autoButtonTouchPointer = -1;
 
 		clientConnected = false;
 		cameraCalibrated = false;
@@ -233,16 +246,17 @@ public abstract class MainMenuStateBase extends BaseState{
 
 	public void onCameraCalibrated(){
 		cameraCalibrated = true;
-		startGame();
+		enableGameButtons();
 	}
 
 	public void onAssetsLoaded(){
 		assetsLoaded = true;
-		startGame();
+		enableGameButtons();
 	}
 
-	private void startGame(){
+	private void enableGameButtons(){
 		startButton.setDisabled(!(cameraCalibrated && assetsLoaded));
+		autoButton.setDisabled(!(cameraCalibrated && assetsLoaded));
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -256,16 +270,21 @@ public abstract class MainMenuStateBase extends BaseState{
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown(%d, %d, %d, %d)", screenX, screenY, pointer, button));
 		Gdx.app.log(TAG, CLASS_NAME + String.format(".touchDown() :: Unprojected touch point: (%f, %f)", touchPointWorldCoords.x, touchPointWorldCoords.y));
 
-		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords) && !calibrationButtonTouched){
+		if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords) && (!calibrationButtonTouched && !autoButtonTouched)){
 			startButton.setChecked(true);
 			startButtonTouched = true;
 			startButtonTouchPointer = pointer;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button pressed.");
-		}else if(!calibrationButton.isDisabled() && calibrationButtonBBox.contains(touchPointWorldCoords) && !startButtonTouched){
+		}else if(!calibrationButton.isDisabled() && calibrationButtonBBox.contains(touchPointWorldCoords) && (!startButtonTouched && !autoButtonTouched)){
 			calibrationButton.setChecked(true);
 			calibrationButtonTouched = true;
 			calibrationButtonTouchPointer = pointer;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Calibration button pressed.");
+		}else if(!autoButton.isDisabled() && autoButtonBBox.contains(touchPointWorldCoords) && (!startButtonTouched && !calibrationButtonTouched)){
+			autoButton.setChecked(true);
+			autoButtonTouched = true;
+			autoButtonTouchPointer = pointer;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Auto button pressed.");
 		}
 
 		return true;
@@ -290,6 +309,12 @@ public abstract class MainMenuStateBase extends BaseState{
 			calibrationButtonTouchPointer = -1;
 			core.nextState = game_states_t.CALIBRATION;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Calibration button released.");
+		}else if(!autoButton.isDisabled() && autoButtonBBox.contains(touchPointWorldCoords) && autoButtonTouched){
+			autoButton.setChecked(false);
+			autoButtonTouched = false;
+			autoButtonTouchPointer = -1;
+			core.nextState = game_states_t.AUTOMATIC_ACTION;
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Auto button released.");
 		}
 
 		return true;
@@ -309,6 +334,11 @@ public abstract class MainMenuStateBase extends BaseState{
 			calibrationButtonTouched = false;
 			calibrationButton.setChecked(false);
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Start button released.");
+		}else if(!autoButton.isDisabled() && autoButtonTouched && pointer == autoButtonTouchPointer && !autoButtonBBox.contains(touchPointWorldCoords)){
+			autoButtonTouchPointer = -1;
+			autoButtonTouched = false;
+			autoButton.setChecked(false);
+			Gdx.app.log(TAG, CLASS_NAME + ".touchDragged() :: Auto button released.");
 		}
 
 		return true;

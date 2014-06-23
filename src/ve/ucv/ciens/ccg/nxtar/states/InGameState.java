@@ -19,6 +19,7 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
@@ -32,7 +33,6 @@ import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
-import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
@@ -149,7 +149,10 @@ public class InGameState extends BaseState{
 	private VideoFrameMonitor               frameMonitor;
 	private MotorEventQueue                 queue;
 
-	public InGameState(final NxtARCore core) throws IllegalStateException{
+	public InGameState(final NxtARCore core) throws IllegalStateException, IllegalArgumentException{
+		if(core == null)
+			throw new IllegalArgumentException(CLASS_NAME + ": Core is null.");
+
 		this.core = core;
 		frameMonitor = VideoFrameMonitor.getInstance();
 		queue = MotorEventQueue.getInstance();
@@ -226,7 +229,7 @@ public class InGameState extends BaseState{
 			setUpButtons();
 
 		// Set up the game world.
-		gameWorld = GameSettings.getGameWorld();
+		gameWorld = GameGlobals.getGameWorld();
 
 		robotArmPositioningSystem = gameWorld.getSystem(RobotArmPositioningSystem.class);
 		markerRenderingSystem     = gameWorld.getSystem(MarkerRenderingSystem.class);
@@ -1162,7 +1165,7 @@ public class InGameState extends BaseState{
 				if(!gamepadButtonPressed[3]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
-					event.setPower((byte)-40);
+					event.setPower((byte)-25);
 					queue.addEvent(event);
 				}
 
@@ -1172,7 +1175,7 @@ public class InGameState extends BaseState{
 				if(!gamepadButtonPressed[2]){
 					event = new MotorEvent();
 					event.setMotor(motor_t.MOTOR_B);
-					event.setPower((byte)40);
+					event.setPower((byte)25);
 					queue.addEvent(event);
 				}
 

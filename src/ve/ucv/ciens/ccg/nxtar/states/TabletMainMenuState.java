@@ -34,9 +34,11 @@ public class TabletMainMenuState extends MainMenuStateBase{
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
 		calibrationButton.setPosition(-(calibrationButton.getWidth() / 2), (startButton.getY() + startButton.getHeight()) + 10);
 		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
+		autoButton.setPosition(-(autoButton.getWidth() / 2), (startButton.getY() - startButton.getHeight()) - 10);
+		autoButtonBBox.setPosition(autoButton.getX(), autoButton.getY());
 
 		// Set leds.
-		ledYPos = (-(Utils.getScreenHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
+		ledYPos = -(Utils.getScreenHeight() / 2) + 10;
 		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
 		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
 		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);
@@ -69,6 +71,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 			// Render buttons.
 			startButton.draw(core.batch, 1.0f);
 			calibrationButton.draw(core.batch, 1.0f);
+			autoButton.draw(core.batch, 1.0f);
 
 		}core.batch.end();
 	}

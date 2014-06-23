@@ -13,11 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.systems;
+package ve.ucv.ciens.ccg.nxtar.game.bombgame;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
-import ve.ucv.ciens.ccg.nxtar.components.BombGamePlayerComponent;
-import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.systems.PlayerSystemBase;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.artemis.ComponentMapper;

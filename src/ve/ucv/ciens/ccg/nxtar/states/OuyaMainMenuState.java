@@ -46,9 +46,11 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
 		calibrationButton.setPosition(-(calibrationButton.getWidth() / 2), (startButton.getY() + startButton.getHeight()) + 10);
 		calibrationButtonBBox.setPosition(calibrationButton.getX(), calibrationButton.getY());
+		autoButton.setPosition(-(autoButton.getWidth() / 2), (startButton.getY() - startButton.getHeight()) - 10);
+		autoButtonBBox.setPosition(autoButton.getX(), autoButton.getY());
 
 		//Set leds.
-		ledYPos = (-(Utils.getScreenHeight() / 2) * 0.5f) + (calibrationButton.getY() * 0.5f);
+		ledYPos = -(Utils.getScreenHeight() / 2) + 10;
 		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
 		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
 		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);
@@ -88,12 +90,15 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 			// Render buttons.
 			startButton.draw(core.batch, 1.0f);
 			calibrationButton.draw(core.batch, 1.0f);
+			autoButton.draw(core.batch, 1.0f);
 
 			// Render O button.
 			if(oButtonSelection == 0){
 				ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY() + (ouyaOButton.getHeight() / 2));
 			}else if(oButtonSelection == 1){
 				ouyaOButton.setPosition(calibrationButton.getX() - ouyaOButton.getWidth() - 20, calibrationButton.getY() + (ouyaOButton.getHeight() / 2));
+			}else if(oButtonSelection == 2){
+				ouyaOButton.setPosition(autoButton.getX() - ouyaOButton.getWidth() - 20, autoButton.getY() + (ouyaOButton.getHeight() / 2));
 			}
 			ouyaOButton.draw(core.batch);
 
@@ -132,6 +137,13 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 						oButtonPressed = true;
 						calibrationButton.setChecked(true);
 					}
+				}else if(oButtonSelection == 2){
+					if(!clientConnected){
+						core.toast("Can't launch automatic action. No client is connected.", true);
+					}else{
+						oButtonPressed = true;
+						autoButton.setChecked(true);
+					}
 				}
 			}else if(buttonCode == Ouya.BUTTON_DPAD_UP){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad up button pressed.");
@@ -162,6 +174,9 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 					}else if(oButtonSelection == 1){
 						calibrationButton.setChecked(false);
 						core.nextState = game_states_t.CALIBRATION;
+					}else if(oButtonSelection == 2){
+						autoButton.setChecked(false);
+						core.nextState = game_states_t.AUTOMATIC_ACTION;
 					}
 				}
 			}

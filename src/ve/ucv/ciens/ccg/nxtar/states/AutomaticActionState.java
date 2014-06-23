@@ -15,20 +15,20 @@
  */
 package ve.ucv.ciens.ccg.nxtar.states;
 
+import ve.ucv.ciens.ccg.networkdata.MotorEvent;
+import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase;
+import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
+import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase.automatic_action_t;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
+import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
+import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
-import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
-import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
@@ -37,6 +37,7 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.controllers.Controller;
 import com.badlogic.gdx.controllers.mappings.Ouya;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Pixmap;
@@ -44,16 +45,24 @@ import com.badlogic.gdx.graphics.Pixmap.Format;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.Texture.TextureFilter;
 import com.badlogic.gdx.graphics.Texture.TextureWrap;
+import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
+import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 
 public class AutomaticActionState extends BaseState{
-	private static final String  TAG                    = "IN_GAME_STATE";
+	private static final String  TAG                    = "AUTOMATIC_STATE";
 	private static final String  CLASS_NAME             = AutomaticActionState.class.getSimpleName();
 	private static final String  BACKGROUND_SHADER_PATH = "shaders/bckg/bckg";
 	private static final float   NEAR                   = 0.01f;
@@ -73,9 +82,9 @@ public class AutomaticActionState extends BaseState{
 	// Game related fields.
 	private World                           gameWorld;
 	private MarkerRenderingSystem           markerRenderingSystem;
-	private ObjectRenderingSystem           objectRenderingSystem;
-	private RobotArmPositioningSystem       robotArmPositioningSystem;
-	private FadeEffectRenderingSystem       fadeEffectRenderingSystem;
+	private boolean                         ignoreBackKey;
+	private boolean                         automaticActionEnabled;
+	private AutomaticActionPerformerBase    automaticActionPerformer;
 
 	// Cameras.
 	private OrthographicCamera              unitaryOrthographicCamera;
@@ -87,6 +96,22 @@ public class AutomaticActionState extends BaseState{
 	private Sprite                          renderableVideoFrame;
 	private Pixmap                          videoFrame;
 
+	// Gui elements.
+	private Texture                         startButtonEnabledTexture;
+	private Texture                         startButtonDisabledTexture;
+	private Texture                         startButtonPressedTexture;
+	private NinePatch                       startButtonEnabled9p;
+	private NinePatch                       startButtonDisabled9p;
+	private NinePatch                       startButtonPressed9p;
+	private BitmapFont                      font;
+	private TextButton                      startButton;
+	private Rectangle                       startButtonBBox;
+	private boolean                         startButtonPressed;
+	private Texture                         ouyaOButtonTexture;
+	private Sprite                          ouyaOButton;
+	private boolean                         oButtonPressed;
+	private boolean                         aButtonPressed;
+
 	// Button touch helper fields.
 	private boolean[]                       buttonsTouched;
 	private int[]                           buttonPointers;
@@ -94,17 +119,23 @@ public class AutomaticActionState extends BaseState{
 
 	// Monitors.
 	private VideoFrameMonitor               frameMonitor;
-	//	private MotorEventQueue                 queue;
-	//	private SensorReportThread              sensorThread;
+	private MotorEventQueue                 queue;
+	private SensorReportThread              sensorThread;
 
-	public AutomaticActionState(final NxtARCore core){
-		this.core = core;
-		frameMonitor = VideoFrameMonitor.getInstance();
-		//		queue = MotorEventQueue.getInstance();
-		//		sensorThread = SensorReportThread.getInstance();
+	public AutomaticActionState(final NxtARCore core) throws IllegalStateException, IllegalArgumentException{
+		if(core == null)
+			throw new IllegalArgumentException(CLASS_NAME + ": Core is null.");
 
-		// Set up rendering fields;
-		videoFrame = null;
+		this.core                = core;
+		frameMonitor             = VideoFrameMonitor.getInstance();
+		queue                    = MotorEventQueue.getInstance();
+		sensorThread             = SensorReportThread.getInstance();
+		ignoreBackKey            = false;
+		videoFrame               = null;
+		aButtonPressed           = false;
+		automaticActionEnabled   = false;
+		startButtonPressed       = false;
+		automaticActionPerformer = GameGlobals.getAutomaticActionPerformer();
 
 		// Set up the cameras.
 		pixelPerfectOrthographicCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -149,25 +180,15 @@ public class AutomaticActionState extends BaseState{
 		perspectiveCamera = null;
 		frameBufferSprite = null;
 
+		// Create the gui.
+		setUpButton();
+
 		// Set up the game world.
-		gameWorld = GameSettings.getGameWorld();
+		gameWorld = GameGlobals.getGameWorld();
+		markerRenderingSystem = gameWorld.getSystem(MarkerRenderingSystem.class);
 
-		robotArmPositioningSystem = new RobotArmPositioningSystem();
-		markerRenderingSystem     = new MarkerRenderingSystem(modelBatch);
-		objectRenderingSystem     = new ObjectRenderingSystem(modelBatch);
-		fadeEffectRenderingSystem = new FadeEffectRenderingSystem();
-
-		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(robotArmPositioningSystem, Ouya.runningOnOuya);
-		gameWorld.setSystem(new GeometrySystem());
-		gameWorld.setSystem(new AnimationSystem());
-		gameWorld.setSystem(new CollisionDetectionSystem());
-		gameWorld.setSystem(GameSettings.getGameLogicSystem());
-		gameWorld.setSystem(markerRenderingSystem, true);
-		gameWorld.setSystem(objectRenderingSystem, true);
-		gameWorld.setSystem(fadeEffectRenderingSystem, true);
-
-		gameWorld.initialize();
+		if(markerRenderingSystem == null)
+			throw new IllegalStateException(CLASS_NAME + ": Essential marker rendering system is null.");
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;
@@ -220,6 +241,9 @@ public class AutomaticActionState extends BaseState{
 
 		// If a valid frame was fetched.
 		if(data != null && data.outFrame != null){
+			if(automaticActionEnabled)
+				performAutomaticAction(data);
+
 			// Set the camera to the correct projection.
 			focalPointX   = core.cvProc.getFocalPointX();
 			focalPointY   = core.cvProc.getFocalPointY();
@@ -308,11 +332,35 @@ public class AutomaticActionState extends BaseState{
 			videoFrameTexture.dispose();
 		}
 
+		core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
+		core.batch.begin();{
+			startButton.draw(core.batch, 1.0f);
+			if(Ouya.runningOnOuya)
+				ouyaOButton.draw(core.batch);
+		}core.batch.end();
+
 		data = null;
 	}
 
 	@Override
 	public void dispose(){
+		SensorReportThread.freeInstance();
+
+		if(font != null)
+			font.dispose();
+
+		if(ouyaOButtonTexture != null)
+			ouyaOButtonTexture.dispose();
+
+		if(startButtonEnabledTexture != null)
+			startButtonEnabledTexture.dispose();
+
+		if(startButtonDisabledTexture != null)
+			startButtonDisabledTexture.dispose();
+
+		if(startButtonPressedTexture != null)
+			startButtonPressedTexture.dispose();
+
 		if(modelBatch != null)
 			modelBatch.dispose();
 
@@ -327,13 +375,7 @@ public class AutomaticActionState extends BaseState{
 
 		if(frameBuffer != null)
 			frameBuffer.dispose();
-
-		fadeEffectRenderingSystem.dispose();
 	}
-
-	/*;;;;;;;;;;;;;;;;;;
-	  ; HELPER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public void onStateSet(){
@@ -351,6 +393,188 @@ public class AutomaticActionState extends BaseState{
 		Gdx.input.setCatchMenuKey(false);
 	}
 
+	/*;;;;;;;;;;;;;;;;;;
+	  ; HELPER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;*/
+
+	private void setUpButton(){
+		TextButtonStyle       textButtonStyle;
+		FreeTypeFontGenerator fontGenerator;
+		FreeTypeFontParameter fontParameters;
+
+		// Create the start button background.
+		startButtonEnabledTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
+		startButtonEnabled9p       = new NinePatch(new TextureRegion(startButtonEnabledTexture, 0, 0, startButtonEnabledTexture.getWidth(), startButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
+		startButtonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
+		startButtonDisabled9p      = new NinePatch(new TextureRegion(startButtonDisabledTexture, 0, 0, startButtonDisabledTexture.getWidth(), startButtonDisabledTexture.getHeight()), 49, 49, 45, 45);
+		startButtonPressedTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
+		startButtonPressed9p       = new NinePatch(new TextureRegion(startButtonPressedTexture, 0, 0, startButtonPressedTexture.getWidth(), startButtonPressedTexture.getHeight()), 49, 49, 45, 45);
+
+		// Create the start button font.
+		fontParameters            = new FreeTypeFontParameter();
+		fontParameters.characters = ProjectConstants.FONT_CHARS;
+		fontParameters.size       = ProjectConstants.MENU_BUTTON_FONT_SIZE;
+		fontParameters.flip       = false;
+		fontGenerator             = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
+		font                      = fontGenerator.generateFont(fontParameters);
+		fontGenerator.dispose();
+
+		// Create the start button.
+		textButtonStyle                   = new TextButtonStyle();
+		textButtonStyle.font              = font;
+		textButtonStyle.up                = new NinePatchDrawable(startButtonEnabled9p);
+		textButtonStyle.checked           = new NinePatchDrawable(startButtonPressed9p);
+		textButtonStyle.disabled          = new NinePatchDrawable(startButtonDisabled9p);
+		textButtonStyle.fontColor         = new Color(Color.BLACK);
+		textButtonStyle.downFontColor     = new Color(Color.WHITE);
+		textButtonStyle.disabledFontColor = new Color(Color.BLACK);
+
+		startButton = new TextButton("Start automatic action", textButtonStyle);
+		startButton.setText("Start automatic action");
+		startButton.setDisabled(false);
+		startButtonBBox = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
+		startButton.setPosition(-(startButton.getWidth() / 2), -(Gdx.graphics.getHeight() / 2) + 10);
+		startButtonBBox.setPosition(startButton.getX(), startButton.getY());
+
+		// Set OUYA's O button.
+		if(Ouya.runningOnOuya){
+			ouyaOButtonTexture = new Texture("data/gfx/gui/OUYA_O.png");
+			ouyaOButton = new Sprite(ouyaOButtonTexture);
+			ouyaOButton.setSize(ouyaOButton.getWidth() * 0.6f, ouyaOButton.getHeight() * 0.6f);
+			oButtonPressed = false;
+			ouyaOButton.setPosition(startButton.getX() - ouyaOButton.getWidth() - 20, startButton.getY() + (ouyaOButton.getHeight() / 2));
+		}else{
+			ouyaOButtonTexture = null;
+		}
+	}
+
+	private void performAutomaticAction(MarkerData data){
+		MotorEvent event1 = null;
+		MotorEvent event2 = null;
+		automatic_action_t nextAction;
+
+		try{
+			if(!automaticActionPerformer.performAutomaticAction(sensorThread.getLightSensorReading(), data)){
+				nextAction = automaticActionPerformer.getNextAction();
+
+				switch(nextAction){
+				case GO_BACKWARDS:
+					event1 = new MotorEvent();
+					event2 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_A);
+					event1.setPower((byte)-100);
+					event2.setMotor(motor_t.MOTOR_C);
+					event2.setPower((byte)-100);
+					break;
+
+				case GO_FORWARD:
+					event1 = new MotorEvent();
+					event2 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_A);
+					event1.setPower((byte)100);
+					event2.setMotor(motor_t.MOTOR_C);
+					event2.setPower((byte)100);
+					break;
+
+				case STOP:
+					event1 = new MotorEvent();
+					event2 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_A);
+					event1.setPower((byte)0);
+					event2.setMotor(motor_t.MOTOR_C);
+					event2.setPower((byte)0);
+					break;
+
+				case ROTATE_90:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.ROTATE_90);
+					event1.setPower((byte)100);
+					break;
+
+				case RECENTER:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.RECENTER);
+					event1.setPower((byte)100);
+					break;
+
+				case TURN_LEFT:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_A);
+					event1.setPower((byte)100);
+					break;
+
+				case TURN_RIGHT:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_C);
+					event1.setPower((byte)100);
+					break;
+
+				case BACKWARDS_LEFT:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_C);
+					event1.setPower((byte)-100);
+					break;
+
+				case BACKWARDS_RIGHT:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_A);
+					event1.setPower((byte)-100);
+					break;
+
+				case LOOK_RIGHT:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_B);
+					event1.setPower((byte)25);
+					break;
+
+				case LOOK_LEFT:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_B);
+					event1.setPower((byte)-25);
+					break;
+
+				case STOP_LOOKING:
+					event1 = new MotorEvent();
+					event1.setMotor(motor_t.MOTOR_B);
+					event1.setPower((byte)0);
+					break;
+
+				case NO_ACTION:
+				default:
+					break;
+				}
+
+				if(event1 != null)
+					queue.addEvent(event1);
+				if(event2 != null)
+					queue.addEvent(event2);
+
+			}else{
+				// TODO: Go to summary screen.
+				startButton.setDisabled(false);
+				ignoreBackKey = false;
+				automaticActionEnabled = false;
+				core.nextState = game_states_t.MAIN_MENU;
+			}
+
+		}catch(IllegalArgumentException e){
+			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Received IllegalArgumentException: ", e);
+
+			startButton.setDisabled(false);
+			ignoreBackKey = false;
+			automaticActionEnabled = false;
+			core.nextState = game_states_t.MAIN_MENU;
+
+		}catch(IllegalStateException e){
+			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Received IllegalStateException: ", e);
+
+			startButton.setDisabled(false);
+			ignoreBackKey = false;
+			automaticActionEnabled = false;
+			core.nextState = game_states_t.MAIN_MENU;
+		}
+	}
+
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	  ; INPUT PROCESSOR METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
@@ -361,6 +585,11 @@ public class AutomaticActionState extends BaseState{
 			win2world.set(screenX, screenY, 0.0f);
 			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+
+			if(!startButton.isDisabled() && startButtonBBox.contains(touchPointWorldCoords)){
+				startButtonPressed = true;
+			}
+
 		}
 
 		return false;
@@ -372,6 +601,13 @@ public class AutomaticActionState extends BaseState{
 			win2world.set(screenX, screenY, 0.0f);
 			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+
+			if(!startButton.isDisabled() && startButtonPressed && startButtonBBox.contains(touchPointWorldCoords)){
+				startButton.setDisabled(true);
+				ignoreBackKey = true;
+				automaticActionEnabled = true;
+			}
+
 		}
 
 		return false;
@@ -383,6 +619,11 @@ public class AutomaticActionState extends BaseState{
 			win2world.set(screenX, screenY, 0.0f);
 			unitaryOrthographicCamera.unproject(win2world);
 			touchPointWorldCoords.set(win2world.x * Gdx.graphics.getWidth(), win2world.y * Gdx.graphics.getHeight());
+
+			if(!startButton.isDisabled() && startButtonPressed && !startButtonBBox.contains(touchPointWorldCoords)){
+				startButtonPressed = false;
+			}
+
 		}
 
 		return false;
@@ -390,7 +631,7 @@ public class AutomaticActionState extends BaseState{
 
 	@Override
 	public boolean keyDown(int keycode){
-		if(keycode == Input.Keys.BACK){
+		if(keycode == Input.Keys.BACK && !ignoreBackKey){
 			core.nextState = game_states_t.MAIN_MENU;
 			return true;
 		}
@@ -405,10 +646,11 @@ public class AutomaticActionState extends BaseState{
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){
 		if(stateActive){
-			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
-
-			if(buttonCode == Ouya.BUTTON_O){
-
+			if(buttonCode == Ouya.BUTTON_O && !startButton.isDisabled()){
+				oButtonPressed = true;
+				startButton.setChecked(true);
+			}else if(buttonCode == Ouya.BUTTON_A && !ignoreBackKey){
+				aButtonPressed = true;
 			}
 
 			return true;
@@ -420,9 +662,17 @@ public class AutomaticActionState extends BaseState{
 	@Override
 	public boolean buttonUp(Controller controller, int buttonCode){
 		if(stateActive){
-			Gdx.app.log(TAG, CLASS_NAME + ".buttonDown() :: " + controller.getName() + " :: " + Integer.toString(buttonCode));
-
-			if(buttonCode == Ouya.BUTTON_O){ }
+			if(buttonCode == Ouya.BUTTON_O && oButtonPressed){
+				if(oButtonPressed){
+					oButtonPressed = false;
+					startButton.setChecked(false);
+					startButton.setDisabled(true);
+					ignoreBackKey = true;
+					automaticActionEnabled = true;
+				}
+			}else if(buttonCode == Ouya.BUTTON_A && aButtonPressed){
+				core.nextState = game_states_t.MAIN_MENU;
+			}
 
 			return true;
 		}else{

@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.utils;
+package ve.ucv.ciens.ccg.nxtar.game;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
-import ve.ucv.ciens.ccg.nxtar.entities.BombGameEntityCreator;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.BombGameLogicSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
@@ -37,13 +35,14 @@ import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.utils.Disposable;
 
-public abstract class GameSettings{
-	private static EntityCreatorBase   entityCreator   = null;
-	private static GameLogicSystemBase gameLogicSystem = null;
-	private static World               gameWorld       = null;
-	private static ModelBatch          modelBatch      = null;
+public abstract class GameGlobals{
+	private static EntityCreatorBase            entityCreator            = null;
+	private static GameLogicSystemBase          gameLogicSystem          = null;
+	private static World                        gameWorld                = null;
+	private static ModelBatch                   modelBatch               = null;
+	private static AutomaticActionPerformerBase automaticActionPerformer = null;
 
-	public static void initGameSettings(NxtARCore core) throws IllegalArgumentException{
+	public static void initGameSettings(NxtARCore core) throws IllegalArgumentException, InstantiationException, IllegalAccessException{
 		if(core == null)
 			throw new IllegalArgumentException("Core is null.");
 
@@ -56,13 +55,42 @@ public abstract class GameSettings{
 		}
 
 		if(getEntityCreator() == null){
-			entityCreator = new BombGameEntityCreator();
+			try {
+				entityCreator = (EntityCreatorBase) ScenarioImplementation.entityCreatorClass.newInstance();
+			} catch (InstantiationException e) {
+				System.out.println("Error instantiating entity creator.");
+				throw e;
+			} catch (IllegalAccessException e) {
+				System.out.println("Error accessing entity creator.");
+				throw e;
+			}
 			entityCreator.setWorld(gameWorld);
 			entityCreator.setCore(core);
 		}
 
-		if(getGameLogicSystem() == null)
-			gameLogicSystem = new BombGameLogicSystem();
+		if(getGameLogicSystem() == null){
+			try {
+				gameLogicSystem = (GameLogicSystemBase) ScenarioImplementation.gameLogicSystemClass.newInstance();
+			} catch (InstantiationException e) {
+				System.out.println("Error instantiating game logic system.");
+				throw e;
+			} catch (IllegalAccessException e) {
+				System.out.println("Error accessing game logic system.");
+				throw e;
+			}
+		}
+
+		if(automaticActionPerformer == null){
+			try {
+				automaticActionPerformer = (AutomaticActionPerformerBase) ScenarioImplementation.automaticActionPerformerClass.newInstance();
+			} catch (InstantiationException e) {
+				System.out.println("Error instantiating automatic action performer.");
+				throw e;
+			} catch (IllegalAccessException e) {
+				System.out.println("Error accessing automatic action performer.");
+				throw e;
+			}
+		}
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new RobotArmPositioningSystem(), Ouya.runningOnOuya);
@@ -70,6 +98,7 @@ public abstract class GameSettings{
 		gameWorld.setSystem(new AnimationSystem());
 		gameWorld.setSystem(new CollisionDetectionSystem());
 		gameWorld.setSystem(gameLogicSystem);
+		// TODO: Add player processing system.
 		gameWorld.setSystem(new MarkerRenderingSystem(modelBatch), true);
 		gameWorld.setSystem(new ObjectRenderingSystem(modelBatch), true);
 		gameWorld.setSystem(new FadeEffectRenderingSystem(), true);
@@ -112,5 +141,12 @@ public abstract class GameSettings{
 	 */
 	public static World getGameWorld() {
 		return gameWorld;
+	}
+
+	/**
+	 * @return the automaticActionPerformer
+	 */
+	public static AutomaticActionPerformerBase getAutomaticActionPerformer() {
+		return automaticActionPerformer;
 	}
 }

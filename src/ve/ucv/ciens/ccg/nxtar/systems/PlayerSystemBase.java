@@ -17,7 +17,7 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
-import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
+import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 
 import com.artemis.Aspect;
 import com.artemis.Entity;
@@ -42,7 +42,7 @@ public abstract class PlayerSystemBase extends EntityProcessingSystem {
 	protected final void finishGame(boolean victory){
 		// TODO: Switch to game over state.
 		// TODO: Set game over state parameters.
-		GameSettings.getEntityCreator().resetAllEntities();
+		GameGlobals.getEntityCreator().resetAllEntities();
 		core.nextState = NxtARCore.game_states_t.MAIN_MENU;
 	}
 

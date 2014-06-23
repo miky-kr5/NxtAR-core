@@ -15,6 +15,7 @@
  */
 package ve.ucv.ciens.ccg.nxtar;
 
+import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ActionResolver;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
@@ -22,13 +23,13 @@ import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
+import ve.ucv.ciens.ccg.nxtar.states.AutomaticActionState;
 import ve.ucv.ciens.ccg.nxtar.states.BaseState;
 import ve.ucv.ciens.ccg.nxtar.states.CameraCalibrationState;
 import ve.ucv.ciens.ccg.nxtar.states.InGameState;
 import ve.ucv.ciens.ccg.nxtar.states.MainMenuStateBase;
 import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.states.TabletMainMenuState;
-import ve.ucv.ciens.ccg.nxtar.utils.GameSettings;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 import aurelienribon.tweenengine.Tween;
@@ -74,7 +75,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * Valid game states.
 	 */
 	public enum game_states_t {
-		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2);
+		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2), AUTOMATIC_ACTION(3);
 
 		private int value;
 
@@ -87,7 +88,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		public static int getNumStates(){
-			return 3;
+			return 4;
 		}
 	};
 
@@ -230,7 +231,28 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * sets the application states.</p>
 	 */
 	public void create(){
-		GameSettings.initGameSettings(this);
+		try {
+			GameGlobals.initGameSettings(this);
+		} catch (IllegalArgumentException e) {
+			Gdx.app.log(TAG, CLASS_NAME + ".create(): Illegal argument initializing globals: ", e);
+			Gdx.app.exit();
+			return;
+		} catch (InstantiationException e) {
+			Gdx.app.log(TAG, CLASS_NAME + ".create(): Instantiation exception initializing globals: ", e);
+			Gdx.app.exit();
+			return;
+		} catch (IllegalAccessException e) {
+			Gdx.app.log(TAG, CLASS_NAME + ".create(): Illegal access exception initializing globals: ", e);
+			Gdx.app.exit();
+			return;
+		}
+
+		// Set up rendering fields and settings.
+		batch = new SpriteBatch();
+		batch.enableBlending();
+		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+		ShaderProgram.pedantic = false;
 
 		// Create the state objects.
 		states = new BaseState[game_states_t.getNumStates()];
@@ -242,26 +264,25 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		try{
 			states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
 		}catch(IllegalStateException e){
-			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state: " + e.getMessage());
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in IN_GAME_STATE: " + e.getMessage());
 			Gdx.app.exit();
 			return;
 		}
 
 		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
 
+		try{
+			states[game_states_t.AUTOMATIC_ACTION.getValue()] = new AutomaticActionState(this);
+		}catch(IllegalStateException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in AUTOMATIC_ACTION_STATE: " + e.getMessage());
+			Gdx.app.exit();
+			return;
+		}
+
 		// Register controller listeners.
 		for(BaseState state : states){
 			Controllers.addListener(state);
 		}
-
-		// Set up rendering fields and settings.
-		batch = new SpriteBatch();
-		batch.enableBlending();
-		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
-		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
-		ShaderProgram.pedantic = false;
 
 		// Set up the overlay font.
 		overlayX = -(Utils.getScreenWidth() / 2) + 10;
@@ -336,8 +357,8 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		super.render();
 
 		// Load the assets.
-		if(!GameSettings.getEntityCreator().areEntitiesCreated())
-			GameSettings.getEntityCreator().updateAssetManager();
+		if(!GameGlobals.getEntityCreator().areEntitiesCreated())
+			GameGlobals.getEntityCreator().updateAssetManager();
 
 		// If the current state set a value for nextState then switch to that state.
 		if(nextState != null){
@@ -452,7 +473,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		batch.dispose();
 		font.dispose();
 
-		GameSettings.clearGameSettings();
+		GameGlobals.clearGameSettings();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

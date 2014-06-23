@@ -13,17 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.entities;
+package ve.ucv.ciens.ccg.nxtar.game.bombgame;
 
 import java.util.LinkedList;
 import java.util.List;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.AutomaticMovementComponent;
-import ve.ucv.ciens.ccg.nxtar.components.BombComponent;
-import ve.ucv.ciens.ccg.nxtar.components.BombComponent.bomb_type_t;
-import ve.ucv.ciens.ccg.nxtar.components.BombGameObjectTypeComponent;
-import ve.ucv.ciens.ccg.nxtar.components.BombGamePlayerComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.EnvironmentComponent;
@@ -33,6 +29,8 @@ import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
 import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
+import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
+import ve.ucv.ciens.ccg.nxtar.game.bombgame.BombComponent.bomb_type_t;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;

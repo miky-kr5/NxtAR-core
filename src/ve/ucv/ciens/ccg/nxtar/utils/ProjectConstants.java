@@ -35,7 +35,7 @@ public abstract class ProjectConstants{
 
 	public static final float   OVERSCAN;
 	public static final int     MENU_BUTTON_FONT_SIZE;
-	public static final String  FONT_CHARS                 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+	public static final String  FONT_CHARS                 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:";
 
 	public static final int     MAXIMUM_NUMBER_OF_MARKERS  = 5;
 	public static final int     CALIBRATION_PATTERN_POINTS = 54;

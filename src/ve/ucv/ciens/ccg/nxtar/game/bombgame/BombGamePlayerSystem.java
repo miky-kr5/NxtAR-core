@@ -29,7 +29,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Disposable;
 
 public class BombGamePlayerSystem extends PlayerSystemBase implements Disposable{
-	private static final float HEART_Y_POS = (Utils.getScreenHeight() / 2) - 69;
+	private static final float HEART_Y_POS = (Utils.getScreenHeightWithOverscan() / 2) - 69;
 	@Mapper ComponentMapper<BombGamePlayerComponent> playerMapper;
 
 	private SpriteBatch batch;
@@ -50,7 +50,7 @@ public class BombGamePlayerSystem extends PlayerSystemBase implements Disposable
 		BombGamePlayerComponent player = playerMapper.get(e);
 
 		// Render remaining lives.
-		heartXPos = -(Utils.getScreenWidth() / 2) + 5;
+		heartXPos = -(Utils.getScreenWidthWithOverscan() / 2) + 5;
 		for(int i = 0; i < player.lives; ++i){
 			heart.setPosition(heartXPos, HEART_Y_POS);
 			heart.draw(batch);

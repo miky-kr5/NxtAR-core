@@ -36,8 +36,11 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 	private int oButtonSelection;
 	private float ledYPos;
 
-	public OuyaMainMenuState(final NxtARCore core){
+	public OuyaMainMenuState(final NxtARCore core) throws IllegalArgumentException{
 		super();
+
+		if(core == null)
+			throw new IllegalArgumentException(CLASS_NAME + ": Core is null.");
 
 		this.core = core;
 
@@ -50,7 +53,7 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		autoButtonBBox.setPosition(autoButton.getX(), autoButton.getY());
 
 		//Set leds.
-		ledYPos = -(Utils.getScreenHeight() / 2) + 10;
+		ledYPos = -(Utils.getScreenHeightWithOverscan() / 2) + 10;
 		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
 		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
 		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);
@@ -111,9 +114,9 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		ouyaOButtonTexture.dispose();
 	}
 
-	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-	  ; BEGIN CONTROLLER LISTENER METHODS ;
-	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
+	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+	  ; CONTROLLER LISTENER METHODS ;
+	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
 	@Override
 	public boolean buttonDown(Controller controller, int buttonCode){

@@ -22,10 +22,15 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.GL20;
 
 public class TabletMainMenuState extends MainMenuStateBase{
+	private static final String CLASS_NAME = TabletMainMenuState.class.getSimpleName();
+
 	private float ledYPos;
 
-	public TabletMainMenuState(final NxtARCore core){
+	public TabletMainMenuState(final NxtARCore core) throws IllegalArgumentException{
 		super();
+
+		if(core == null)
+			throw new IllegalArgumentException(CLASS_NAME + ": Core is null.");
 
 		this.core = core;
 
@@ -38,7 +43,7 @@ public class TabletMainMenuState extends MainMenuStateBase{
 		autoButtonBBox.setPosition(autoButton.getX(), autoButton.getY());
 
 		// Set leds.
-		ledYPos = -(Utils.getScreenHeight() / 2) + 10;
+		ledYPos = -(Utils.getScreenHeightWithOverscan() / 2) + 10;
 		cameraCalibratedLedOn.setSize(cameraCalibratedLedOn.getWidth() * 0.5f, cameraCalibratedLedOn.getHeight() * 0.5f);
 		cameraCalibratedLedOn.setPosition(-cameraCalibratedLedOn.getWidth() - 5, ledYPos);
 		cameraCalibratedLedOff.setSize(cameraCalibratedLedOff.getWidth() * 0.5f, cameraCalibratedLedOff.getHeight() * 0.5f);

@@ -24,6 +24,7 @@ import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
 import ve.ucv.ciens.ccg.nxtar.states.AutomaticActionState;
+import ve.ucv.ciens.ccg.nxtar.states.AutomaticActionSummaryState;
 import ve.ucv.ciens.ccg.nxtar.states.BaseState;
 import ve.ucv.ciens.ccg.nxtar.states.CameraCalibrationState;
 import ve.ucv.ciens.ccg.nxtar.states.InGameState;
@@ -75,7 +76,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * Valid game states.
 	 */
 	public enum game_states_t {
-		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2), AUTOMATIC_ACTION(3);
+		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2), AUTOMATIC_ACTION(3), SUMMARY(4);
 
 		private int value;
 
@@ -88,7 +89,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		public static int getNumStates(){
-			return 4;
+			return 5;
 		}
 	};
 
@@ -256,25 +257,35 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 
 		// Create the state objects.
 		states = new BaseState[game_states_t.getNumStates()];
-		if(Ouya.runningOnOuya)
-			states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
-		else
-			states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
 
 		try{
-			states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
-		}catch(IllegalStateException e){
-			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in IN_GAME_STATE: " + e.getMessage());
-			Gdx.app.exit();
-			return;
-		}
+			if(Ouya.runningOnOuya)
+				states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
+			else
+				states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
 
-		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
+			try{
+				states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
+			}catch(IllegalStateException e){
+				Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in IN_GAME_STATE: ", e);
+				Gdx.app.exit();
+				return;
+			}
 
-		try{
-			states[game_states_t.AUTOMATIC_ACTION.getValue()] = new AutomaticActionState(this);
-		}catch(IllegalStateException e){
-			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in AUTOMATIC_ACTION_STATE: " + e.getMessage());
+			states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
+
+			try{
+				states[game_states_t.AUTOMATIC_ACTION.getValue()] = new AutomaticActionState(this);
+			}catch(IllegalStateException e){
+				Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in AUTOMATIC_ACTION_STATE: ", e);
+				Gdx.app.exit();
+				return;
+			}
+
+			states[game_states_t.SUMMARY.getValue()] = new AutomaticActionSummaryState(this);
+
+		}catch(IllegalArgumentException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal argument caught creating states: ", e);
 			Gdx.app.exit();
 			return;
 		}
@@ -285,8 +296,8 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		// Set up the overlay font.
-		overlayX = -(Utils.getScreenWidth() / 2) + 10;
-		overlayY = (Utils.getScreenHeight() / 2) - 10;
+		overlayX = -(Utils.getScreenWidthWithOverscan() / 2) + 10;
+		overlayY = (Utils.getScreenHeightWithOverscan() / 2) - 10;
 
 		font = new BitmapFont();
 		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
@@ -428,21 +439,23 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	}
 
 	/**
-	 * <p>Pause a currently running thread. Pausing an already paused thread is a
-	 * no op.</p>
+	 * <p>Pauses the video streaming and the current state.</p>
 	 */
 	public void pause(){
 		if(videoThread != null)
 			videoThread.pause();
+
+		states[currState.getValue()].pause();
 	}
 
 	/**
-	 * <p>Resume a currently paused thread. Resuming an already resumed thread is a
-	 * no op.</p>
+	 * <p>Resumes the video streaming and the current state.</p>
 	 */
 	public void resume(){
 		if(videoThread != null)
 			videoThread.play();
+
+		states[currState.getValue()].resume();
 	}
 
 	/**
@@ -473,7 +486,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		batch.dispose();
 		font.dispose();
 
-		GameGlobals.clearGameSettings();
+		GameGlobals.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

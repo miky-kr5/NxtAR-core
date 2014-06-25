@@ -246,8 +246,8 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void render(float delta){
-		final float MIN_SLIDER_X = correctAngleLedOnSprite != null ? -(Utils.getScreenWidth() / 2) + 5 + correctAngleLedOnSprite.getWidth() : -(Utils.getScreenWidth() / 2) + 5;
-		final float MAX_SLIDER_X = correctAngleLedOnSprite != null ? (Utils.getScreenWidth() / 2) - 5 - correctAngleLedOnSprite.getWidth(): (Utils.getScreenWidth() / 2) - 5;
+		final float MIN_SLIDER_X = correctAngleLedOnSprite != null ? -(Utils.getScreenWidthWithOverscan() / 2) + 5 + correctAngleLedOnSprite.getWidth() : -(Utils.getScreenWidthWithOverscan() / 2) + 5;
+		final float MAX_SLIDER_X = correctAngleLedOnSprite != null ? (Utils.getScreenWidthWithOverscan() / 2) - 5 - correctAngleLedOnSprite.getWidth(): (Utils.getScreenWidthWithOverscan() / 2) - 5;
 		int w, h;
 		float t, xSliderPos;
 		byte[] frame;
@@ -362,11 +362,11 @@ public class InGameState extends BaseState{
 
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (w / h);
-				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
+				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
 
-				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
+				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
 			}
@@ -595,7 +595,7 @@ public class InGameState extends BaseState{
 		orientationSliderTexture = new Texture(Gdx.files.internal("data/gfx/gui/slider_black.png"));
 		orientationSlider = new Sprite(orientationSliderTexture);
 		orientationSlider.setSize(orientationSlider.getWidth() * 0.25f, orientationSlider.getHeight() * 0.25f);
-		orientationSlider.setPosition(-(orientationSlider.getWidth() / 2), (Utils.getScreenHeight() / 2) - orientationSlider.getHeight() - 5);
+		orientationSlider.setPosition(-(orientationSlider.getWidth() / 2), (Utils.getScreenHeightWithOverscan() / 2) - orientationSlider.getHeight() - 5);
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;

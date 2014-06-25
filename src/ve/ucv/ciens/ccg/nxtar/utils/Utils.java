@@ -41,14 +41,14 @@ public abstract class Utils{
 	/**
 	 * @return The width of the screen accounting for screen overscan.
 	 */
-	public static int getScreenWidth(){
+	public static int getScreenWidthWithOverscan(){
 		return (int)(Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN);
 	}
 
 	/**
 	 * @return The height of the screen accounting for screen overscan.
 	 */
-	public static int getScreenHeight(){
+	public static int getScreenHeightWithOverscan(){
 		return (int)(Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN);
 	}
 

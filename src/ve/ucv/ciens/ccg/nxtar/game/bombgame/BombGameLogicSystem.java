@@ -53,7 +53,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		}
 	}
 
-	@Mapper ComponentMapper<BombGameObjectTypeComponent> typeMapper;
+	@Mapper ComponentMapper<BombGameEntityTypeComponent> typeMapper;
 	@Mapper ComponentMapper<AnimationComponent>          animationMapper;
 	@Mapper ComponentMapper<VisibilityComponent>         visibilityMapper;
 	@Mapper ComponentMapper<MarkerCodeComponent>         markerMapper;
@@ -61,20 +61,20 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	@Mapper ComponentMapper<FadeEffectComponent>         fadeMapper;
 
 	private MarkerCodeComponent         tempMarker;
-	private BombGameObjectTypeComponent tempType;
+	private BombGameEntityTypeComponent tempType;
 	private GroupManager                manager;
 	private int                         then;
 
 	@SuppressWarnings("unchecked")
 	public BombGameLogicSystem(){
-		super(Aspect.getAspectForAll(BombGameObjectTypeComponent.class));
+		super(Aspect.getAspectForAll(BombGameEntityTypeComponent.class));
 		manager = null;
 		then = 0;
 	}
 
 	@Override
 	protected void process(Entity e){
-		BombGameObjectTypeComponent typeComponent;
+		BombGameEntityTypeComponent typeComponent;
 
 		if(manager == null)
 			manager = world.getManager(GroupManager.class);
@@ -82,28 +82,28 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		typeComponent = typeMapper.get(e);
 
 		switch(typeComponent.type){
-		case BombGameObjectTypeComponent.BOMB_WIRE_1:
-		case BombGameObjectTypeComponent.BOMB_WIRE_2:
-		case BombGameObjectTypeComponent.BOMB_WIRE_3:
+		case BombGameEntityTypeComponent.BOMB_WIRE_1:
+		case BombGameEntityTypeComponent.BOMB_WIRE_2:
+		case BombGameEntityTypeComponent.BOMB_WIRE_3:
 			processWireBomb(e);
 			break;
 
-		case BombGameObjectTypeComponent.BIG_BUTTON:
+		case BombGameEntityTypeComponent.BIG_BUTTON:
 			processInclinationBomb(e);
 			break;
 
-		case BombGameObjectTypeComponent.COM_BUTTON_1:
-		case BombGameObjectTypeComponent.COM_BUTTON_2:
-		case BombGameObjectTypeComponent.COM_BUTTON_3:
-		case BombGameObjectTypeComponent.COM_BUTTON_4:
+		case BombGameEntityTypeComponent.COM_BUTTON_1:
+		case BombGameEntityTypeComponent.COM_BUTTON_2:
+		case BombGameEntityTypeComponent.COM_BUTTON_3:
+		case BombGameEntityTypeComponent.COM_BUTTON_4:
 			processCombinationBomb(e);
 			break;
 
-		case BombGameObjectTypeComponent.DOOR:
+		case BombGameEntityTypeComponent.DOOR:
 			processDoor(e);
 			break;
 
-		case BombGameObjectTypeComponent.FADE_EFFECT:
+		case BombGameEntityTypeComponent.FADE_EFFECT:
 			processFade(e);
 			break;
 
@@ -120,7 +120,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	private void processWireBomb(Entity b){
 		CollisionDetectionComponent collision;
 		MarkerCodeComponent         marker;
-		BombGameObjectTypeComponent wireType;
+		BombGameEntityTypeComponent wireType;
 
 		// Get this wire's parameters.
 		collision  = collisionMapper.getSafe(b);
@@ -140,7 +140,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				manager.remove(b, Integer.toString(marker.code));
 				b.deleteFromWorld();
 
-				if(wireType.type != BombGameObjectTypeComponent.BOMB_WIRE_1){
+				if(wireType.type != BombGameEntityTypeComponent.BOMB_WIRE_1){
 					Gdx.app.log(TAG, CLASS_NAME + ".processWireBomb(): Wire bomb exploded.");
 					createFadeOutEffect();
 					reducePlayerLivesByOne();
@@ -163,7 +163,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		combination_button_state_t  state;
 		CollisionDetectionComponent collision;
 		MarkerCodeComponent         marker;
-		BombGameObjectTypeComponent buttonType;
+		BombGameEntityTypeComponent buttonType;
 
 		// Get this wire's parameters.
 		collision  = collisionMapper.getSafe(b);
@@ -360,10 +360,10 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 			// Enable collisions with the corresponding door frame entity. Disable collisions with other related entities.
 			if(tempMarker != null) tempMarker.enabled = false;
 			if(tempType != null){
-				if(tempType.type != BombGameObjectTypeComponent.DOOR_FRAME && tempType.type != BombGameObjectTypeComponent.DOOR){
+				if(tempType.type != BombGameEntityTypeComponent.DOOR_FRAME && tempType.type != BombGameEntityTypeComponent.DOOR){
 					manager.remove(related.get(i), CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
 					manager.remove(related.get(i), Integer.toString(markerCode));
-				}else if(tempType.type != BombGameObjectTypeComponent.DOOR_FRAME){
+				}else if(tempType.type != BombGameEntityTypeComponent.DOOR_FRAME){
 					manager.add(related.get(i), CollisionDetectionSystem.COLLIDABLE_OBJECTS_GROUP);
 				}
 			}
@@ -373,7 +373,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	/**
 	 * <p>Checks if a combination bomb is being disabled in the correct sequence.</p>
 	 * 
-	 * @param buttonType A number between {@link BombGameObjectTypeComponent.COM_BUTTON_1} and {@link BombGameObjectTypeComponent.COM_BUTTON_4}.
+	 * @param buttonType A number between {@link BombGameEntityTypeComponent.COM_BUTTON_1} and {@link BombGameEntityTypeComponent.COM_BUTTON_4}.
 	 * @param markerCode A marker code between [0, 1023], inclusive.
 	 * @return The current state of the bomb.
 	 * @throws IllegalArgumentException If marker code is not in range or if buttonType is not valid.
@@ -384,7 +384,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		int                        remainingButtons = 0;
 		ImmutableBag<Entity>       related;
 
-		if(buttonType < BombGameObjectTypeComponent.COM_BUTTON_1 || buttonType > BombGameObjectTypeComponent.COM_BUTTON_4)
+		if(buttonType < BombGameEntityTypeComponent.COM_BUTTON_1 || buttonType > BombGameEntityTypeComponent.COM_BUTTON_4)
 			throw new IllegalArgumentException("Button is not a valid combination bomb button: " + Integer.toString(buttonType));
 
 		if(markerCode < 0 || markerCode > 1023)
@@ -398,7 +398,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 
 			if(tempType == null) continue;
 
-			if(tempType.type >= BombGameObjectTypeComponent.COM_BUTTON_1 && tempType.type <= BombGameObjectTypeComponent.COM_BUTTON_4){
+			if(tempType.type >= BombGameEntityTypeComponent.COM_BUTTON_1 && tempType.type <= BombGameEntityTypeComponent.COM_BUTTON_4){
 				if(tempType.type >= buttonType){
 					// If this remaining button is a correct one then skip it.
 					remainingButtons++;
@@ -427,7 +427,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	 */
 	private void createFadeOutEffect(){
 		Entity effect = world.createEntity();
-		effect.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.FADE_EFFECT));
+		effect.addComponent(new BombGameEntityTypeComponent(BombGameEntityTypeComponent.FADE_EFFECT));
 		effect.addComponent(new FadeEffectComponent());
 		effect.addToWorld();
 	}
@@ -437,7 +437,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 	 */
 	private void createFadeInEffect(){
 		Entity effect = world.createEntity();
-		effect.addComponent(new BombGameObjectTypeComponent(BombGameObjectTypeComponent.FADE_EFFECT));
+		effect.addComponent(new BombGameEntityTypeComponent(BombGameEntityTypeComponent.FADE_EFFECT));
 		effect.addComponent(new FadeEffectComponent(true));
 		effect.addToWorld();
 	}

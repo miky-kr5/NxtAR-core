@@ -18,6 +18,10 @@ package ve.ucv.ciens.ccg.nxtar.game;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 
 public abstract class AutomaticActionPerformerBase {
+	public abstract class AutomaticActionSummary{
+		public abstract void reset();
+	}
+
 	public enum automatic_action_t{
 		NO_ACTION,
 		GO_FORWARD,
@@ -34,6 +38,8 @@ public abstract class AutomaticActionPerformerBase {
 		STOP_LOOKING;
 	}
 
-	public abstract boolean performAutomaticAction(int lightSensorReading, MarkerData markers);
-	public abstract automatic_action_t getNextAction();
+	public abstract boolean                performAutomaticAction(int lightSensorReading, MarkerData markers);
+	public abstract automatic_action_t     getNextAction();
+	public abstract AutomaticActionSummary getSummary();
+	public abstract void                   reset();
 }

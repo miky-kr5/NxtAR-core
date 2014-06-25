@@ -85,6 +85,7 @@ public class AutomaticActionState extends BaseState{
 	private boolean                         ignoreBackKey;
 	private boolean                         automaticActionEnabled;
 	private AutomaticActionPerformerBase    automaticActionPerformer;
+	private automatic_action_t              previousAction;
 
 	// Cameras.
 	private OrthographicCamera              unitaryOrthographicCamera;
@@ -136,6 +137,7 @@ public class AutomaticActionState extends BaseState{
 		automaticActionEnabled   = false;
 		startButtonPressed       = false;
 		automaticActionPerformer = GameGlobals.getAutomaticActionPerformer();
+		previousAction           = automatic_action_t.NO_ACTION;
 
 		// Set up the cameras.
 		pixelPerfectOrthographicCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
@@ -306,11 +308,11 @@ public class AutomaticActionState extends BaseState{
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
 			}else{
 				float xSize = Gdx.graphics.getHeight() * (w / h);
-				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
+				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
 				renderableVideoFrame.rotate90(true);
 				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
 
-				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeight());
+				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
 				frameBufferSprite.rotate90(true);
 				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
 			}
@@ -340,6 +342,14 @@ public class AutomaticActionState extends BaseState{
 		}core.batch.end();
 
 		data = null;
+	}
+
+	@Override
+	public void pause(){
+		automaticActionPerformer.reset();
+		startButton.setDisabled(false);
+		ignoreBackKey = false;
+		automaticActionEnabled = false;
 	}
 
 	@Override
@@ -457,104 +467,109 @@ public class AutomaticActionState extends BaseState{
 			if(!automaticActionPerformer.performAutomaticAction(sensorThread.getLightSensorReading(), data)){
 				nextAction = automaticActionPerformer.getNextAction();
 
-				switch(nextAction){
-				case GO_BACKWARDS:
-					event1 = new MotorEvent();
-					event2 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_A);
-					event1.setPower((byte)-100);
-					event2.setMotor(motor_t.MOTOR_C);
-					event2.setPower((byte)-100);
-					break;
+				if(nextAction != previousAction){
+					switch(nextAction){
+					case GO_BACKWARDS:
+						event1 = new MotorEvent();
+						event2 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_A);
+						event1.setPower((byte)-20);
+						event2.setMotor(motor_t.MOTOR_C);
+						event2.setPower((byte)-20);
+						break;
 
-				case GO_FORWARD:
-					event1 = new MotorEvent();
-					event2 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_A);
-					event1.setPower((byte)100);
-					event2.setMotor(motor_t.MOTOR_C);
-					event2.setPower((byte)100);
-					break;
+					case GO_FORWARD:
+						event1 = new MotorEvent();
+						event2 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_A);
+						event1.setPower((byte)20);
+						event2.setMotor(motor_t.MOTOR_C);
+						event2.setPower((byte)20);
+						break;
 
-				case STOP:
-					event1 = new MotorEvent();
-					event2 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_A);
-					event1.setPower((byte)0);
-					event2.setMotor(motor_t.MOTOR_C);
-					event2.setPower((byte)0);
-					break;
+					case STOP:
+						event1 = new MotorEvent();
+						event2 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_A);
+						event1.setPower((byte)0);
+						event2.setMotor(motor_t.MOTOR_C);
+						event2.setPower((byte)0);
+						break;
 
-				case ROTATE_90:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.ROTATE_90);
-					event1.setPower((byte)100);
-					break;
+					case ROTATE_90:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.ROTATE_90);
+						event1.setPower((byte)20);
+						break;
 
-				case RECENTER:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.RECENTER);
-					event1.setPower((byte)100);
-					break;
+					case RECENTER:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.RECENTER);
+						event1.setPower((byte)20);
+						break;
 
-				case TURN_LEFT:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_A);
-					event1.setPower((byte)100);
-					break;
+					case TURN_LEFT:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_A);
+						event1.setPower((byte)20);
+						break;
 
-				case TURN_RIGHT:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_C);
-					event1.setPower((byte)100);
-					break;
+					case TURN_RIGHT:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_C);
+						event1.setPower((byte)20);
+						break;
 
-				case BACKWARDS_LEFT:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_C);
-					event1.setPower((byte)-100);
-					break;
+					case BACKWARDS_LEFT:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_C);
+						event1.setPower((byte)-20);
+						break;
 
-				case BACKWARDS_RIGHT:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_A);
-					event1.setPower((byte)-100);
-					break;
+					case BACKWARDS_RIGHT:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_A);
+						event1.setPower((byte)-20);
+						break;
 
-				case LOOK_RIGHT:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_B);
-					event1.setPower((byte)25);
-					break;
+					case LOOK_RIGHT:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_B);
+						event1.setPower((byte)25);
+						break;
 
-				case LOOK_LEFT:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_B);
-					event1.setPower((byte)-25);
-					break;
+					case LOOK_LEFT:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_B);
+						event1.setPower((byte)-25);
+						break;
 
-				case STOP_LOOKING:
-					event1 = new MotorEvent();
-					event1.setMotor(motor_t.MOTOR_B);
-					event1.setPower((byte)0);
-					break;
+					case STOP_LOOKING:
+						event1 = new MotorEvent();
+						event1.setMotor(motor_t.MOTOR_B);
+						event1.setPower((byte)0);
+						break;
 
-				case NO_ACTION:
-				default:
-					break;
+					case NO_ACTION:
+					default:
+						break;
+					}
+
+					if(event1 != null)
+						queue.addEvent(event1);
+					if(event2 != null)
+						queue.addEvent(event2);
+
+					previousAction = nextAction;
+				}else{
+					Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Skipping repeated action.");
 				}
 
-				if(event1 != null)
-					queue.addEvent(event1);
-				if(event2 != null)
-					queue.addEvent(event2);
-
 			}else{
-				// TODO: Go to summary screen.
 				startButton.setDisabled(false);
 				ignoreBackKey = false;
 				automaticActionEnabled = false;
-				core.nextState = game_states_t.MAIN_MENU;
+				core.nextState = game_states_t.SUMMARY;
 			}
 
 		}catch(IllegalArgumentException e){

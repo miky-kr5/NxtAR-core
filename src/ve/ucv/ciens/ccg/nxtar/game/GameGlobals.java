@@ -36,11 +36,12 @@ import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.utils.Disposable;
 
 public abstract class GameGlobals{
-	private static EntityCreatorBase            entityCreator            = null;
-	private static GameLogicSystemBase          gameLogicSystem          = null;
-	private static World                        gameWorld                = null;
-	private static ModelBatch                   modelBatch               = null;
-	private static AutomaticActionPerformerBase automaticActionPerformer = null;
+	private static EntityCreatorBase                entityCreator                    = null;
+	private static GameLogicSystemBase              gameLogicSystem                  = null;
+	private static World                            gameWorld                        = null;
+	private static ModelBatch                       modelBatch                       = null;
+	private static AutomaticActionPerformerBase     automaticActionPerformer         = null;
+	private static AutomaticActionSummaryOverlayBase automaticActionSummaryOverlay     = null;
 
 	public static void initGameSettings(NxtARCore core) throws IllegalArgumentException, InstantiationException, IllegalAccessException{
 		if(core == null)
@@ -49,12 +50,12 @@ public abstract class GameGlobals{
 		if(modelBatch == null)
 			modelBatch = new ModelBatch();
 
-		if(getGameWorld() == null){
+		if(gameWorld == null){
 			gameWorld = new World();
 			gameWorld.setManager(new GroupManager());
 		}
 
-		if(getEntityCreator() == null){
+		if(entityCreator == null){
 			try {
 				entityCreator = (EntityCreatorBase) ScenarioImplementation.entityCreatorClass.newInstance();
 			} catch (InstantiationException e) {
@@ -68,7 +69,7 @@ public abstract class GameGlobals{
 			entityCreator.setCore(core);
 		}
 
-		if(getGameLogicSystem() == null){
+		if(gameLogicSystem == null){
 			try {
 				gameLogicSystem = (GameLogicSystemBase) ScenarioImplementation.gameLogicSystemClass.newInstance();
 			} catch (InstantiationException e) {
@@ -92,6 +93,18 @@ public abstract class GameGlobals{
 			}
 		}
 
+		if(automaticActionSummaryOverlay == null){
+			try {
+				automaticActionSummaryOverlay = (AutomaticActionSummaryOverlayBase) ScenarioImplementation.automaticActionSummaryScreen.newInstance();
+			} catch (InstantiationException e) {
+				System.out.println("Error instantiating automatic action performer.");
+				throw e;
+			} catch (IllegalAccessException e) {
+				System.out.println("Error accessing automatic action performer.");
+				throw e;
+			}
+		}
+	
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new RobotArmPositioningSystem(), Ouya.runningOnOuya);
 		gameWorld.setSystem(new GeometrySystem());
@@ -106,8 +119,13 @@ public abstract class GameGlobals{
 		gameWorld.initialize();
 	}
 
-	public static void clearGameSettings(){
-		ImmutableBag<EntitySystem> systems = gameWorld.getSystems();
+	public static void dispose() throws IllegalStateException{
+		ImmutableBag<EntitySystem> systems;
+
+		if(entityCreator == null || gameWorld == null || gameLogicSystem == null || automaticActionPerformer == null || automaticActionSummaryOverlay == null)
+			throw new IllegalStateException("Calling dispose before init or after previous dispose.");
+
+		systems = gameWorld.getSystems();
 
 		for(int i = 0; i < systems.size(); i++){
 			if(systems.get(i) instanceof Disposable){
@@ -115,38 +133,64 @@ public abstract class GameGlobals{
 			}
 		}
 
+		automaticActionSummaryOverlay.dispose();
 		entityCreator.dispose();
-		entityCreator = null;
-		gameLogicSystem = null;
-		gameWorld = null;
+
+		entityCreator                 = null;
+		gameLogicSystem               = null;
+		gameWorld                     = null;
+		automaticActionPerformer      = null;
+		automaticActionSummaryOverlay = null;
 		System.gc();
 	}
 
 	/**
 	 * @return the entityCreator
 	 */
-	public static EntityCreatorBase getEntityCreator() {
+	public static EntityCreatorBase getEntityCreator() throws IllegalStateException{
+		if(entityCreator == null)
+			throw new IllegalStateException("Calling getEntityCreator() before init.");
+
 		return entityCreator;
 	}
 
 	/**
 	 * @return the gameLogicSystem
 	 */
-	public static GameLogicSystemBase getGameLogicSystem() {
+	public static GameLogicSystemBase getGameLogicSystem() throws IllegalStateException{
+		if(gameLogicSystem == null)
+			throw new IllegalStateException("Calling getGameLogicSystem() before init.");
+
 		return gameLogicSystem;
 	}
 
 	/**
 	 * @return the gameWorld
 	 */
-	public static World getGameWorld() {
+	public static World getGameWorld() throws IllegalStateException{
+		if(gameWorld == null)
+			throw new IllegalStateException("Calling getGameWorld() before init.");
+
 		return gameWorld;
 	}
 
 	/**
 	 * @return the automaticActionPerformer
 	 */
-	public static AutomaticActionPerformerBase getAutomaticActionPerformer() {
+	public static AutomaticActionPerformerBase getAutomaticActionPerformer() throws IllegalStateException{
+		if(automaticActionPerformer == null)
+			throw new IllegalStateException("Calling getAutomaticActionPerformer() before init.");
+
 		return automaticActionPerformer;
+	}
+
+	/**
+	 * @return the automaticActionSummaryScreen
+	 */
+	public static AutomaticActionSummaryOverlayBase getAutomaticActionSummaryOverlay() throws IllegalStateException{
+		if(automaticActionSummaryOverlay == null)
+			throw new IllegalStateException("Calling getAutomaticActionSummaryOverlay() before init.");
+
+		return automaticActionSummaryOverlay;
 	}
 }

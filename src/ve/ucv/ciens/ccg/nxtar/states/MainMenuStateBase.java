@@ -65,8 +65,7 @@ public abstract class MainMenuStateBase extends BaseState{
 	protected Sprite     cameraCalibratedLedOff;
 	protected Sprite     assetsLoadedLedOn;
 	protected Sprite     assetsLoadedLedOff;
-
-	protected Sprite background;
+	protected Sprite     background;
 
 	// Graphic data for the start button.
 	private Texture    menuButtonEnabledTexture;
@@ -102,10 +101,8 @@ public abstract class MainMenuStateBase extends BaseState{
 		// Create the start button background.
 		menuButtonEnabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
 		menuButtonEnabled9p = new NinePatch(new TextureRegion(menuButtonEnabledTexture, 0, 0, menuButtonEnabledTexture.getWidth(), menuButtonEnabledTexture.getHeight()), 49, 49, 45, 45);
-
 		menuButtonDisabledTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Cyan.png"));
 		menuButtonDisabled9p = new NinePatch(new TextureRegion(menuButtonDisabledTexture, 0, 0, menuButtonDisabledTexture.getWidth(), menuButtonDisabledTexture.getHeight()), 49, 49, 45, 45);
-
 		menuButtonPressedTexture = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Blue.png"));
 		menuButtonPressed9p = new NinePatch(new TextureRegion(menuButtonPressedTexture, 0, 0, menuButtonPressedTexture.getWidth(), menuButtonPressedTexture.getHeight()), 49, 49, 45, 45);
 
@@ -118,7 +115,7 @@ public abstract class MainMenuStateBase extends BaseState{
 		font = fontGenerator.generateFont(fontParameters);
 		fontGenerator.dispose();
 
-		// Create the start button.
+		// Create the buttons.
 		textButtonStyle = new TextButtonStyle();
 		textButtonStyle.font = font;
 		textButtonStyle.up = new NinePatchDrawable(menuButtonEnabled9p);
@@ -133,7 +130,6 @@ public abstract class MainMenuStateBase extends BaseState{
 		startButton.setDisabled(true);
 		startButtonBBox = new Rectangle(0, 0, startButton.getWidth(), startButton.getHeight());
 
-		// Create the calibration button.
 		calibrationButton = new TextButton("Calibrate camera", textButtonStyle);
 		calibrationButton.setText("Calibrate camera");
 		calibrationButton.setDisabled(true);
@@ -150,13 +146,10 @@ public abstract class MainMenuStateBase extends BaseState{
 
 		region = new TextureRegion(ledOnTexture);
 		cameraCalibratedLedOn = new Sprite(region);
-
 		region = new TextureRegion(ledOffTexture);
 		cameraCalibratedLedOff = new Sprite(region);
-
 		region = new TextureRegion(ledOnTexture);
 		assetsLoadedLedOn = new Sprite(region);
-
 		region = new TextureRegion(ledOffTexture);
 		assetsLoadedLedOff = new Sprite(region);
 

@@ -17,7 +17,7 @@ package ve.ucv.ciens.ccg.nxtar.game.bombgame;
 
 import com.artemis.Component;
 
-public class BombGameObjectTypeComponent extends Component {
+public class BombGameEntityTypeComponent extends Component {
 	public static final int BOMB_WIRE_1  = 10;
 	public static final int BOMB_WIRE_2  = 11;
 	public static final int BOMB_WIRE_3  = 12;
@@ -32,7 +32,7 @@ public class BombGameObjectTypeComponent extends Component {
 
 	public int type;
 
-	public BombGameObjectTypeComponent(int type){
+	public BombGameEntityTypeComponent(int type){
 		this.type = type;
 	}
 }

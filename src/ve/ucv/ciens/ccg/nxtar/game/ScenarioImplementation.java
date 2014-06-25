@@ -26,6 +26,7 @@ public final class ScenarioImplementation{
 	public static Class entityCreatorClass            = BombGameEntityCreator.class;
 	public static Class automaticActionPerformerClass = BombGameAutomaticActionPerformer.class;
 	public static Class automaticActionSummaryScreen  = BombGameAutomaticActionSummaryOverlay.class;
+	// TODO: Add player processing system.
 
 	private ScenarioImplementation(){}
 }

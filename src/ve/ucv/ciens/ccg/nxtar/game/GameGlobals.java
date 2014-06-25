@@ -41,7 +41,7 @@ public abstract class GameGlobals{
 	private static World                            gameWorld                        = null;
 	private static ModelBatch                       modelBatch                       = null;
 	private static AutomaticActionPerformerBase     automaticActionPerformer         = null;
-	private static AutomaticActionSummaryOverlayBase automaticActionSummaryOverlay     = null;
+	private static AutomaticActionSummaryOverlayBase automaticActionSummaryOverlay   = null;
 
 	public static void initGameSettings(NxtARCore core) throws IllegalArgumentException, InstantiationException, IllegalAccessException{
 		if(core == null)
@@ -104,7 +104,9 @@ public abstract class GameGlobals{
 				throw e;
 			}
 		}
-	
+
+		// TODO: Create player processing system.
+
 		gameWorld.setSystem(new MarkerPositioningSystem());
 		gameWorld.setSystem(new RobotArmPositioningSystem(), Ouya.runningOnOuya);
 		gameWorld.setSystem(new GeometrySystem());

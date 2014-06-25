@@ -20,13 +20,14 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
 import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase;
-import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase.automatic_action_t;
+import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -389,6 +390,7 @@ public class AutomaticActionState extends BaseState{
 
 	@Override
 	public void onStateSet(){
+		gameWorld.getSystem(CollisionDetectionSystem.class).disableCollisions();
 		stateActive = true;
 		Gdx.input.setInputProcessor(this);
 		Gdx.input.setCatchBackKey(true);

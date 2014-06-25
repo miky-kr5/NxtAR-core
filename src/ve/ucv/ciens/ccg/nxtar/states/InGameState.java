@@ -28,6 +28,7 @@ import ve.ucv.ciens.ccg.nxtar.input.UserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
@@ -493,6 +494,7 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void onStateSet(){
+		gameWorld.getSystem(CollisionDetectionSystem.class).enableCollisions();
 		stateActive = true;
 		Gdx.input.setInputProcessor(this);
 		Gdx.input.setCatchBackKey(true);

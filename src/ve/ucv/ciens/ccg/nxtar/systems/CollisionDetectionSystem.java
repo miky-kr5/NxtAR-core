@@ -40,12 +40,14 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 	private GroupManager groupManager;
 	private BoundingBox colBB;
 	private BoundingBox targetBB;
+	private boolean     collisionsEnabled;
 
 	@SuppressWarnings("unchecked")
 	public CollisionDetectionSystem(){
 		super(Aspect.getAspectForAll(CollisionModelComponent.class, CollisionDetectionComponent.class).exclude(MarkerCodeComponent.class));
-		colBB    = new BoundingBox();
-		targetBB = new BoundingBox();
+		colBB             = new BoundingBox();
+		targetBB          = new BoundingBox();
+		collisionsEnabled = true;
 	}
 
 	@Override
@@ -56,6 +58,9 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 		CollisionDetectionComponent onCollision;
 		CollisionDetectionComponent onCollisionTarget;
 		ImmutableBag<Entity>        collidables;
+
+		if(!collisionsEnabled)
+			return;
 
 		// Get this entity's known necessary components.
 		collision   = collisionModelMapper.get(e);
@@ -100,5 +105,17 @@ public class CollisionDetectionSystem extends EntityProcessingSystem {
 				onCollisionTarget.colliding = false;
 			}
 		}
+	}
+
+	public boolean isCollisionDetectionEnabled(){
+		return collisionsEnabled;
+	}
+
+	public void enableCollisions(){
+		this.collisionsEnabled = true;
+	}
+
+	public void disableCollisions(){
+		this.collisionsEnabled = false;
 	}
 }

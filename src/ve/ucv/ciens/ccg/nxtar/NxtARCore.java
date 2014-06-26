@@ -28,6 +28,7 @@ import ve.ucv.ciens.ccg.nxtar.states.AutomaticActionSummaryState;
 import ve.ucv.ciens.ccg.nxtar.states.BaseState;
 import ve.ucv.ciens.ccg.nxtar.states.CameraCalibrationState;
 import ve.ucv.ciens.ccg.nxtar.states.InGameState;
+import ve.ucv.ciens.ccg.nxtar.states.InstructionsState;
 import ve.ucv.ciens.ccg.nxtar.states.MainMenuStateBase;
 import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.states.ScenarioEndSummaryState;
@@ -77,7 +78,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * Valid game states.
 	 */
 	public enum game_states_t {
-		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2), AUTOMATIC_ACTION(3), AUTOMATIC_ACTION_SUMMARY(4), SCENARIO_END_SUMMARY(5);
+		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2), AUTOMATIC_ACTION(3), AUTOMATIC_ACTION_SUMMARY(4), SCENARIO_END_SUMMARY(5), HINTS(6);
 
 		private int value;
 
@@ -90,7 +91,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		public static int getNumStates(){
-			return 6;
+			return 7;
 		}
 	};
 
@@ -285,6 +286,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 
 			states[game_states_t.AUTOMATIC_ACTION_SUMMARY.getValue()] = new AutomaticActionSummaryState(this);
 			states[game_states_t.SCENARIO_END_SUMMARY.getValue()]     = new ScenarioEndSummaryState(this);
+			states[game_states_t.HINTS.getValue()]                    = new InstructionsState(this);
 
 		}catch(IllegalArgumentException e){
 			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal argument caught creating states: ", e);
@@ -426,17 +428,19 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		// Render the debug overlay.
-		batch.setProjectionMatrix(pixelPerfectCamera.combined);
-		batch.begin();{
-			// Draw the FPS overlay.
-			font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
-			font.draw(batch, String.format("Total stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
-			font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
-			font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
-			font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
-			font.draw(batch, String.format("Device pitch: %f", Gdx.input.getPitch()), overlayX, overlayY - (5 * font.getCapHeight()) - 25);
-			font.draw(batch, String.format("Device azimuth: %f", Gdx.input.getAzimuth()), overlayX, overlayY - (6 * font.getCapHeight()) - 30);
-		}batch.end();
+		if(ProjectConstants.DEBUG){
+			batch.setProjectionMatrix(pixelPerfectCamera.combined);
+			batch.begin();{
+				// Draw the FPS overlay.
+				font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
+				font.draw(batch, String.format("Total stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
+				font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
+				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
+				font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
+				font.draw(batch, String.format("Device pitch: %f", Gdx.input.getPitch()), overlayX, overlayY - (5 * font.getCapHeight()) - 25);
+				font.draw(batch, String.format("Device azimuth: %f", Gdx.input.getAzimuth()), overlayX, overlayY - (6 * font.getCapHeight()) - 30);
+			}batch.end();
+		}
 	}
 
 	/**

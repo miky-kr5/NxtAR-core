@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2014 Miguel Angel Astor Romero
+ * Copyright (C) 2013 Miguel Angel Astor Romero
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,8 @@ package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
+import ve.ucv.ciens.ccg.nxtar.scenarios.HintsOverlayBase;
 import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
-import ve.ucv.ciens.ccg.nxtar.scenarios.SummaryOverlayBase;
-import ve.ucv.ciens.ccg.nxtar.systems.PlayerSystemBase;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
@@ -48,9 +47,9 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 
-public class ScenarioEndSummaryState extends BaseState {
-	private static final String TAG = "SCENARIO_SUMMARY";
-	private static final String CLASS_NAME = ScenarioEndSummaryState.class.getSimpleName();
+public class InstructionsState extends BaseState {
+	private static final String TAG = "HINTS_STATE";
+	private static final String CLASS_NAME = InstructionsState.class.getSimpleName();
 	private static final String SHADER_PATH = "shaders/movingBckg/movingBckg";
 
 	// Helper fields.
@@ -73,15 +72,14 @@ public class ScenarioEndSummaryState extends BaseState {
 	private Texture    buttonPressedTexture;
 	private BitmapFont font;
 
-	// Summary overlay related fields.
-	PlayerSystemBase   playerSystem;
-	SummaryOverlayBase summaryOverlay;
+	// Overlay related fields.
+	HintsOverlayBase   hintsOverlay;
 
 	// Button touch helper fields.
 	private boolean continueButtonTouched;
 	private int     continueButtonTouchPointer;
 
-	public  ScenarioEndSummaryState(NxtARCore core) throws IllegalArgumentException{
+	public  InstructionsState(NxtARCore core) throws IllegalArgumentException{
 		TextButtonStyle       textButtonStyle;
 		FreeTypeFontGenerator fontGenerator;
 		FreeTypeFontParameter fontParameters;
@@ -95,8 +93,7 @@ public class ScenarioEndSummaryState extends BaseState {
 		this.core                = core;
 		this.pixelPerfectCamera  = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		oButtonPressed           = false;
-		playerSystem             = ScenarioGlobals.getPlayerSystem();
-		summaryOverlay           = ScenarioGlobals.getScenarioSummaryOverlay();
+		hintsOverlay             = ScenarioGlobals.getHintsOverlay();
 
 		// Create the start button background.
 		buttonEnabledTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
@@ -181,7 +178,7 @@ public class ScenarioEndSummaryState extends BaseState {
 			drawBackground(core.batch);
 			core.batch.enableBlending();
 
-			summaryOverlay.render(core.batch, playerSystem.getPlayerSummary());
+			hintsOverlay.render(core.batch);
 
 			// Render buttons.
 			continueButton.draw(core.batch, 1.0f);
@@ -262,7 +259,7 @@ public class ScenarioEndSummaryState extends BaseState {
 			continueButton.setChecked(false);
 			continueButtonTouched = false;
 			continueButtonTouchPointer = -1;
-			core.nextState = game_states_t.MAIN_MENU;
+			core.nextState = game_states_t.IN_GAME;
 			Gdx.app.log(TAG, CLASS_NAME + ".touchDown() :: Start button released.");
 		}
 
@@ -286,7 +283,7 @@ public class ScenarioEndSummaryState extends BaseState {
 	@Override
 	public boolean keyDown(int keycode){
 		if(keycode == Input.Keys.BACK){
-			core.nextState = game_states_t.MAIN_MENU;
+			core.nextState = game_states_t.IN_GAME;
 			return true;
 		}
 		return false;
@@ -318,7 +315,7 @@ public class ScenarioEndSummaryState extends BaseState {
 				if(oButtonPressed){
 					oButtonPressed = false;
 					continueButton.setChecked(false);
-					core.nextState = game_states_t.MAIN_MENU;
+					core.nextState = game_states_t.IN_GAME;
 				}
 			}
 			return true;

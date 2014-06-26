@@ -227,10 +227,12 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				manager.remove(b, Integer.toString(marker.code));
 				b.deleteFromWorld();
 
-				if(!Utils.isDeviceRollValid() || (Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) > ProjectConstants.MAX_ABS_ROLL)){
-					Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb exploded.");
-					createFadeOutEffect();
-					reducePlayerLivesByOne();
+				if(Utils.deviceHasOrientationSensors()){
+					if(!Utils.isDeviceRollValid() || (Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) > ProjectConstants.MAX_ABS_ROLL)){
+						Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb exploded.");
+						createFadeOutEffect();
+						reducePlayerLivesByOne();
+					}
 				}
 
 				// Disable all related entities.
@@ -363,7 +365,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 			Gdx.app.log(TAG, CLASS_NAME + ".reducePlayerLivesByOne(): No players found.");
 		}
 	}
-	
+
 	/**
 	 * <p>Disables all entities associated with the corresponding marker code.</p>
 	 * 

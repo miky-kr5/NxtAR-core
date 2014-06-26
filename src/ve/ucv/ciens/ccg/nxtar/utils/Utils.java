@@ -53,15 +53,24 @@ public abstract class Utils{
 	}
 
 	/**
+	 * <p>Checks if the running device posseses and accelerometer and compass.</p>
+	 * 
+	 * @return True when the device supports both sensors. False otherwise.
+	 */
+	public static boolean deviceHasOrientationSensors(){
+		return Gdx.input.isPeripheralAvailable(Peripheral.Accelerometer) && Gdx.input.isPeripheralAvailable(Peripheral.Compass);
+	}
+
+	/**
 	 * <p>Checks if the device's orientation is available and wihtin some arbitrary ranges.</p>
 	 * 
 	 * @return True if the device can detect it's orientation and it's within range. False otherwise.
 	 */
 	public static boolean isDeviceRollValid(){
-		boolean rollValid = Gdx.input.isPeripheralAvailable(Peripheral.Accelerometer) && Gdx.input.isPeripheralAvailable(Peripheral.Compass);
+		boolean rollValid = false;
 		float azimuth, pitch;
 
-		if(rollValid){
+		if(deviceHasOrientationSensors()){
 			azimuth = Gdx.input.getAzimuth();
 			pitch = Gdx.input.getPitch();
 

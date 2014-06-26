@@ -45,6 +45,7 @@ public abstract class ScenarioGlobals{
 	private static SummaryOverlayBase                automaticActionSummaryOverlay    = null;
 	private static PlayerSystemBase                  playerSystem                     = null;
 	private static SummaryOverlayBase                scenarioSummaryOverlay           = null;
+	private static HintsOverlayBase                  hintsOverlay                     = null;
 
 	public static void init(NxtARCore core) throws IllegalArgumentException, InstantiationException, IllegalAccessException{
 		if(core == null)
@@ -132,6 +133,18 @@ public abstract class ScenarioGlobals{
 			}
 		}
 
+		if(hintsOverlay == null){
+			try {
+				hintsOverlay = (HintsOverlayBase) ScenarioImplementation.hintsOverlayClass.newInstance();
+			} catch (InstantiationException e) {
+				System.out.println("Error instantiating hints overlay.");
+				throw e;
+			} catch (IllegalAccessException e) {
+				System.out.println("Error accessing hints overlay.");
+				throw e;
+			}
+		}
+
 		playerSystem.setCore(core);
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
@@ -165,6 +178,7 @@ public abstract class ScenarioGlobals{
 		scenarioSummaryOverlay.dispose();
 		automaticActionSummaryOverlay.dispose();
 		entityCreator.dispose();
+		hintsOverlay.dispose();
 
 		entityCreator                 = null;
 		gameLogicSystem               = null;
@@ -173,6 +187,7 @@ public abstract class ScenarioGlobals{
 		automaticActionSummaryOverlay = null;
 		playerSystem                  = null;
 		scenarioSummaryOverlay        = null;
+		hintsOverlay                  = null;
 
 		System.gc();
 	}
@@ -224,5 +239,12 @@ public abstract class ScenarioGlobals{
 			throw new IllegalStateException("Calling getScenarioSummaryOverlay() before init.");
 
 		return scenarioSummaryOverlay;
+	}
+
+	public static HintsOverlayBase getHintsOverlay() throws IllegalStateException{
+		if(hintsOverlay == null)
+			throw new IllegalStateException("Calling getHintsOverlay() before init.");
+
+		return hintsOverlay;
 	}
 }

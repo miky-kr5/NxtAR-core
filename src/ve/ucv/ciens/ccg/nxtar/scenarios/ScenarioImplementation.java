@@ -18,6 +18,7 @@ package ve.ucv.ciens.ccg.nxtar.scenarios;
 import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameAutomaticActionPerformer;
 import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameAutomaticActionSummaryOverlay;
 import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameEntityCreator;
+import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameInstructionsOverlay;
 import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameLogicSystem;
 import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGamePlayerSystem;
 import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameScenarioEndingOverlay;
@@ -30,6 +31,7 @@ public final class ScenarioImplementation{
 	public static final Class automaticActionSummaryOverlay  = BombGameAutomaticActionSummaryOverlay.class;
 	public static final Class playerSystemClass              = BombGamePlayerSystem.class;
 	public static final Class scenarioSummaryOverlayClass    = BombGameScenarioEndingOverlay.class;
+	public static final Class hintsOverlayClass              = BombGameInstructionsOverlay.class;
 
 	private ScenarioImplementation(){}
 }

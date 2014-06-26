@@ -124,6 +124,7 @@ public class InGameState extends BaseState{
 	private Texture                         correctAngleLedOnTexture;
 	private Texture                         correctAngleLedOffTexture;
 	private Texture                         orientationSliderTexture;
+	private Texture                         hintButtonTexture;
 
 	// Gui renderable sprites.
 	private Sprite                          motorAButton;
@@ -142,6 +143,7 @@ public class InGameState extends BaseState{
 	private Sprite                          correctAngleLedOnSprite;
 	private Sprite                          correctAngleLedOffSprite;
 	private Sprite                          orientationSlider;
+	private Sprite                          hintButton;
 
 	// Button touch helper fields.
 	private boolean[]                       buttonsTouched;
@@ -230,6 +232,16 @@ public class InGameState extends BaseState{
 		// Set up he buttons.
 		if(!Ouya.runningOnOuya)
 			setUpButtons();
+
+		// Set up the hint button.
+		// Set up the correct angle leds.
+		hintButtonTexture = new Texture(Gdx.files.internal("data/gfx/gui/help.png"));
+		hintButton        = new Sprite(hintButtonTexture);
+		hintButton.setSize(hintButton.getWidth() * (Ouya.runningOnOuya ? 0.5f : 0.25f), hintButton.getHeight() * (Ouya.runningOnOuya ? 0.5f : 0.25f));
+		if(!Ouya.runningOnOuya)
+			hintButton.setPosition(-(Gdx.graphics.getWidth() / 2) + 5, (Gdx.graphics.getHeight() / 2) - hintButton.getHeight() - 5);
+		else
+			hintButton.setPosition(-(Utils.getScreenWidthWithOverscan() / 2) + 5, -hintButton.getHeight() / 2);
 
 		// Set up the game world.
 		gameWorld = ScenarioGlobals.getGameWorld();
@@ -443,6 +455,11 @@ public class InGameState extends BaseState{
 			}core.batch.end();
 		}
 
+		core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
+		core.batch.begin();{
+			hintButton.draw(core.batch);
+		}core.batch.end();
+
 		fadeEffectRenderingSystem.process();
 		playerSystem.process();
 
@@ -483,6 +500,9 @@ public class InGameState extends BaseState{
 
 		if(orientationSliderTexture != null)
 			orientationSliderTexture.dispose();
+
+		if(hintButtonTexture != null)
+			hintButtonTexture.dispose();
 
 		if(backgroundShader != null)
 			backgroundShader.dispose();
@@ -744,17 +764,20 @@ public class InGameState extends BaseState{
 				buttonPointers[7] = pointer;
 				controlMode = controlMode.getValue() == robot_control_mode_t.WHEEL_CONTROL.getValue() ? robot_control_mode_t.ARM_CONTROL : robot_control_mode_t.WHEEL_CONTROL;
 
+			}else if(hintButton.getBoundingRectangle().contains(touchPointWorldCoords)){
+				core.nextState = game_states_t.HINTS;
 			}else{
+				if(controlMode == robot_control_mode_t.ARM_CONTROL){
+					touchPointWorldCoords.set(win2world.x, win2world.y);
 
-				touchPointWorldCoords.set(win2world.x, win2world.y);
+					if(frameBufferSprite != null && frameBufferSprite.getBoundingRectangle().contains(touchPointWorldCoords)){
+						Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point inside framebuffer.");
+						input = new TouchUserInput();
+						robotArmPositioningSystem.setUserInput(input);
 
-				if(frameBufferSprite != null && frameBufferSprite.getBoundingRectangle().contains(touchPointWorldCoords)){
-					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point inside framebuffer.");
-					input = new TouchUserInput();
-					robotArmPositioningSystem.setUserInput(input);
-
-				}else{
-					Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point outside framebuffer.");
+					}else{
+						Gdx.app.log(TAG, CLASS_NAME + "touchDown(): Touch point outside framebuffer.");
+					}
 				}
 			}
 
@@ -1060,6 +1083,9 @@ public class InGameState extends BaseState{
 		if(keycode == Input.Keys.BACK){
 			core.nextState = game_states_t.MAIN_MENU;
 			return true;
+		}else if(keycode == Input.Keys.F1){
+			core.nextState = game_states_t.HINTS;
+			return true;
 		}
 
 		switch(keycode){
@@ -1223,7 +1249,9 @@ public class InGameState extends BaseState{
 				robotArmPositioningSystem.setUserInput(userInput);
 				robotArmPositioningSystem.process();
 
-			}else if(buttonCode == Ouya.BUTTON_A){
+			}else if(buttonCode == Ouya.BUTTON_U){
+				core.nextState = game_states_t.HINTS;
+			}else if(buttonCode == Ouya.BUTTON_A || buttonCode == Ouya.BUTTON_MENU){
 				core.nextState = game_states_t.MAIN_MENU;
 			}
 

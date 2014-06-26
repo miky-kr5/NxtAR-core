@@ -67,7 +67,7 @@ public abstract class Utils{
 	 * @return True if the device can detect it's orientation and it's within range. False otherwise.
 	 */
 	public static boolean isDeviceRollValid(){
-		boolean rollValid = false;
+		boolean rollValid = true;
 		float azimuth, pitch;
 
 		if(deviceHasOrientationSensors()){
@@ -79,7 +79,8 @@ public abstract class Utils{
 
 			if(rollValid && (azimuth < MIN_AZIMUTH || azimuth > MAX_AZIMUTH))
 				rollValid = false;
-		}
+		}else
+			rollValid = false;
 
 		return rollValid;
 	}

@@ -13,20 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.graphics.shaders;
+package ve.ucv.ciens.ccg.nxtar.components;
 
-import ve.ucv.ciens.ccg.nxtar.exceptions.ShaderFailedToLoadException;
+import com.artemis.Component;
 
-import com.badlogic.gdx.graphics.glutils.ShaderProgram;
+/**
+ * Tag class.
+ */
+public abstract class PlayerComponentBase extends Component {
+	public static final String PLAYER_GROUP = "PLAYER";
 
-public abstract class CustomShaderBase{
-	protected ShaderProgram shaderProgram;
+	public boolean gameFinished;
+	public boolean victory;
 
-	public abstract CustomShaderBase loadShader() throws ShaderFailedToLoadException;
+	public PlayerComponentBase(){
+		this.gameFinished = false;
+		this.victory = false;
+	}
 
-	public abstract void setUniforms();
-
-	public ShaderProgram getShaderProgram(){
-		return this.shaderProgram;
+	public void reset(){
+		this.gameFinished = false;
+		this.victory = false;
 	}
 }

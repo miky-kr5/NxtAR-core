@@ -13,12 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.exceptions;
+package ve.ucv.ciens.ccg.nxtar.components;
 
-public class ShaderFailedToLoadException extends Exception {
-	private static final long serialVersionUID = 9989L;
+import com.artemis.Component;
 
-	public ShaderFailedToLoadException(String msg){
-		super(msg);
+public class VisibilityComponent extends Component {
+	public boolean visible;
+
+	public VisibilityComponent(){
+		this.visible = true;
+	}
+
+	public VisibilityComponent(boolean visibility){
+		this.visible = visibility;
 	}
 }

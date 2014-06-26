@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.scenarios;
 
-import com.artemis.Component;
-import com.badlogic.gdx.graphics.g3d.Model;
-import com.badlogic.gdx.graphics.g3d.ModelInstance;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.Disposable;
 
-public class ModelComponent extends Component {
-	public ModelInstance instance;
-
-	public ModelComponent(Model model) throws IllegalArgumentException{
-		if(model == null)
-			throw new IllegalArgumentException("Model is null.");
-
-		this.instance = new ModelInstance(model);
-	}
+/**
+ * <p>Base class for hint screens.</p>
+ */
+public abstract class HintsOverlayBase implements Disposable{
+	/**
+	 * <p>Renders the overlay.</p>
+	 * 
+	 * @param batch The {@link SpriteBatch} to use for rendering.
+	 */
+	public abstract void render(SpriteBatch batch);
 }

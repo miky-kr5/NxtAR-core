@@ -13,20 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.entities;
+package ve.ucv.ciens.ccg.nxtar.input;
 
-public class BombGameEntityCreator extends EntityCreatorBase {
-	public BombGameEntityCreator(){
-		// TODO: Empty constructor.
+import com.badlogic.gdx.math.Vector3;
+
+public class TouchUserInput extends UserInput {
+	public Vector3 userTouchEndPoint;
+
+	public TouchUserInput(){
+		this.userTouchEndPoint = new Vector3();
 	}
 
-	@Override
-	public void createAllEntities() {
-		// TODO Auto-generated method stub
+	public TouchUserInput(Vector3 userTouchEndPoint){
+		this.userTouchEndPoint = new Vector3(userTouchEndPoint);
 	}
 
-	@Override
-	public void dispose() {
-		// TODO Auto-generated method stub
+	public TouchUserInput(float x, float y, float z){
+		this.userTouchEndPoint = new Vector3(x, y, z);
 	}
 }

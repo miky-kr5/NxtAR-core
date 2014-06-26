@@ -16,20 +16,23 @@
 package ve.ucv.ciens.ccg.nxtar.components;
 
 import com.artemis.Component;
+import com.badlogic.gdx.graphics.g3d.Model;
+import com.badlogic.gdx.graphics.g3d.ModelInstance;
 
-public class MarkerCodeComponent extends Component {
-	public int     code;
-	public boolean enabled;
+public class CollisionModelComponent extends Component {
+	public ModelInstance instance;
 
-	public MarkerCodeComponent(int code) throws IllegalArgumentException{
-		if(code < 0 || code > 1024)
-			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
-		this.code = code;
-		this.enabled = true;
+	public CollisionModelComponent(Model model) throws IllegalArgumentException{
+		if(model == null)
+			throw new IllegalArgumentException("Model is null.");
+
+		this.instance = new ModelInstance(model);
 	}
 
-	public MarkerCodeComponent(int code, boolean enabled){
-		this(code);
-		this.enabled = enabled;
+	public CollisionModelComponent(ModelInstance instance) throws IllegalArgumentException{
+		if(instance == null)
+			throw new IllegalArgumentException("Instance is null.");
+
+		this.instance = instance;
 	}
 }

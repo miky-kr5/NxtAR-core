@@ -17,19 +17,10 @@ package ve.ucv.ciens.ccg.nxtar.components;
 
 import com.artemis.Component;
 
-public class MarkerCodeComponent extends Component {
-	public int     code;
-	public boolean enabled;
+public class CollisionDetectionComponent extends Component {
+	public boolean colliding;
 
-	public MarkerCodeComponent(int code) throws IllegalArgumentException{
-		if(code < 0 || code > 1024)
-			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
-		this.code = code;
-		this.enabled = true;
-	}
-
-	public MarkerCodeComponent(int code, boolean enabled){
-		this(code);
-		this.enabled = enabled;
+	public CollisionDetectionComponent(){
+		this.colliding = false;
 	}
 }

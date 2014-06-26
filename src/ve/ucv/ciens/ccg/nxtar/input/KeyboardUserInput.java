@@ -13,19 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.input;
 
-import ve.ucv.ciens.ccg.nxtar.graphics.shaders.CustomShaderBase;
+public class KeyboardUserInput extends UserInput {
+	public boolean      keyLeft;
+	public boolean      keyRight;
+	public boolean      keyUp;
+	public boolean      keyDown;
+	public boolean      keySpace;
 
-import com.artemis.Component;
-
-public class CustomShaderComponent extends Component {
-	public CustomShaderBase shader;
-
-	public CustomShaderComponent(CustomShaderBase shader) throws IllegalArgumentException{
-		if(shader == null)
-			throw new IllegalArgumentException("Shader cannot be null.");
-
-		this.shader = shader;
+	public KeyboardUserInput(){
+		this.keyLeft     = false;
+		this.keyRight    = false;
+		this.keyUp       = false;
+		this.keyDown     = false;
+		this.keySpace    = false;
 	}
 }

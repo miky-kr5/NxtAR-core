@@ -15,21 +15,26 @@
  */
 package ve.ucv.ciens.ccg.nxtar;
 
-import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
-import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ActionResolver;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
+import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor;
 import ve.ucv.ciens.ccg.nxtar.network.RobotControlThread;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.ServiceDiscoveryThread;
 import ve.ucv.ciens.ccg.nxtar.network.VideoStreamingThread;
+import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
+import ve.ucv.ciens.ccg.nxtar.states.AutomaticActionState;
+import ve.ucv.ciens.ccg.nxtar.states.AutomaticActionSummaryState;
 import ve.ucv.ciens.ccg.nxtar.states.BaseState;
 import ve.ucv.ciens.ccg.nxtar.states.CameraCalibrationState;
 import ve.ucv.ciens.ccg.nxtar.states.InGameState;
+import ve.ucv.ciens.ccg.nxtar.states.InstructionsState;
 import ve.ucv.ciens.ccg.nxtar.states.MainMenuStateBase;
 import ve.ucv.ciens.ccg.nxtar.states.OuyaMainMenuState;
-import ve.ucv.ciens.ccg.nxtar.states.PauseState;
+import ve.ucv.ciens.ccg.nxtar.states.ScenarioEndSummaryState;
 import ve.ucv.ciens.ccg.nxtar.states.TabletMainMenuState;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
+import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 import aurelienribon.tweenengine.Tween;
 import aurelienribon.tweenengine.TweenEquations;
 import aurelienribon.tweenengine.primitives.MutableFloat;
@@ -51,7 +56,7 @@ import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 /**
  * <p>Core of the application.</p>
  * 
- * <p>This class has three basic resposibilities:</p>
+ * <p>This class has three basic responsibilities:</p>
  * <ul>
  *     <li> Handling the main game loop.</li>
  *     <li> Starting and destroying the networking threads.</li>
@@ -73,7 +78,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * Valid game states.
 	 */
 	public enum game_states_t {
-		MAIN_MENU(0), IN_GAME(1), PAUSED(2), CALIBRATION(3);
+		MAIN_MENU(0), IN_GAME(1), CALIBRATION(2), AUTOMATIC_ACTION(3), AUTOMATIC_ACTION_SUMMARY(4), SCENARIO_END_SUMMARY(5), HINTS(6);
 
 		private int value;
 
@@ -86,7 +91,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		}
 
 		public static int getNumStates(){
-			return 4;
+			return 7;
 		}
 	};
 
@@ -121,7 +126,7 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	/**
 	 * <p>Wrapper around the Operating System methods.</p>
 	 */
-	private ActionResolver osFunction;
+	private ActionResolver actionResolver;
 
 	// Networking related fields.
 	/**
@@ -206,10 +211,10 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 
 		// Check if the concrete application implements all required interfaces.
 		try{
-			this.osFunction = (ActionResolver)concreteApp;
+			this.actionResolver = (ActionResolver)concreteApp;
 		}catch(ClassCastException cc){
 			Gdx.app.debug(TAG, CLASS_NAME + ".Main() :: concreteApp does not implement the Toaster interface. Toasting disabled.");
-			this.osFunction = null;
+			this.actionResolver = null;
 		}
 
 		try{
@@ -229,46 +234,85 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 * sets the application states.</p>
 	 */
 	public void create(){
-		// Create the state objects.
-		states = new BaseState[game_states_t.getNumStates()];
-		if(Ouya.runningOnOuya)
-			states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
-		else
-			states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
-		states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
-		states[game_states_t.PAUSED.getValue()] = new PauseState(this);
-		states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
-
-		// Register controller listeners.
-		for(BaseState state : states){
-			Controllers.addListener(state);
+		try {
+			ScenarioGlobals.init(this);
+		} catch (IllegalArgumentException e) {
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal argument initializing globals: ", e);
+			System.exit(1);
+			return;
+		} catch (InstantiationException e) {
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Instantiation exception initializing globals: ", e);
+			System.exit(1);
+			return;
+		} catch (IllegalAccessException e) {
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal access exception initializing globals: ", e);
+			System.exit(1);
+			return;
 		}
 
 		// Set up rendering fields and settings.
 		batch = new SpriteBatch();
 		batch.enableBlending();
 		batch.setBlendFunction(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-
 		pixelPerfectCamera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
 		ShaderProgram.pedantic = false;
 
-		// Set up the overlay font.
-		if(ProjectConstants.DEBUG){
-			overlayX = -((Gdx.graphics.getWidth() * ProjectConstants.OVERSCAN) / 2) + 10;
-			overlayY = ((Gdx.graphics.getHeight() * ProjectConstants.OVERSCAN) / 2) - 10;
+		// Create the state objects.
+		states = new BaseState[game_states_t.getNumStates()];
 
-			font = new BitmapFont();
-			font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
-			if(!Ouya.runningOnOuya){
-				font.setScale(1.0f);
-			}else{
-				font.setScale(2.5f);
+		try{
+			if(Ouya.runningOnOuya)
+				states[game_states_t.MAIN_MENU.getValue()] = new OuyaMainMenuState(this);
+			else
+				states[game_states_t.MAIN_MENU.getValue()] = new TabletMainMenuState(this);
+
+			try{
+				states[game_states_t.IN_GAME.getValue()] = new InGameState(this);
+			}catch(IllegalStateException e){
+				Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in IN_GAME_STATE: ", e);
+				System.exit(1);
+				return;
 			}
+
+			states[game_states_t.CALIBRATION.getValue()] = new CameraCalibrationState(this);
+
+			try{
+				states[game_states_t.AUTOMATIC_ACTION.getValue()] = new AutomaticActionState(this);
+			}catch(IllegalStateException e){
+				Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal state in AUTOMATIC_ACTION_STATE: ", e);
+				System.exit(1);
+				return;
+			}
+
+			states[game_states_t.AUTOMATIC_ACTION_SUMMARY.getValue()] = new AutomaticActionSummaryState(this);
+			states[game_states_t.SCENARIO_END_SUMMARY.getValue()]     = new ScenarioEndSummaryState(this);
+			states[game_states_t.HINTS.getValue()]                    = new InstructionsState(this);
+
+		}catch(IllegalArgumentException e){
+			Gdx.app.error(TAG, CLASS_NAME + ".create(): Illegal argument caught creating states: ", e);
+			System.exit(1);
+			return;
+		}
+
+		// Register controller listeners.
+		for(BaseState state : states){
+			Controllers.addListener(state);
+		}
+
+		// Set up the overlay font.
+		overlayX = -(Utils.getScreenWidthWithOverscan() / 2) + 10;
+		overlayY = (Utils.getScreenHeightWithOverscan() / 2) - 10;
+
+		font = new BitmapFont();
+		font.setColor(1.0f, 1.0f, 0.0f, 1.0f);
+		if(!Ouya.runningOnOuya){
+			font.setScale(1.0f);
+		}else{
+			font.setScale(2.5f);
 		}
 
 		// Start networking.
-		osFunction.enableMulticast();
+		actionResolver.enableMulticast();
 
 		Gdx.app.debug(TAG, CLASS_NAME + ".create() :: Creating network threads");
 		serviceDiscoveryThread = ServiceDiscoveryThread.getInstance();
@@ -302,11 +346,10 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 		fadeTexture = new Texture(pixmap);
 		pixmap.dispose();
 
-		alpha = new MutableFloat(0.0f);
+		alpha   = new MutableFloat(0.0f);
 		fadeOut = Tween.to(alpha, 0, 0.5f).target(1.0f).ease(TweenEquations.easeInQuint);
-		fadeIn = Tween.to(alpha, 0, 0.5f).target(0.0f).ease(TweenEquations.easeInQuint);
-
-		fading = false;
+		fadeIn  = Tween.to(alpha, 0, 0.5f).target(0.0f).ease(TweenEquations.easeInQuint);
+		fading  = false;
 
 		// Set initial input handlers.
 		Gdx.input.setInputProcessor(states[currState.getValue()]);
@@ -326,6 +369,10 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	 */
 	public void render(){
 		super.render();
+
+		// Load the assets.
+		if(!ScenarioGlobals.getEntityCreator().areEntitiesCreated())
+			ScenarioGlobals.getEntityCreator().updateAssetManager();
 
 		// If the current state set a value for nextState then switch to that state.
 		if(nextState != null){
@@ -385,82 +432,96 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 			batch.setProjectionMatrix(pixelPerfectCamera.combined);
 			batch.begin();{
 				// Draw the FPS overlay.
-				font.draw(batch, String.format("Render FPS:        %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
-				font.draw(batch, String.format("Total  stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
-				font.draw(batch, String.format("Lost   stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
+				font.draw(batch, String.format("Render FPS: %d", Gdx.graphics.getFramesPerSecond()), overlayX, overlayY);
+				font.draw(batch, String.format("Total stream FPS: %d", videoThread.getFps()), overlayX, overlayY - font.getCapHeight() - 5);
+				font.draw(batch, String.format("Lost stream FPS: %d", videoThread.getLostFrames()), overlayX, overlayY - (2 * font.getCapHeight()) - 10);
 				font.draw(batch, String.format("Light sensor data: %d", sensorThread.getLightSensorReading()), overlayX, overlayY - (3 * font.getCapHeight()) - 15);
+				font.draw(batch, String.format("Device roll: %f", Gdx.input.getRoll()), overlayX, overlayY - (4 * font.getCapHeight()) - 20);
+				font.draw(batch, String.format("Device pitch: %f", Gdx.input.getPitch()), overlayX, overlayY - (5 * font.getCapHeight()) - 25);
+				font.draw(batch, String.format("Device azimuth: %f", Gdx.input.getAzimuth()), overlayX, overlayY - (6 * font.getCapHeight()) - 30);
 			}batch.end();
 		}
 	}
 
 	/**
-	 * <p>Pause a currently running thread. Pausing an already paused thread is a
-	 * no op.</p>
+	 * <p>Pauses the video streaming and the current state.</p>
 	 */
 	public void pause(){
 		if(videoThread != null)
 			videoThread.pause();
-		// TODO: Ignore pausing paused threads.
-		// TODO: Pause the other threads.
+
+		states[currState.getValue()].pause();
 	}
 
 	/**
-	 * <p>Resume a currently paused thread. Resuming an already resumed thread is a
-	 * no op.</p>
+	 * <p>Resumes the video streaming and the current state.</p>
 	 */
 	public void resume(){
 		if(videoThread != null)
 			videoThread.play();
-		// TODO: Ignore resuming resumed threads.
-		// TODO: Resume the other threads.
+
+		states[currState.getValue()].resume();
 	}
 
 	/**
 	 * <p>Clear graphic resources</p> 
 	 */
 	public void dispose(){
-		// Finish network threads.
-		videoThread.finish();
-		robotThread.finish();
-
-		// Dispose graphic objects.
-		fadeTexture.dispose();
-		batch.dispose();
-		if(ProjectConstants.DEBUG){
-			font.dispose();
-		}
-
 		// Dispose screens.
 		for(int i = 0; i < states.length; i++){
 			states[i].dispose();
 		}
+
+		// Finish network threads.
+		serviceDiscoveryThread.finish();
+		videoThread.finish();
+		robotThread.finish();
+		sensorThread.finish();
+		serviceDiscoveryThread = null;
+		videoThread = null;
+		robotThread = null;
+		sensorThread = null;
+		ServiceDiscoveryThread.freeInstance();
+		VideoStreamingThread.freeInstance();
+		RobotControlThread.freeInstance();
+		SensorReportThread.freeInstance();
+
+		// Dispose graphic objects.
+		fadeTexture.dispose();
+		batch.dispose();
+		font.dispose();
+
+		ScenarioGlobals.dispose();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	  ; APPLICATION EVENTS LISTENER INTERFACE METHODS ;
 	  ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;*/
 
-	// TODO: Disable start game button until camera has been sucessfully calibrated.
-	// TODO: Add calibration listener callback.
-
-	/**
-	 * <p>Callback used by the networking threads to notify sucessfull connections
-	 * to the application</p>
-	 * 
-	 * @param streamName The name of the thread notifying a connection.
-	 */
 	@Override
-	public synchronized void networkStreamConnected(String streamName){
+	public synchronized void onNetworkStreamConnected(String streamName){
 		Gdx.app.log(TAG, CLASS_NAME + ".networkStreamConnected() :: Stream " + streamName + " connected.");
 		connections += 1;
 
 		if(connections >= 3){
 			Gdx.app.debug(TAG, CLASS_NAME + ".networkStreamConnected() :: Stopping service broadcast.");
 			serviceDiscoveryThread.finish();
-			osFunction.disableMulticast();
-			osFunction.showShortToast("Client connected");
+			if(actionResolver != null) actionResolver.disableMulticast();
+			if(actionResolver != null) actionResolver.showShortToast("Client connected");
 			((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onClientConnected();
 		}
+	}
+
+	@Override
+	public void onAssetsLoaded(){
+		if(actionResolver != null) actionResolver.showShortToast("All assets sucessfully loaded.");
+		((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onAssetsLoaded();
+	}
+
+	@Override
+	public void onCameraCalibrated(){
+		if(actionResolver != null) actionResolver.showShortToast("Camera successfully calibrated.");
+		((MainMenuStateBase)states[game_states_t.MAIN_MENU.getValue()]).onCameraCalibrated();
 	}
 
 	/*;;;;;;;;;;;;;;;;;;
@@ -468,15 +529,14 @@ public class NxtARCore extends Game implements ApplicationEventsListener{
 	  ;;;;;;;;;;;;;;;;;;*/
 
 	/**
-	 * <p>Show a toast message on screen using the O.S. functionality
-	 * provider.</p>
+	 * <p>Show a toast message on screen using the {@link ActionResolver}.</p>
 	 * @param msg The message to show.
 	 * @param longToast True for a lasting toast. False for a short toast.
 	 */
 	public void toast(String msg, boolean longToast){
-		if(osFunction != null){
-			if(longToast) osFunction.showLongToast(msg);
-			else osFunction.showShortToast(msg);
+		if(actionResolver != null){
+			if(longToast) actionResolver.showLongToast(msg);
+			else actionResolver.showShortToast(msg);
 		}
 	}
 }

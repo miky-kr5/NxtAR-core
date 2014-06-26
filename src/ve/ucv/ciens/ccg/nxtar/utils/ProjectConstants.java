@@ -28,13 +28,14 @@ public abstract class ProjectConstants{
 	public static final int     EXIT_SUCCESS               = 0;
 	public static final int     EXIT_FAILURE               = 1;
 
-	public static final boolean DEBUG                      = true;
+	public static final boolean DEBUG                      = false;
 
 	public static final int[]   POWERS_OF_2                = {64, 128, 256, 512, 1024, 2048};
+	public static final float   MAX_ABS_ROLL               = 60.0f;
 
 	public static final float   OVERSCAN;
 	public static final int     MENU_BUTTON_FONT_SIZE;
-	public static final String  FONT_CHARS                 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+	public static final String  FONT_CHARS                 = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890:,";
 
 	public static final int     MAXIMUM_NUMBER_OF_MARKERS  = 5;
 	public static final int     CALIBRATION_PATTERN_POINTS = 54;

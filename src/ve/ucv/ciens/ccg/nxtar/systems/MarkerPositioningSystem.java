@@ -17,6 +17,7 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.components.GeometryComponent;
 import ve.ucv.ciens.ccg.nxtar.components.MarkerCodeComponent;
+import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
@@ -25,20 +26,17 @@ import com.artemis.ComponentMapper;
 import com.artemis.Entity;
 import com.artemis.annotations.Mapper;
 import com.artemis.systems.EntityProcessingSystem;
-import com.badlogic.gdx.Gdx;
 
 public class MarkerPositioningSystem extends EntityProcessingSystem {
 	@Mapper ComponentMapper<MarkerCodeComponent> markerMapper;
-	@Mapper ComponentMapper<GeometryComponent> geometryMapper;
-
-	private static final String TAG = "MARKER_POSITIONING_SYSTEM";
-	private static final String CLASS_NAME = MarkerPositioningSystem.class.getSimpleName();
+	@Mapper ComponentMapper<GeometryComponent>   geometryMapper;
+	@Mapper ComponentMapper<VisibilityComponent> visibilityMapper;
 
 	private MarkerData markers;
 
 	@SuppressWarnings("unchecked")
 	public MarkerPositioningSystem(){
-		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class));
+		super(Aspect.getAspectForAll(MarkerCodeComponent.class, GeometryComponent.class, VisibilityComponent.class));
 
 		markers = null;
 	}
@@ -51,26 +49,25 @@ public class MarkerPositioningSystem extends EntityProcessingSystem {
 	protected void process(Entity e) {
 		MarkerCodeComponent marker;
 		GeometryComponent   geometry;
+		VisibilityComponent visibility;
 
 		if(markers == null)
 			return;
 
-		Gdx.app.log(TAG, CLASS_NAME + ".process(): Getting components.");
-		marker   = markerMapper.get(e);
-		geometry = geometryMapper.get(e);
+		marker     = markerMapper.get(e);
+		geometry   = geometryMapper.get(e);
+		visibility = visibilityMapper.get(e);
 
-		Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing markers.");
 		for(int i = 0; i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
 			if(markers.markerCodes[i] != 1){
-				Gdx.app.log(TAG, CLASS_NAME + ".process(): Checking marker code: " + Integer.toString(markers.markerCodes[i]));
-				Gdx.app.log(TAG, CLASS_NAME + ".process(): This entity's code is: " + Integer.toString(marker.code));
 				if(markers.markerCodes[i] == marker.code){
-					Gdx.app.log(TAG, CLASS_NAME + ".process(): Processing marker code " + Integer.toString(markers.markerCodes[i]) + ".");
 					geometry.position.set(markers.translationVectors[i]);
 					geometry.rotation.set(markers.rotationMatrices[i]);
+					visibility.visible = true;
+					break;
+				}else{
+					visibility.visible = false;
 				}
-			}else{
-				Gdx.app.log(TAG, CLASS_NAME + ".process(): Skipping marker number " + Integer.toString(i) + ".");
 			}
 		}
 	}

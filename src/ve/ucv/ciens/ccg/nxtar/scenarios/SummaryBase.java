@@ -13,23 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.scenarios;
 
-import com.artemis.Component;
-
-public class MarkerCodeComponent extends Component {
-	public int     code;
-	public boolean enabled;
-
-	public MarkerCodeComponent(int code) throws IllegalArgumentException{
-		if(code < 0 || code > 1024)
-			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
-		this.code = code;
-		this.enabled = true;
-	}
-
-	public MarkerCodeComponent(int code, boolean enabled){
-		this(code);
-		this.enabled = enabled;
-	}
+public abstract class SummaryBase{
+	public abstract void reset();
 }

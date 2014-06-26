@@ -13,23 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
 import com.artemis.Component;
 
-public class MarkerCodeComponent extends Component {
-	public int     code;
+public class BombComponent extends Component {
+	public enum bomb_type_t{
+		COMBINATION(0), INCLINATION(1), WIRES(2);
+
+		private int value;
+
+		private bomb_type_t(int value){
+			this.value = value;
+		}
+
+		public int getValue(){
+			return this.value;
+		}
+	};
+
+	public int id;
+	public bomb_type_t bombType;
 	public boolean enabled;
 
-	public MarkerCodeComponent(int code) throws IllegalArgumentException{
-		if(code < 0 || code > 1024)
-			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
-		this.code = code;
+	public BombComponent(int id, bomb_type_t bomb_type){
+		this.id = id;
+		this.bombType = bomb_type;
 		this.enabled = true;
 	}
 
-	public MarkerCodeComponent(int code, boolean enabled){
-		this(code);
-		this.enabled = enabled;
+	public BombComponent(BombComponent bomb){
+		this.id = bomb.id;
+		this.bombType = bomb.bombType;
+		this.enabled = bomb.enabled;
 	}
 }

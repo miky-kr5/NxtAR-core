@@ -24,10 +24,15 @@ import com.badlogic.gdx.graphics.g3d.utils.AnimationController;
 
 public class AnimationComponent extends Component {
 	public AnimationController controller;
+	public AnimationController collisionController;
 	public List<String> animationsIds;
 	public int current;
 	public int next;
 	public boolean loop;
+
+	public AnimationComponent(ModelInstance instance, ModelInstance collisionInstance){
+		this(instance, -1, false, collisionInstance);
+	}
 
 	public AnimationComponent(ModelInstance instance) throws IllegalArgumentException{
 		this(instance, -1, false);
@@ -40,19 +45,32 @@ public class AnimationComponent extends Component {
 	public AnimationComponent(ModelInstance instance, int next, boolean loop) throws IllegalArgumentException{
 		if(instance == null)
 			throw new IllegalArgumentException("Instance is null.");
-		else if(next < 0)
-			throw new IllegalArgumentException("Next is less than 0.");
 		else if(next > instance.animations.size)
 			throw new IllegalArgumentException("Next is greater than the number of animations for this model.");
 
-		controller    = new AnimationController(instance);
-		animationsIds = new LinkedList<String>();
-		current       = -1;
-		this.next     = next;
-		this.loop     = loop;
+		controller          = new AnimationController(instance);
+		collisionController = null;
+		animationsIds       = new LinkedList<String>();
+		current             = -1;
+		this.next           = next;
+		this.loop           = loop;
 
 		for(int i = 0; i < instance.animations.size; i++){
 			animationsIds.add(instance.animations.get(i).id);
 		}
+	}
+
+	public AnimationComponent(ModelInstance instance, int next, boolean loop, ModelInstance collisionInstance) throws IllegalArgumentException{
+		this(instance, next, loop);
+
+		if(instance.animations.size != collisionInstance.animations.size)
+			throw new IllegalArgumentException("Animation number doesn't match between render model and collision model.");
+
+		for(int i = 0; i < instance.animations.size; i++){
+			if(!instance.animations.get(i).id.contentEquals(collisionInstance.animations.get(i).id))
+				throw new IllegalArgumentException("Animations don't match between render model and collision model.");
+		}
+
+		collisionController = new AnimationController(collisionInstance);
 	}
 }

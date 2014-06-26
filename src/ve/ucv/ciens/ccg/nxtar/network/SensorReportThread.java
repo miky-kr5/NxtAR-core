@@ -29,6 +29,7 @@ public class SensorReportThread extends Thread {
 	public static final String THREAD_NAME = "SensorReportThread";
 	private static final String TAG = "NXTAR_CORE_ROBOTTHREAD";
 	private static final String CLASS_NAME = SensorReportThread.class.getSimpleName();
+	private static int refCount = 0;
 
 	private ApplicationEventsListener netListener;
 	private ServerSocket server;
@@ -56,11 +57,19 @@ public class SensorReportThread extends Thread {
 	}
 
 	private static class SingletonHolder{
-		public final static SensorReportThread INSTANCE = new SensorReportThread();
+		public static SensorReportThread INSTANCE;
 	}
 
 	public static SensorReportThread getInstance(){
+		if(refCount == 0)
+			SingletonHolder.INSTANCE = new SensorReportThread();
+		refCount++;
 		return SingletonHolder.INSTANCE;
+	}
+
+	public static void freeInstance(){
+		refCount--;
+		if(refCount == 0) SingletonHolder.INSTANCE = null;
 	}
 
 	public void addNetworkConnectionListener(ApplicationEventsListener listener){
@@ -81,6 +90,11 @@ public class SensorReportThread extends Thread {
 
 	public void finish(){
 		done = true;
+		try{
+			server.close();
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: IOException closing sockets: " + io.getMessage(), io);
+		}
 	}
 
 	public byte getLightSensorReading(){
@@ -100,7 +114,7 @@ public class SensorReportThread extends Thread {
 		try{
 			client = server.accept();
 			client.setTcpNoDelay(true);
-			if(netListener != null) netListener.networkStreamConnected(THREAD_NAME);
+			if(netListener != null) netListener.onNetworkStreamConnected(THREAD_NAME);
 			reader = client.getInputStream();
 
 		}catch(IOException io){
@@ -121,6 +135,14 @@ public class SensorReportThread extends Thread {
 			synchronized (lightReading) {
 				lightReading = reading[0];
 			}
+		}
+
+		try{
+			reader.close();
+			client.close();
+			server.close();
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: IOException closing sockets: " + io.getMessage(), io);
 		}
 	}
 }

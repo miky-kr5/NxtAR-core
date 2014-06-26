@@ -34,6 +34,7 @@ public class RobotControlThread extends Thread {
 	public static final String THREAD_NAME = "RobotControlThread";
 	private static final String TAG = "NXTAR_CORE_ROBOTTHREAD";
 	private static final String CLASS_NAME = RobotControlThread.class.getSimpleName();
+	private static int refCount = 0;
 
 	private ApplicationEventsListener netListener;
 	private ServerSocket server;
@@ -62,11 +63,19 @@ public class RobotControlThread extends Thread {
 	}
 
 	private static class SingletonHolder{
-		public static final RobotControlThread INSTANCE = new RobotControlThread();
+		public static RobotControlThread INSTANCE;
 	}
 
 	public static RobotControlThread getInstance(){
+		if(refCount == 0)
+			SingletonHolder.INSTANCE = new RobotControlThread();
+		refCount++;
 		return SingletonHolder.INSTANCE;
+	}
+
+	public static void freeInstance(){
+		refCount--;
+		if(refCount == 0) SingletonHolder.INSTANCE = null;
 	}
 
 	public void addNetworkConnectionListener(ApplicationEventsListener listener){
@@ -87,6 +96,11 @@ public class RobotControlThread extends Thread {
 
 	public void finish(){
 		done = true;
+		try{
+			server.close();
+		}catch(IOException io){
+			Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error closing client: " + io.getMessage(), io);
+		}
 	}
 
 	@Override
@@ -97,7 +111,7 @@ public class RobotControlThread extends Thread {
 		try{
 			client = server.accept();
 			client.setTcpNoDelay(true);
-			if(netListener != null) netListener.networkStreamConnected(THREAD_NAME);
+			if(netListener != null) netListener.onNetworkStreamConnected(THREAD_NAME);
 			os = new ObjectOutputStream(client.getOutputStream());
 			is = new ObjectInputStream(client.getInputStream());
 
@@ -167,7 +181,6 @@ public class RobotControlThread extends Thread {
 				continue;
 			}
 		}
-
 
 		try{
 			client.close();

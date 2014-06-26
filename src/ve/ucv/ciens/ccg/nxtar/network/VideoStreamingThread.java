@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.Socket;
 
 import ve.ucv.ciens.ccg.networkdata.VideoFrameDataMessage;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ApplicationEventsListener;
@@ -33,6 +32,7 @@ public class VideoStreamingThread extends Thread{
 	public static final String THREAD_NAME = "VideoStreamingThread";
 	private static final String TAG = "NXTAR_CORE_VIDEOTHREAD";
 	private static final String CLASS_NAME = VideoStreamingThread.class.getSimpleName();
+	private static int refCount = 0;
 
 	private ApplicationEventsListener netListener;
 	private DatagramSocket socket;
@@ -41,7 +41,6 @@ public class VideoStreamingThread extends Thread{
 	private boolean pause;
 	private boolean coreNotified;
 	private Object protocolPauseMonitor;
-	private Socket client;
 	private VideoFrameMonitor frameMonitor;
 	private long then;
 	private long now;
@@ -72,11 +71,19 @@ public class VideoStreamingThread extends Thread{
 	}
 
 	private static class SingletonHolder{
-		public static final VideoStreamingThread INSTANCE = new VideoStreamingThread();
+		public static VideoStreamingThread INSTANCE;
 	}
 
 	public static VideoStreamingThread getInstance(){
+		if(refCount == 0)
+			SingletonHolder.INSTANCE = new VideoStreamingThread();
+		refCount++;
 		return SingletonHolder.INSTANCE;
+	}
+
+	public static void freeInstance(){
+		refCount--;
+		if(refCount == 0) SingletonHolder.INSTANCE = null;
 	}
 
 	public void addNetworkConnectionListener(ApplicationEventsListener listener){
@@ -141,6 +148,7 @@ public class VideoStreamingThread extends Thread{
 			//Gdx.app.debug(TAG, CLASS_NAME + ".receiveUdp() :: Reading message size from socket.");
 			try{
 				packet = new DatagramPacket(size, size.length);
+				socket.setSoTimeout(1000);
 				socket.receive(packet);
 			}catch(IOException io){
 				Gdx.app.error(TAG, CLASS_NAME + ".receiveUdp() :: IOException receiving size " + io.getMessage());
@@ -200,7 +208,7 @@ public class VideoStreamingThread extends Thread{
 	public int getFps(){
 		return fps;
 	}
-	
+
 	public int getLostFrames(){
 		return lostFrames;
 	}
@@ -220,7 +228,7 @@ public class VideoStreamingThread extends Thread{
 			//Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Receiving.");
 			if(netListener != null && !coreNotified && frameMonitor.getCurrentFrame() != null){
 				coreNotified = true;
-				netListener.networkStreamConnected(THREAD_NAME);
+				netListener.onNetworkStreamConnected(THREAD_NAME);
 			}
 			receiveUdp();
 			frames++;
@@ -236,12 +244,6 @@ public class VideoStreamingThread extends Thread{
 			}
 		}
 
-		try{
-			client.close();
-		}catch(IOException io){
-			Gdx.app.error(TAG, CLASS_NAME + ".run() :: Error closing client socket.", io);
-		}
-
 		Gdx.app.debug(TAG, CLASS_NAME + ".run() :: Thread finished.");
 	}
 
@@ -250,7 +252,7 @@ public class VideoStreamingThread extends Thread{
 			pause = true;
 		}
 	}
-	
+
 	public void play(){
 		synchronized (pauseMonitor){
 			pause = false;

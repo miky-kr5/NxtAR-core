@@ -30,12 +30,14 @@ import com.badlogic.gdx.math.Matrix4;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.GdxRuntimeException;
 
-public class SingleLightPerPixelShader implements Shader{
+public class DirectionalLightPerPixelShader implements Shader{
 	private static final int     MAX_NUM_BONES        = 4;
 	private static final Matrix4 IDENTITY             = new Matrix4();
 	private static final String  VERTEX_SHADER_PATH   = "shaders/directionalPerPixelSingleLight/directionalPerPixel_vert.glsl";
 	private static final String  FRAGMENT_SHADER_PATH = "shaders/directionalPerPixelSingleLight/directionalPerPixel_frag.glsl";
 	private static final String  INCLUDE_SKINNING     = "#define SKINNING\n";
+	private static final float   DEFAULT_SHININESS    = 50.0f;
+	private static final Vector3 DEFAULT_LIGHT            = new Vector3(1, 1, 1);
 
 	private ShaderProgram skinningProgram;
 	private ShaderProgram baseProgram;
@@ -56,7 +58,7 @@ public class SingleLightPerPixelShader implements Shader{
 	private int[]   u_normalMatrix;
 	private int[]   u_bones;
 
-	public SingleLightPerPixelShader(){
+	public DirectionalLightPerPixelShader(){
 		skinningProgram = null;
 		baseProgram     = null;
 		camera          = null;
@@ -79,7 +81,7 @@ public class SingleLightPerPixelShader implements Shader{
 			throw new GdxRuntimeException(skinningProgram.getLog());
 
 		if(!baseProgram.isCompiled())
-			throw new GdxRuntimeException(skinningProgram.getLog());
+			throw new GdxRuntimeException(baseProgram.getLog());
 
 		// Create uniform locations.
 		u_projTrans       = new int[2];
@@ -134,22 +136,8 @@ public class SingleLightPerPixelShader implements Shader{
 
 	@Override
 	public boolean canRender(Renderable renderable){
-		// Check for all needed lighting and material attributes.
-		if(renderable.environment.directionalLights.size < 1)
-			return false;
-
-		if(!renderable.environment.has(ColorAttribute.AmbientLight))
-			return false;
-
-		if(!renderable.material.has(ColorAttribute.Diffuse))
-			return false;
-
-		if(!renderable.material.has(ColorAttribute.Specular))
-			return false;
-
-		if(!renderable.material.has(FloatAttribute.Shininess))
-			return false;
-
+		// Easier to always return true. Missing material properties are replaced by
+		// default values during render.
 		return true;
 	}
 
@@ -169,16 +157,43 @@ public class SingleLightPerPixelShader implements Shader{
 	@Override
 	public void render(Renderable renderable){
 		ShaderProgram program;
-		int index;
-		boolean bonesEnabled;
+		int           index;
+		boolean       bonesEnabled;
+		Vector3       lightPosition;
+		Color         diffuseLightColor;
+		Color         diffuseColor;
+		Color         specularColor;
+		Color         ambientColor;
+		float         shininess;
 
 		// Get material colors.
-		Vector3 lightPosition   = renderable.environment.directionalLights.get(0).direction;
-		Color diffuseLightColor = renderable.environment.directionalLights.get(0).color;
-		Color diffuseColor      = ((ColorAttribute)renderable.material.get(ColorAttribute.Diffuse)).color;
-		Color specularColor     = ((ColorAttribute)renderable.material.get(ColorAttribute.Specular)).color;
-		Color ambientColor      = ((ColorAttribute)renderable.environment.get(ColorAttribute.AmbientLight)).color;
-		float shininess         = ((FloatAttribute)renderable.material.get(FloatAttribute.Shininess)).value;
+		if(renderable.environment != null && renderable.environment.directionalLights != null && renderable.environment.directionalLights.size >= 1){
+			lightPosition   = renderable.environment.directionalLights.get(0).direction;
+			diffuseLightColor = renderable.environment.directionalLights.get(0).color;
+		}else{
+			lightPosition = DEFAULT_LIGHT;
+			diffuseLightColor = Color.WHITE;
+		}
+
+		if(renderable.material.has(ColorAttribute.Diffuse))
+			diffuseColor      = ((ColorAttribute)renderable.material.get(ColorAttribute.Diffuse)).color;
+		else
+			diffuseColor = Color.WHITE;
+
+		if(renderable.material.has(ColorAttribute.Specular))
+			specularColor     = ((ColorAttribute)renderable.material.get(ColorAttribute.Specular)).color;
+		else
+			specularColor = Color.BLACK;
+
+		if(renderable.environment != null && renderable.environment.has(ColorAttribute.AmbientLight))
+			ambientColor      = ((ColorAttribute)renderable.environment.get(ColorAttribute.AmbientLight)).color;
+		else
+			ambientColor = Color.BLACK;
+
+		if(renderable.material.has(FloatAttribute.Shininess))
+			shininess         = ((FloatAttribute)renderable.material.get(FloatAttribute.Shininess)).value;
+		else
+			shininess = DEFAULT_SHININESS;
 
 		if(renderable.mesh.getVertexAttribute(VertexAttributes.Usage.BoneWeight) != null){
 			program      = skinningProgram;
@@ -198,7 +213,7 @@ public class SingleLightPerPixelShader implements Shader{
 
 		// Set model dependant uniforms.
 		program.setUniformMatrix(u_geomTrans[index], renderable.worldTransform);
-		program.setUniformMatrix(u_normalMatrix[index], normalMatrix.idt().mul(renderable.worldTransform).inv().tra());
+		program.setUniformMatrix(u_normalMatrix[index], normalMatrix.set(renderable.worldTransform).toNormalMatrix());
 		program.setUniformf(u_lightPos[index], lightPosition);
 		program.setUniformf(u_lightDiffuse[index], diffuseLightColor);
 		program.setUniformf(u_materialDiffuse[index], diffuseColor);

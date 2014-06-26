@@ -13,23 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.systems;
 
-import com.artemis.Component;
+import com.artemis.Aspect;
+import com.artemis.Entity;
+import com.artemis.systems.EntityProcessingSystem;
 
-public class MarkerCodeComponent extends Component {
-	public int     code;
-	public boolean enabled;
+public abstract class GameLogicSystemBase extends EntityProcessingSystem {
 
-	public MarkerCodeComponent(int code) throws IllegalArgumentException{
-		if(code < 0 || code > 1024)
-			throw new IllegalArgumentException("Marker code must be between [0, 1024].");
-		this.code = code;
-		this.enabled = true;
+	public GameLogicSystemBase(Aspect aspect){
+		super(aspect);
 	}
 
-	public MarkerCodeComponent(int code, boolean enabled){
-		this(code);
-		this.enabled = enabled;
-	}
+	@Override
+	protected abstract void process(Entity e);
 }

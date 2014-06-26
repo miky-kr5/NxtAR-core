@@ -16,5 +16,23 @@
 package ve.ucv.ciens.ccg.nxtar.interfaces;
 
 public interface ApplicationEventsListener {
-	public void networkStreamConnected(String streamName);
+	/**
+	 * <p>Callback used by the networking threads to notify sucessfull connections
+	 * to the application</p>
+	 * 
+	 * @param streamName The name of the thread notifying a connection.
+	 */
+	public void onNetworkStreamConnected(String streamName);
+
+	/**
+	 * <p>Callback used by the assets loader to notify that all 
+	 * required game assets are ready to be used.</p>
+	 */
+	public void onAssetsLoaded();
+
+	/**
+	 * <p>Callback used by the camera calibration state to notify that the
+	 * camera has been succesfully calibrated.</p>
+	 */
+	public void onCameraCalibrated();
 }

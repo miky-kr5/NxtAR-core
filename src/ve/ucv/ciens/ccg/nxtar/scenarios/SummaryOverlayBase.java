@@ -13,15 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.components;
+package ve.ucv.ciens.ccg.nxtar.scenarios;
 
-import com.artemis.Component;
-import com.badlogic.gdx.graphics.Mesh;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.utils.Disposable;
 
-public class MeshComponent extends Component {
-	public Mesh model;
-	
-	public MeshComponent(Mesh model){
-		this.model = model;
-	}
+/**
+ * <p>Base class for summary screens. Just renders a summary overlay.</p>
+ */
+public abstract class SummaryOverlayBase implements Disposable{
+	/**
+	 * <p>Renders the overlay.</p>
+	 * 
+	 * @param batch The {@link SpriteBatch} to use for rendering.
+	 */
+	public abstract void render(SpriteBatch batch, SummaryBase summary);
 }

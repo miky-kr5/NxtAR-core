@@ -20,6 +20,7 @@ import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -70,7 +71,10 @@ public class BombGameInstructionsOverlay extends HintsOverlayBase {
 
 		fontParameters = new FreeTypeFontParameter();
 		fontParameters.characters = ProjectConstants.FONT_CHARS;
-		fontParameters.size = (int)((float)ProjectConstants.MENU_BUTTON_FONT_SIZE * ((float)Gdx.graphics.getWidth() / CANNONICAL_SCREEN_WIDTH));
+		if(!Ouya.runningOnOuya)
+			fontParameters.size = (int)((float)ProjectConstants.MENU_BUTTON_FONT_SIZE * ((float)Gdx.graphics.getWidth() / CANNONICAL_SCREEN_WIDTH));
+		else
+			fontParameters.size = ProjectConstants.MENU_BUTTON_FONT_SIZE;
 		fontParameters.flip = false;
 		fontGenerator = new FreeTypeFontGenerator(Gdx.files.internal("data/fonts/d-puntillas-B-to-tiptoe.ttf"));
 
@@ -115,6 +119,9 @@ public class BombGameInstructionsOverlay extends HintsOverlayBase {
 		font.draw(batch, "Blue, red, gray and green", combinationX, combinationY);
 		font.draw(batch, "Cut the blue wire.", wireX, wireY);
 
-		titleFont.draw(batch, "Instructions", -(titleWidth / 2), (Utils.getScreenHeightWithOverscan() / 2) - titleHeight - 10);
+		if(!Ouya.runningOnOuya)
+			titleFont.draw(batch, "Instructions", -(titleWidth / 2), (Utils.getScreenHeightWithOverscan() / 2) - titleHeight - 10);
+		else
+			titleFont.draw(batch, "Instructions", -(titleWidth / 2), (Utils.getScreenHeightWithOverscan() / 2) - 10);
 	}
 }

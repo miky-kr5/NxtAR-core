@@ -32,7 +32,6 @@ import com.artemis.EntitySystem;
 import com.artemis.World;
 import com.artemis.managers.GroupManager;
 import com.artemis.utils.ImmutableBag;
-import com.badlogic.gdx.controllers.mappings.Ouya;
 import com.badlogic.gdx.graphics.g3d.ModelBatch;
 import com.badlogic.gdx.utils.Disposable;
 
@@ -148,7 +147,7 @@ public abstract class ScenarioGlobals{
 		playerSystem.setCore(core);
 
 		gameWorld.setSystem(new MarkerPositioningSystem());
-		gameWorld.setSystem(new RobotArmPositioningSystem(), Ouya.runningOnOuya);
+		gameWorld.setSystem(new RobotArmPositioningSystem());
 		gameWorld.setSystem(new GeometrySystem());
 		gameWorld.setSystem(new AnimationSystem());
 		gameWorld.setSystem(new CollisionDetectionSystem());

@@ -136,6 +136,7 @@ public class ScenarioEndSummaryState extends BaseState {
 			ouyaOButtonTexture = new Texture("data/gfx/gui/OUYA_O.png");
 			ouyaOButton = new Sprite(ouyaOButtonTexture);
 			ouyaOButton.setSize(ouyaOButton.getWidth() * 0.6f, ouyaOButton.getHeight() * 0.6f);
+			ouyaOButton.setPosition(continueButton.getX() - ouyaOButton.getWidth() - 20, continueButton.getY() + (ouyaOButton.getHeight() / 2));
 			oButtonPressed = false;
 		}else{
 			ouyaOButtonTexture = null;

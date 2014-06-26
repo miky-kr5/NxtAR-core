@@ -57,6 +57,7 @@ import com.badlogic.gdx.graphics.glutils.FrameBuffer;
 import com.badlogic.gdx.graphics.glutils.ShaderProgram;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.badlogic.gdx.utils.GdxRuntimeException;
 
 public class InGameState extends BaseState{
 	private static final String  TAG                    = "IN_GAME_STATE";
@@ -309,104 +310,108 @@ public class InGameState extends BaseState{
 
 		// If a valid frame was fetched.
 		if(data != null && data.outFrame != null){
-			// Set the camera to the correct projection.
-			focalPointX   = core.cvProc.getFocalPointX();
-			focalPointY   = core.cvProc.getFocalPointY();
-			cameraCenterX = core.cvProc.getCameraCenterX();
-			cameraCenterY = core.cvProc.getCameraCenterY();
-			perspectiveCamera.setCustomARProjectionMatrix(focalPointX, focalPointY, cameraCenterX, cameraCenterY, NEAR, FAR, w, h);
-			perspectiveCamera.update(perspectiveCamera.projection);
+			try{
+				// Set the camera to the correct projection.
+				focalPointX   = core.cvProc.getFocalPointX();
+				focalPointY   = core.cvProc.getFocalPointY();
+				cameraCenterX = core.cvProc.getCameraCenterX();
+				cameraCenterY = core.cvProc.getCameraCenterY();
+				perspectiveCamera.setCustomARProjectionMatrix(focalPointX, focalPointY, cameraCenterX, cameraCenterY, NEAR, FAR, w, h);
+				perspectiveCamera.update(perspectiveCamera.projection);
 
-			// Update the game state.
-			if(controlMode == robot_control_mode_t.ARM_CONTROL)
-				gameWorld.getSystem(CollisionDetectionSystem.class).enableCollisions();
-			else
-				gameWorld.getSystem(CollisionDetectionSystem.class).disableCollisions();
+				// Update the game state.
+				if(controlMode == robot_control_mode_t.ARM_CONTROL || Ouya.runningOnOuya)
+					gameWorld.getSystem(CollisionDetectionSystem.class).enableCollisions();
+				else
+					gameWorld.getSystem(CollisionDetectionSystem.class).disableCollisions();
 
-			gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
-			gameWorld.getSystem(MarkerPositioningSystem.class).setMarkerData(data);
-			gameWorld.process();
+				gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
+				gameWorld.getSystem(MarkerPositioningSystem.class).setMarkerData(data);
+				gameWorld.process();
 
-			// Decode the video frame.
-			videoFrame = new Pixmap(data.outFrame, 0, w * h);
-			videoFrameTexture = new Texture(videoFrame);
-			videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
-			videoFrame.dispose();
+				// Decode the video frame.
+				videoFrame = new Pixmap(data.outFrame, 0, w * h);
+				videoFrameTexture = new Texture(videoFrame);
+				videoFrameTexture.setFilter(TextureFilter.Linear, TextureFilter.Linear);
+				videoFrame.dispose();
 
-			// Convert the decoded frame into a renderable texture.
-			region = new TextureRegion(videoFrameTexture, 0, 0, w, h);
-			if(renderableVideoFrame == null)
-				renderableVideoFrame = new Sprite(region);
-			else
-				renderableVideoFrame.setRegion(region);
-			renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
-			renderableVideoFrame.setPosition(0, 0);
+				// Convert the decoded frame into a renderable texture.
+				region = new TextureRegion(videoFrameTexture, 0, 0, w, h);
+				if(renderableVideoFrame == null)
+					renderableVideoFrame = new Sprite(region);
+				else
+					renderableVideoFrame.setRegion(region);
+				renderableVideoFrame.setOrigin(renderableVideoFrame.getWidth() / 2, renderableVideoFrame.getHeight() / 2);
+				renderableVideoFrame.setPosition(0, 0);
 
-			// Set the 3D frame buffer for rendering.
-			frameBuffer.begin();{
-				// Set OpenGL state.
-				Gdx.gl.glClearColor(0, 0, 0, 0);
-				Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
-				Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
+				// Set the 3D frame buffer for rendering.
+				frameBuffer.begin();{
+					// Set OpenGL state.
+					Gdx.gl.glClearColor(0, 0, 0, 0);
+					Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT | GL20.GL_DEPTH_BUFFER_BIT);
+					Gdx.gl.glDisable(GL20.GL_TEXTURE_2D);
 
-				// Call rendering systems.
-				markerRenderingSystem.begin(perspectiveCamera);
-				markerRenderingSystem.process();
-				markerRenderingSystem.end();
+					// Call rendering systems.
+					markerRenderingSystem.begin(perspectiveCamera);
+					markerRenderingSystem.process();
+					markerRenderingSystem.end();
 
-				if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue() || Ouya.runningOnOuya){
-					objectRenderingSystem.begin(perspectiveCamera);
-					objectRenderingSystem.process();
-					objectRenderingSystem.end();
+					if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue() || Ouya.runningOnOuya){
+						objectRenderingSystem.begin(perspectiveCamera);
+						objectRenderingSystem.process();
+						objectRenderingSystem.end();
+					}
+				}frameBuffer.end();
+
+				// Set the frame buffer object texture to a renderable sprite.
+				region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
+				region.flip(false, true);
+				if(frameBufferSprite == null)
+					frameBufferSprite = new Sprite(region);
+				else
+					frameBufferSprite.setRegion(region);
+				frameBufferSprite.setOrigin(frameBufferSprite.getWidth() / 2, frameBufferSprite.getHeight() / 2);
+				frameBufferSprite.setPosition(0, 0);
+
+				// Set the position and orientation of the renderable video frame and the frame buffer.
+				if(!Ouya.runningOnOuya){
+					renderableVideoFrame.setSize(1.0f, renderableVideoFrame.getHeight() / renderableVideoFrame.getWidth() );
+					renderableVideoFrame.rotate90(true);
+					renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, 0.5f - renderableVideoFrame.getHeight());
+
+					frameBufferSprite.setSize(1.0f, frameBufferSprite.getHeight() / frameBufferSprite.getWidth() );
+					frameBufferSprite.rotate90(true);
+					frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
+
+				}else{
+					float xSize = Gdx.graphics.getHeight() * (w / h);
+					renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
+					renderableVideoFrame.rotate90(true);
+					renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
+
+					frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
+					frameBufferSprite.rotate90(true);
+					frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
 				}
-			}frameBuffer.end();
 
-			// Set the frame buffer object texture to a renderable sprite.
-			region = new TextureRegion(frameBuffer.getColorBufferTexture(), 0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
-			region.flip(false, true);
-			if(frameBufferSprite == null)
-				frameBufferSprite = new Sprite(region);
-			else
-				frameBufferSprite.setRegion(region);
-			frameBufferSprite.setOrigin(frameBufferSprite.getWidth() / 2, frameBufferSprite.getHeight() / 2);
-			frameBufferSprite.setPosition(0, 0);
+				// Set the correct camera for the device.
+				if(!Ouya.runningOnOuya){
+					core.batch.setProjectionMatrix(unitaryOrthographicCamera.combined);
+				}else{
+					core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
+				}
 
-			// Set the position and orientation of the renderable video frame and the frame buffer.
-			if(!Ouya.runningOnOuya){
-				renderableVideoFrame.setSize(1.0f, renderableVideoFrame.getHeight() / renderableVideoFrame.getWidth() );
-				renderableVideoFrame.rotate90(true);
-				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, 0.5f - renderableVideoFrame.getHeight());
+				// Render the video frame and the frame buffer.
+				core.batch.begin();{
+					renderableVideoFrame.draw(core.batch);
+					frameBufferSprite.draw(core.batch);
+				}core.batch.end();
 
-				frameBufferSprite.setSize(1.0f, frameBufferSprite.getHeight() / frameBufferSprite.getWidth() );
-				frameBufferSprite.rotate90(true);
-				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, 0.5f - frameBufferSprite.getHeight());
-
-			}else{
-				float xSize = Gdx.graphics.getHeight() * (w / h);
-				renderableVideoFrame.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
-				renderableVideoFrame.rotate90(true);
-				renderableVideoFrame.translate(-renderableVideoFrame.getWidth() / 2, -renderableVideoFrame.getHeight() / 2);
-
-				frameBufferSprite.setSize(xSize * ProjectConstants.OVERSCAN, Utils.getScreenHeightWithOverscan());
-				frameBufferSprite.rotate90(true);
-				frameBufferSprite.translate(-frameBufferSprite.getWidth() / 2, -frameBufferSprite.getHeight() / 2);
+				// Clear the video frame from memory.
+				videoFrameTexture.dispose();
+			}catch(GdxRuntimeException e){
+				Gdx.app.error(TAG, CLASS_NAME + ".render(): Runtime exception caught: ", e);
 			}
-
-			// Set the correct camera for the device.
-			if(!Ouya.runningOnOuya){
-				core.batch.setProjectionMatrix(unitaryOrthographicCamera.combined);
-			}else{
-				core.batch.setProjectionMatrix(pixelPerfectOrthographicCamera.combined);
-			}
-
-			// Render the video frame and the frame buffer.
-			core.batch.begin();{
-				renderableVideoFrame.draw(core.batch);
-				frameBufferSprite.draw(core.batch);
-			}core.batch.end();
-
-			// Clear the video frame from memory.
-			videoFrameTexture.dispose();
 		}
 
 		// Render the interface buttons.

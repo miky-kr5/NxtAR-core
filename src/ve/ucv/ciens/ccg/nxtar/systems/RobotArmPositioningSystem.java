@@ -82,9 +82,7 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 
 					Gdx.app.log(TAG, CLASS_NAME + ".process(): Started moving from " + Utils.vector2String(auto.startPoint) + " to " + Utils.vector2String(auto.endPoint));
 				}else autoMove(geometry, auto, collision);
-
 				input = null;
-
 			}else if(input instanceof GamepadUserInput){
 				tempGP = (GamepadUserInput) input;
 
@@ -92,18 +90,22 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 					if(!tempGP.oButton){
 						geometry.position.x += -tempGP.axisLeftY * STEP_SIZE;
 						geometry.position.y += tempGP.axisLeftX * STEP_SIZE;
-						if(Math.abs(tempGP.axisLeftX) < Ouya.STICK_DEADZONE && Math.abs(tempGP.axisLeftY) < Ouya.STICK_DEADZONE && Math.abs(tempGP.axisRightX) < Ouya.STICK_DEADZONE && Math.abs(tempGP.axisRightY) < Ouya.STICK_DEADZONE)
+						if(Math.abs(tempGP.axisLeftX) < Ouya.STICK_DEADZONE && Math.abs(tempGP.axisLeftY) < Ouya.STICK_DEADZONE)
 							input = null;
+						else
+							input = (UserInput)tempGP;
 					}else{
 						endPoint = new Vector3(geometry.position.x, geometry.position.y, MAX_Z);
 						auto.startPoint.set(geometry.position);
 						auto.endPoint.set(endPoint);
 						auto.moving = true;
 						auto.forward = true;
-
 						input = null;
 					}
-				}else autoMove(geometry, auto, collision);
+				}else{
+					autoMove(geometry, auto, collision);
+					input = null;
+				}
 
 			}else if(input instanceof KeyboardUserInput){
 				tempKey = (KeyboardUserInput) input;
@@ -114,20 +116,26 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 						geometry.position.x -= tempKey.keyDown ? STEP_SIZE : 0.0f;
 						geometry.position.y -= tempKey.keyLeft ? STEP_SIZE : 0.0f;
 						geometry.position.y += tempKey.keyRight ? STEP_SIZE : 0.0f;
+						if(!tempKey.keyUp && !tempKey.keyUp && !tempKey.keyUp && !tempKey.keyUp)
+							input = null;
+						else
+							input = (UserInput)tempKey;
 					}else{
 						endPoint = new Vector3(geometry.position.x, geometry.position.y, MAX_Z);
 						auto.startPoint.set(geometry.position);
 						auto.endPoint.set(endPoint);
 						auto.moving = true;
 						auto.forward = true;
+						input = null;
 					}
-				}else autoMove(geometry, auto, collision);
-
-				input = null;
-
+				}else{
+					autoMove(geometry, auto, collision);
+					input = null;
+				}
 			}else
 				throw new ClassCastException("Input is not a valid UserInput instance.");
 		}
+
 	}
 
 	private void autoMove(GeometryComponent geometry, AutomaticMovementComponent auto, CollisionDetectionComponent collision){

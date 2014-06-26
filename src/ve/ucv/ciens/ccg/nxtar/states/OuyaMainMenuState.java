@@ -150,10 +150,10 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 				}
 			}else if(buttonCode == Ouya.BUTTON_DPAD_UP){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad up button pressed.");
-				oButtonSelection = oButtonSelection - 1 < 0 ? NUM_MENU_BUTTONS - 1 : oButtonSelection - 1;
+				oButtonSelection = (oButtonSelection + 1) % NUM_MENU_BUTTONS;
 			}else if(buttonCode == Ouya.BUTTON_DPAD_DOWN){
 				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad down button pressed.");
-				oButtonSelection = (oButtonSelection + 1) % NUM_MENU_BUTTONS;
+				oButtonSelection = oButtonSelection - 1 < 0 ? NUM_MENU_BUTTONS - 1 : oButtonSelection - 1;
 			}
 
 			return true;
@@ -188,5 +188,22 @@ public class OuyaMainMenuState extends MainMenuStateBase{
 		}else{
 			return false;
 		}
+	}
+
+	@Override
+	public boolean axisMoved(Controller controller, int axisCode, float value){
+		if(Math.abs(value) > 0.99f){
+			if(axisCode == Ouya.AXIS_LEFT_Y && value < 0.0f){
+				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad up button pressed.");
+				oButtonSelection = (oButtonSelection + 1) % NUM_MENU_BUTTONS;
+			}else if(axisCode == Ouya.AXIS_LEFT_Y && value >= 0.0f){
+				Gdx.app.log(TAG, CLASS_NAME + ".buttonDown(): Dpad down button pressed.");
+				oButtonSelection = oButtonSelection - 1 < 0 ? NUM_MENU_BUTTONS - 1 : oButtonSelection - 1;
+			}
+
+			return true;
+		}
+
+		return false;
 	}
 }

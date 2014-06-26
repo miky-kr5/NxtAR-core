@@ -19,14 +19,14 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase;
-import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase.automatic_action_t;
-import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.SensorReportThread;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.scenarios.AutomaticActionPerformerBase;
+import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
+import ve.ucv.ciens.ccg.nxtar.scenarios.AutomaticActionPerformerBase.automatic_action_t;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
@@ -137,7 +137,7 @@ public class AutomaticActionState extends BaseState{
 		aButtonPressed           = false;
 		automaticActionEnabled   = false;
 		startButtonPressed       = false;
-		automaticActionPerformer = GameGlobals.getAutomaticActionPerformer();
+		automaticActionPerformer = ScenarioGlobals.getAutomaticActionPerformer();
 		previousAction           = automatic_action_t.NO_ACTION;
 
 		// Set up the cameras.
@@ -187,7 +187,7 @@ public class AutomaticActionState extends BaseState{
 		setUpButton();
 
 		// Set up the game world.
-		gameWorld = GameGlobals.getGameWorld();
+		gameWorld = ScenarioGlobals.getGameWorld();
 		markerRenderingSystem = gameWorld.getSystem(MarkerRenderingSystem.class);
 
 		if(markerRenderingSystem == null)
@@ -571,7 +571,7 @@ public class AutomaticActionState extends BaseState{
 				startButton.setDisabled(false);
 				ignoreBackKey = false;
 				automaticActionEnabled = false;
-				core.nextState = game_states_t.SUMMARY;
+				core.nextState = game_states_t.AUTOMATIC_ACTION_SUMMARY;
 			}
 
 		}catch(IllegalArgumentException e){

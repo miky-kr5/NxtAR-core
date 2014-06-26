@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
 import ve.ucv.ciens.ccg.nxtar.components.AnimationComponent;
 import ve.ucv.ciens.ccg.nxtar.components.CollisionDetectionComponent;
@@ -227,7 +227,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				manager.remove(b, Integer.toString(marker.code));
 				b.deleteFromWorld();
 
-				if(Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) > ProjectConstants.MAX_ABS_ROLL){
+				if(!Utils.isDeviceRollValid() || (Utils.isDeviceRollValid() && Math.abs(Gdx.input.getRoll()) > ProjectConstants.MAX_ABS_ROLL)){
 					Gdx.app.log(TAG, CLASS_NAME + ".processInclinationBomb(): Inclination bomb exploded.");
 					createFadeOutEffect();
 					reducePlayerLivesByOne();
@@ -326,7 +326,7 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 
 		players = manager.getEntities(PlayerComponentBase.PLAYER_GROUP);
 		if(players !=  null && players.size() > 0 && players.get(0) != null){
-			player = players.get(0);
+			player          = players.get(0);
 			playerComponent = player.getComponent(BombGamePlayerComponent.class);
 
 			if(playerComponent != null){
@@ -340,6 +340,30 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 		}
 	}
 
+	/**
+	 * <p>Updates the player's disabled bombs count.</p>
+	 */
+	private void increasePlayerDisabledBombsByOne(){
+		Entity                  player;
+		BombGamePlayerComponent playerComponent;
+		ImmutableBag<Entity>    players;
+
+		players = manager.getEntities(PlayerComponentBase.PLAYER_GROUP);
+		if(players !=  null && players.size() > 0 && players.get(0) != null){
+			player          = players.get(0);
+			playerComponent = player.getComponent(BombGamePlayerComponent.class);
+
+			if(playerComponent != null){
+				playerComponent.disabledBombs += 1;
+			}else{
+				Gdx.app.log(TAG, CLASS_NAME + ".reducePlayerLivesByOne(): Players is missing required components.");
+			}
+
+		}else{
+			Gdx.app.log(TAG, CLASS_NAME + ".reducePlayerLivesByOne(): No players found.");
+		}
+	}
+	
 	/**
 	 * <p>Disables all entities associated with the corresponding marker code.</p>
 	 * 
@@ -368,6 +392,8 @@ public class BombGameLogicSystem extends GameLogicSystemBase {
 				}
 			}
 		}
+
+		increasePlayerDisabledBombsByOne();
 	}
 
 	/**

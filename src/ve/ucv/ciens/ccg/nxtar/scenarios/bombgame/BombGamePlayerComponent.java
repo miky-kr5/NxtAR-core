@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
 import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
 
@@ -21,9 +21,9 @@ public class BombGamePlayerComponent extends PlayerComponentBase {
 	public static final int MIN_LIVES = 1;
 	public static final int MAX_LIVES = 5;
 
-	private int startingLives;
-	public  int     lives;
-	public  int     disabledBombs;
+	public  int startingLives;
+	public  int lives;
+	public  int disabledBombs;
 
 	public BombGamePlayerComponent(int lives) throws IllegalArgumentException{
 		super();
@@ -38,7 +38,7 @@ public class BombGamePlayerComponent extends PlayerComponentBase {
 	public BombGamePlayerComponent(){
 		this(3);
 	}
-	
+
 	@Override
 	public void reset(){
 		super.reset();

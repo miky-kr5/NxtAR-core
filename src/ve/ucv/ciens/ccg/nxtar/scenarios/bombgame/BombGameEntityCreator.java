@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -30,8 +30,8 @@ import ve.ucv.ciens.ccg.nxtar.components.RenderModelComponent;
 import ve.ucv.ciens.ccg.nxtar.components.ShaderComponent;
 import ve.ucv.ciens.ccg.nxtar.components.VisibilityComponent;
 import ve.ucv.ciens.ccg.nxtar.entities.EntityCreatorBase;
-import ve.ucv.ciens.ccg.nxtar.game.bombgame.BombComponent.bomb_type_t;
 import ve.ucv.ciens.ccg.nxtar.graphics.shaders.DirectionalLightPerPixelShader;
+import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombComponent.bomb_type_t;
 import ve.ucv.ciens.ccg.nxtar.systems.AnimationSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 

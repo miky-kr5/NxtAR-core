@@ -17,36 +17,35 @@ package ve.ucv.ciens.ccg.nxtar.systems;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.components.PlayerComponentBase;
-import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
+import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
+import ve.ucv.ciens.ccg.nxtar.scenarios.SummaryBase;
 
 import com.artemis.Aspect;
-import com.artemis.Entity;
 import com.artemis.systems.EntityProcessingSystem;
+import com.badlogic.gdx.utils.Disposable;
 
-public abstract class PlayerSystemBase extends EntityProcessingSystem {
+public abstract class PlayerSystemBase extends EntityProcessingSystem implements Disposable{
 	protected NxtARCore core;
 
 	@SuppressWarnings("unchecked")
-	public PlayerSystemBase(Class<? extends PlayerComponentBase> component, NxtARCore core){
+	public PlayerSystemBase(Class<? extends PlayerComponentBase> component){
 		super(Aspect.getAspectForAll(component));
+	}
 
-		if(component == null)
-			throw new IllegalArgumentException("Component is null.");
+	public abstract SummaryBase getPlayerSummary();
 
+	public final void setCore(NxtARCore core) throws IllegalArgumentException{
 		if(core == null)
 			throw new IllegalArgumentException("Core is null.");
 
 		this.core = core;
 	}
 
-	protected final void finishGame(boolean victory){
-		// TODO: Switch to game over state.
-		// TODO: Set game over state parameters.
-		GameGlobals.getEntityCreator().resetAllEntities();
-		core.nextState = NxtARCore.game_states_t.MAIN_MENU;
+	protected final void finishGame(boolean victory) throws IllegalStateException{
+		if(core == null)
+			throw new IllegalStateException("Core is null.");
+
+		ScenarioGlobals.getEntityCreator().resetAllEntities();
+		core.nextState = NxtARCore.game_states_t.SCENARIO_END_SUMMARY;
 	}
-
-	@Override
-	protected abstract void process(Entity e);
-
 }

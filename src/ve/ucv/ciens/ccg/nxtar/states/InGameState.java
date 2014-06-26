@@ -19,7 +19,6 @@ import ve.ucv.ciens.ccg.networkdata.MotorEvent;
 import ve.ucv.ciens.ccg.networkdata.MotorEvent.motor_t;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.graphics.CustomPerspectiveCamera;
 import ve.ucv.ciens.ccg.nxtar.input.GamepadUserInput;
 import ve.ucv.ciens.ccg.nxtar.input.KeyboardUserInput;
@@ -28,11 +27,13 @@ import ve.ucv.ciens.ccg.nxtar.input.UserInput;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.MotorEventQueue;
 import ve.ucv.ciens.ccg.nxtar.network.monitors.VideoFrameMonitor;
+import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
 import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.PlayerSystemBase;
 import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
@@ -99,6 +100,7 @@ public class InGameState extends BaseState{
 	private ObjectRenderingSystem           objectRenderingSystem;
 	private RobotArmPositioningSystem       robotArmPositioningSystem;
 	private FadeEffectRenderingSystem       fadeEffectRenderingSystem;
+	private PlayerSystemBase                playerSystem;
 	private robot_control_mode_t            controlMode;
 
 	// Cameras.
@@ -215,13 +217,13 @@ public class InGameState extends BaseState{
 			backgroundShader = null;
 		}
 
-		uScaling = new float[2];
+		uScaling    = new float[2];
 		uScaling[0] = Gdx.graphics.getWidth() > Gdx.graphics.getHeight() ? 16.0f : 9.0f;
 		uScaling[1] = Gdx.graphics.getHeight() > Gdx.graphics.getWidth() ? 16.0f : 9.0f;
 
 		// Set up the 3D rendering.
-		modelBatch = new ModelBatch();
-		frameBuffer = null;
+		modelBatch        = new ModelBatch();
+		frameBuffer       = null;
 		perspectiveCamera = null;
 		frameBufferSprite = null;
 
@@ -230,12 +232,13 @@ public class InGameState extends BaseState{
 			setUpButtons();
 
 		// Set up the game world.
-		gameWorld = GameGlobals.getGameWorld();
+		gameWorld = ScenarioGlobals.getGameWorld();
 
 		robotArmPositioningSystem = gameWorld.getSystem(RobotArmPositioningSystem.class);
 		markerRenderingSystem     = gameWorld.getSystem(MarkerRenderingSystem.class);
 		objectRenderingSystem     = gameWorld.getSystem(ObjectRenderingSystem.class);
 		fadeEffectRenderingSystem = gameWorld.getSystem(FadeEffectRenderingSystem.class);
+		playerSystem              = ScenarioGlobals.getPlayerSystem();
 
 		if(robotArmPositioningSystem == null || markerRenderingSystem == null || objectRenderingSystem == null || fadeEffectRenderingSystem == null)
 			throw new IllegalStateException("One or more essential systems are null.");
@@ -303,6 +306,11 @@ public class InGameState extends BaseState{
 			perspectiveCamera.update(perspectiveCamera.projection);
 
 			// Update the game state.
+			if(controlMode == robot_control_mode_t.ARM_CONTROL)
+				gameWorld.getSystem(CollisionDetectionSystem.class).enableCollisions();
+			else
+				gameWorld.getSystem(CollisionDetectionSystem.class).disableCollisions();
+
 			gameWorld.setDelta(Gdx.graphics.getDeltaTime() * 1000);
 			gameWorld.getSystem(MarkerPositioningSystem.class).setMarkerData(data);
 			gameWorld.process();
@@ -436,6 +444,7 @@ public class InGameState extends BaseState{
 		}
 
 		fadeEffectRenderingSystem.process();
+		playerSystem.process();
 
 		data = null;
 	}
@@ -494,7 +503,6 @@ public class InGameState extends BaseState{
 
 	@Override
 	public void onStateSet(){
-		gameWorld.getSystem(CollisionDetectionSystem.class).enableCollisions();
 		stateActive = true;
 		Gdx.input.setInputProcessor(this);
 		Gdx.input.setCatchBackKey(true);

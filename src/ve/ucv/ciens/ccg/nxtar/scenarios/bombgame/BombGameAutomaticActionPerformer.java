@@ -13,14 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
 import java.util.LinkedList;
 import java.util.List;
 
-import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase;
-import ve.ucv.ciens.ccg.nxtar.game.GameGlobals;
 import ve.ucv.ciens.ccg.nxtar.interfaces.ImageProcessor.MarkerData;
+import ve.ucv.ciens.ccg.nxtar.scenarios.AutomaticActionPerformerBase;
+import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
+import ve.ucv.ciens.ccg.nxtar.scenarios.SummaryBase;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 
 import com.artemis.Entity;
@@ -39,7 +40,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 		START, WALK_FORWARD, DETECT_MARKER, FINISHING, END;
 	}
 
-	public class BombGameAutomaticActionSummary extends AutomaticActionSummary{
+	public class BombGameAutomaticActionSummary extends SummaryBase{
 		private int numCombinationBombs;
 		private int numInclinationBombs;
 		private int numWireBombs;
@@ -109,7 +110,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 		World                       world;
 
 		if(manager == null){
-			world = GameGlobals.getGameWorld();
+			world = ScenarioGlobals.getGameWorld();
 			if(world == null)
 				throw new IllegalStateException("World is null after getGameWorld().");
 
@@ -264,8 +265,8 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 	}
 
 	@Override
-	public AutomaticActionSummary getSummary() {
-		return (AutomaticActionSummary)summary;
+	public SummaryBase getSummary() {
+		return (SummaryBase)summary;
 	}
 
 	@Override

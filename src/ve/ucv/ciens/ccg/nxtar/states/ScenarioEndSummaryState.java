@@ -17,9 +17,9 @@ package ve.ucv.ciens.ccg.nxtar.states;
 
 import ve.ucv.ciens.ccg.nxtar.NxtARCore;
 import ve.ucv.ciens.ccg.nxtar.NxtARCore.game_states_t;
-import ve.ucv.ciens.ccg.nxtar.scenarios.AutomaticActionPerformerBase;
 import ve.ucv.ciens.ccg.nxtar.scenarios.ScenarioGlobals;
 import ve.ucv.ciens.ccg.nxtar.scenarios.SummaryOverlayBase;
+import ve.ucv.ciens.ccg.nxtar.systems.PlayerSystemBase;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
@@ -48,7 +48,7 @@ import com.badlogic.gdx.scenes.scene2d.ui.TextButton;
 import com.badlogic.gdx.scenes.scene2d.ui.TextButton.TextButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 
-public class AutomaticActionSummaryState extends BaseState{
+public class ScenarioEndSummaryState extends BaseState {
 	private static final String TAG = "AUTO_SUMMARY";
 	private static final String CLASS_NAME = AutomaticActionSummaryState.class.getSimpleName();
 	private static final String SHADER_PATH = "shaders/movingBckg/movingBckg";
@@ -74,14 +74,14 @@ public class AutomaticActionSummaryState extends BaseState{
 	private BitmapFont font;
 
 	// Summary overlay related fields.
-	AutomaticActionPerformerBase automaticActionPerformer;
-	SummaryOverlayBase           summaryOverlay;
+	PlayerSystemBase   playerSystem;
+	SummaryOverlayBase summaryOverlay;
 
 	// Button touch helper fields.
 	private boolean continueButtonTouched;
 	private int     continueButtonTouchPointer;
 
-	public  AutomaticActionSummaryState(NxtARCore core) throws IllegalArgumentException{
+	public  ScenarioEndSummaryState(NxtARCore core) throws IllegalArgumentException{
 		TextButtonStyle       textButtonStyle;
 		FreeTypeFontGenerator fontGenerator;
 		FreeTypeFontParameter fontParameters;
@@ -95,8 +95,8 @@ public class AutomaticActionSummaryState extends BaseState{
 		this.core                = core;
 		this.pixelPerfectCamera  = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		oButtonPressed           = false;
-		automaticActionPerformer = ScenarioGlobals.getAutomaticActionPerformer();
-		summaryOverlay           = ScenarioGlobals.getAutomaticActionSummaryOverlay();
+		playerSystem             = ScenarioGlobals.getPlayerSystem();
+		summaryOverlay           = ScenarioGlobals.getScenarioSummaryOverlay();
 
 		// Create the start button background.
 		buttonEnabledTexture  = new Texture(Gdx.files.internal("data/gfx/gui/Anonymous_Pill_Button_Yellow.png"));
@@ -181,7 +181,7 @@ public class AutomaticActionSummaryState extends BaseState{
 			drawBackground(core.batch);
 			core.batch.enableBlending();
 
-			summaryOverlay.render(core.batch, automaticActionPerformer.getSummary());
+			summaryOverlay.render(core.batch, playerSystem.getPlayerSummary());
 
 			// Render buttons.
 			continueButton.draw(core.batch, 1.0f);

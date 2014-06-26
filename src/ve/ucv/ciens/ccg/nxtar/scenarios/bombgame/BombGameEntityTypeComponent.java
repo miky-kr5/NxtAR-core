@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
 import com.artemis.Component;
 

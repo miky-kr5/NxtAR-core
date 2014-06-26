@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game;
-
-import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase.AutomaticActionSummary;
+package ve.ucv.ciens.ccg.nxtar.scenarios;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Disposable;
@@ -23,11 +21,11 @@ import com.badlogic.gdx.utils.Disposable;
 /**
  * <p>Base class for summary screens. Just renders a summary overlay.</p>
  */
-public abstract class AutomaticActionSummaryOverlayBase implements Disposable{
+public abstract class SummaryOverlayBase implements Disposable{
 	/**
 	 * <p>Renders the overlay.</p>
 	 * 
 	 * @param batch The {@link SpriteBatch} to use for rendering.
 	 */
-	public abstract void render(SpriteBatch batch, AutomaticActionSummary summary);
+	public abstract void render(SpriteBatch batch, SummaryBase summary);
 }

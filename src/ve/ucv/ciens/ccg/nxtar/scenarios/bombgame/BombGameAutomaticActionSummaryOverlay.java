@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package ve.ucv.ciens.ccg.nxtar.game.bombgame;
+package ve.ucv.ciens.ccg.nxtar.scenarios.bombgame;
 
-import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionPerformerBase.AutomaticActionSummary;
-import ve.ucv.ciens.ccg.nxtar.game.AutomaticActionSummaryOverlayBase;
-import ve.ucv.ciens.ccg.nxtar.game.bombgame.BombGameAutomaticActionPerformer.BombGameAutomaticActionSummary;
+import ve.ucv.ciens.ccg.nxtar.scenarios.SummaryBase;
+import ve.ucv.ciens.ccg.nxtar.scenarios.SummaryOverlayBase;
+import ve.ucv.ciens.ccg.nxtar.scenarios.bombgame.BombGameAutomaticActionPerformer.BombGameAutomaticActionSummary;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
 import ve.ucv.ciens.ccg.nxtar.utils.Utils;
 
@@ -30,7 +30,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 
-public class BombGameAutomaticActionSummaryOverlay extends AutomaticActionSummaryOverlayBase{
+public class BombGameAutomaticActionSummaryOverlay extends SummaryOverlayBase{
 	private static final float CANNONICAL_SCREEN_WIDTH = 800.0f;
 
 	private Texture    inclinationBombTexture;
@@ -106,7 +106,7 @@ public class BombGameAutomaticActionSummaryOverlay extends AutomaticActionSummar
 	}
 
 	@Override
-	public void render(SpriteBatch batch, AutomaticActionSummary summary) throws ClassCastException{
+	public void render(SpriteBatch batch, SummaryBase summary) throws ClassCastException{
 		BombGameAutomaticActionSummary bombGameSummary;
 
 		if(!(summary instanceof BombGameAutomaticActionSummary))

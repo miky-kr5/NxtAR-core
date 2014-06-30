@@ -39,8 +39,8 @@ public class RobotArmPositioningSystem extends EntityProcessingSystem {
 	private static final String  CLASS_NAME          = RobotArmPositioningSystem.class.getSimpleName();
 	private static final float   INTERPOLATION_STEP  = 0.05f;
 	private static final float   STEP_SIZE           = 0.05f;
-	private static final float   MAX_Z               = -4.5f;
-	private static final float   MIN_Z               = -1.0f;
+	public  static final float   MAX_Z               = -4.5f;
+	public  static final float   MIN_Z               = -1.0f;
 
 	@Mapper ComponentMapper<GeometryComponent>           geometryMapper;
 	@Mapper ComponentMapper<AutomaticMovementComponent>  autoMapper;

@@ -32,7 +32,7 @@ import ve.ucv.ciens.ccg.nxtar.systems.CollisionDetectionSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.FadeEffectRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.RobotArmRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.PlayerSystemBase;
 import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.utils.ProjectConstants;
@@ -98,7 +98,7 @@ public class InGameState extends BaseState{
 	// Game related fields.
 	private World                           gameWorld;
 	private MarkerRenderingSystem           markerRenderingSystem;
-	private ObjectRenderingSystem           objectRenderingSystem;
+	private RobotArmRenderingSystem           robotArmRenderingSystem;
 	private RobotArmPositioningSystem       robotArmPositioningSystem;
 	private FadeEffectRenderingSystem       fadeEffectRenderingSystem;
 	private PlayerSystemBase                playerSystem;
@@ -249,11 +249,11 @@ public class InGameState extends BaseState{
 
 		robotArmPositioningSystem = gameWorld.getSystem(RobotArmPositioningSystem.class);
 		markerRenderingSystem     = gameWorld.getSystem(MarkerRenderingSystem.class);
-		objectRenderingSystem     = gameWorld.getSystem(ObjectRenderingSystem.class);
+		robotArmRenderingSystem     = gameWorld.getSystem(RobotArmRenderingSystem.class);
 		fadeEffectRenderingSystem = gameWorld.getSystem(FadeEffectRenderingSystem.class);
 		playerSystem              = ScenarioGlobals.getPlayerSystem();
 
-		if(robotArmPositioningSystem == null || markerRenderingSystem == null || objectRenderingSystem == null || fadeEffectRenderingSystem == null)
+		if(robotArmPositioningSystem == null || markerRenderingSystem == null || robotArmRenderingSystem == null || fadeEffectRenderingSystem == null)
 			throw new IllegalStateException("One or more essential systems are null.");
 	}
 
@@ -357,9 +357,9 @@ public class InGameState extends BaseState{
 					markerRenderingSystem.end();
 
 					if(controlMode.getValue() == robot_control_mode_t.ARM_CONTROL.getValue() || Ouya.runningOnOuya){
-						objectRenderingSystem.begin(perspectiveCamera);
-						objectRenderingSystem.process();
-						objectRenderingSystem.end();
+						robotArmRenderingSystem.begin(perspectiveCamera);
+						robotArmRenderingSystem.process();
+						robotArmRenderingSystem.end();
 					}
 				}frameBuffer.end();
 

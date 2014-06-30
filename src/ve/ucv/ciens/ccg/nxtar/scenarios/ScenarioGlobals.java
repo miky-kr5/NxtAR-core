@@ -24,7 +24,7 @@ import ve.ucv.ciens.ccg.nxtar.systems.GameLogicSystemBase;
 import ve.ucv.ciens.ccg.nxtar.systems.GeometrySystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerPositioningSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.MarkerRenderingSystem;
-import ve.ucv.ciens.ccg.nxtar.systems.ObjectRenderingSystem;
+import ve.ucv.ciens.ccg.nxtar.systems.RobotArmRenderingSystem;
 import ve.ucv.ciens.ccg.nxtar.systems.PlayerSystemBase;
 import ve.ucv.ciens.ccg.nxtar.systems.RobotArmPositioningSystem;
 
@@ -154,7 +154,7 @@ public abstract class ScenarioGlobals{
 		gameWorld.setSystem(gameLogicSystem);
 		gameWorld.setSystem(playerSystem, true);
 		gameWorld.setSystem(new MarkerRenderingSystem(modelBatch), true);
-		gameWorld.setSystem(new ObjectRenderingSystem(modelBatch), true);
+		gameWorld.setSystem(new RobotArmRenderingSystem(modelBatch), true);
 		gameWorld.setSystem(new FadeEffectRenderingSystem(), true);
 
 		gameWorld.initialize();

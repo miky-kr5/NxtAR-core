@@ -33,8 +33,7 @@ import com.badlogic.gdx.Gdx;
 public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBase {
 	private static final String TAG                               = "BOMB_GAME_AUTO_PERFORMER";
 	private static final String CLASS_NAME                        = BombGameAutomaticActionPerformer.class.getSimpleName();
-	private static final int    GOAL_FLOOR_MIN_LUMINANCE          = 75;
-	private static final int    MARKER_NEARBY_FLOOR_MIN_LUMINANCE = 45;
+	private static final int    MARKER_NEARBY_FLOOR_MIN_LUMINANCE = 50;
 
 	private enum action_state_t{
 		START, WALK_FORWARD, DETECT_MARKER, FINISHING, END;
@@ -44,6 +43,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 		private int numCombinationBombs;
 		private int numInclinationBombs;
 		private int numWireBombs;
+		private int totalBombs;
 
 		public BombGameAutomaticActionSummary(){
 			reset();
@@ -63,14 +63,21 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 
 		public void addCombinationBomb(){
 			numCombinationBombs++;
+			totalBombs++;
 		}
 
 		public void addInclinationBomb(){
 			numInclinationBombs++;
+			totalBombs++;
 		}
 
 		public void addWireBomb(){
 			numWireBombs++;
+			totalBombs++;
+		}
+
+		public int getBombsSeen(){
+			return totalBombs;
 		}
 
 		@Override
@@ -78,6 +85,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 			this.numCombinationBombs = 0;
 			this.numInclinationBombs = 0;
 			this.numWireBombs        = 0;
+			this.totalBombs          = 0;
 		}
 	}
 
@@ -86,6 +94,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 	private List<Integer>                  detectedMarkers;
 	private float                          then;
 	private float                          now;
+	private int                            stops;
 	private GroupManager                   manager;
 	private BombGameAutomaticActionSummary summary;
 
@@ -103,7 +112,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 	public boolean performAutomaticAction(int lightSensorReading, MarkerData markers) throws IllegalStateException, IllegalArgumentException{
 		BombComponent               bomb;
 		boolean                     finish         = false;
-		boolean                     markerDetected = false;
+		boolean                     markerAlreadyDetected = false;
 		int                         detectedCode   = -1;
 		ImmutableBag<Entity>        entities       = null;
 		float                       deltaT;
@@ -125,7 +134,8 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 		switch(state){
 		case START:
 			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): State is START.");
-			summary.reset();
+			// Reset everything, then look to the left and start moving forward.
+			this.reset();
 			nextAction = automatic_action_t.ROTATE_90;
 			state = action_state_t.WALK_FORWARD;
 			finish = false;
@@ -133,17 +143,22 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 
 		case WALK_FORWARD:
 			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): State is WALK_FORWARD.");
-			if(lightSensorReading >= GOAL_FLOOR_MIN_LUMINANCE){
+			// Check if all stops have been found.
+			if(stops >= BombGameEntityCreator.NUM_BOMBS){
+				// If all stops have been found then stop the robot and finish the automatic action.
 				Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Found goal.");
 				nextAction = automatic_action_t.STOP;
 				state = action_state_t.FINISHING;
 			}else{
-				if(lightSensorReading >= MARKER_NEARBY_FLOOR_MIN_LUMINANCE && lightSensorReading < GOAL_FLOOR_MIN_LUMINANCE){
+				// If there are stops to be found yet then check if the light sensor found a stop.
+				if(lightSensorReading >= MARKER_NEARBY_FLOOR_MIN_LUMINANCE){
+					// If a stop have been found then check if there is a marker nearby.
 					Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): There is a marker nearby.");
 					nextAction = automatic_action_t.STOP;
 					state = action_state_t.DETECT_MARKER;
 					then = Gdx.graphics.getDeltaTime();
 				}else{
+					// If the light sensor didn't find a stop the keep moving.
 					Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Walking.");
 					nextAction = automatic_action_t.GO_FORWARD;
 				}
@@ -153,18 +168,18 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 
 		case DETECT_MARKER:
 			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): State is DETECT_MARKER.");
-			for(int i = 0; !markerDetected && i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
+			for(int i = 0; !markerAlreadyDetected && i < ProjectConstants.MAXIMUM_NUMBER_OF_MARKERS; i++){
 				// Check if this marker has not been detected already.
 				for(Integer code : detectedMarkers){
 					if(markers.markerCodes[i] == code){
 						Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Marker already detected.");
-						markerDetected = true;
+						markerAlreadyDetected = true;
 						break;
 					}
 				}
 
 				// If the marker has not been detected before then examine it.
-				if(!markerDetected){
+				if(!markerAlreadyDetected){
 					Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): New marker detected.");
 					detectedCode = markers.markerCodes[i];
 					entities = manager.getEntities(Integer.toString(detectedCode));
@@ -197,17 +212,21 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 				}
 			}
 
-			if(!markerDetected && detectedCode != -1)
+			// If found a marker and it has not been detected before then add it to the detected markers list.
+			if(!markerAlreadyDetected && detectedCode != -1)
 				detectedMarkers.add(detectedCode);
 
 			if(lightSensorReading < MARKER_NEARBY_FLOOR_MIN_LUMINANCE){
 				Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Switching to WALK_FORWARD.");
+				// If cleared the stop mark on the floor then start moving is search for the next mark.
 				state      = action_state_t.WALK_FORWARD;
 				nextAction = automatic_action_t.STOP;
 				then       = 0.0f;
 				now        = 0.0f;
+				stops++;
 			}else{
 				Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): Clearing MARKER_NEARBY_FLOOR.");
+				// Wait for two seconds to make sure the marker can be correctly detected.
 				now    += Gdx.graphics.getDeltaTime();
 				deltaT  = now - then;
 				if(deltaT >= 2.0f){
@@ -223,6 +242,7 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 
 		case FINISHING:
 			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): State is FINISHING.");
+			// Recenter the camera.
 			state      = action_state_t.END;
 			nextAction = automatic_action_t.RECENTER;
 			finish     = false;
@@ -230,12 +250,10 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 
 		case END:
 			Gdx.app.log(TAG, CLASS_NAME + ".performAutomaticAction(): State is END.");
+			// Finish the automatic action.
 			nextAction = automatic_action_t.NO_ACTION;
 			state      = action_state_t.START;
 			finish     = true;
-			now        = 0.0f;
-			then       = 0.0f;
-			detectedMarkers.clear();
 			break;
 
 		default:
@@ -277,5 +295,6 @@ public class BombGameAutomaticActionPerformer extends AutomaticActionPerformerBa
 		state      = action_state_t.START;
 		nextAction = automatic_action_t.NO_ACTION;
 		then       = 0.0f;
+		stops      = 0;
 	}
 }

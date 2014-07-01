@@ -98,7 +98,7 @@ public class InGameState extends BaseState{
 	// Game related fields.
 	private World                           gameWorld;
 	private MarkerRenderingSystem           markerRenderingSystem;
-	private RobotArmRenderingSystem           robotArmRenderingSystem;
+	private RobotArmRenderingSystem         robotArmRenderingSystem;
 	private RobotArmPositioningSystem       robotArmPositioningSystem;
 	private FadeEffectRenderingSystem       fadeEffectRenderingSystem;
 	private PlayerSystemBase                playerSystem;

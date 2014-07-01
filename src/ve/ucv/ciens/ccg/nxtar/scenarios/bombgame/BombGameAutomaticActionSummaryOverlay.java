@@ -126,6 +126,9 @@ public class BombGameAutomaticActionSummaryOverlay extends SummaryOverlayBase{
 		font.draw(batch, String.format("Combination bombs: %d", bombGameSummary.getNumCombinationBombs()), combinationX, combinationY);
 		font.draw(batch, String.format("Wire bombs: %d", bombGameSummary.getNumWireBombs()), wireX, wireY);
 
+		font.draw(batch, "Bombs found: " + bombGameSummary.getBombsSeen(), wireX, inclinationY + inclinationBomb.getHeight() + font.getCapHeight() + 20.0f);
+		font.draw(batch, "Bombs expected: " + BombGameEntityCreator.NUM_BOMBS, wireX, inclinationY + inclinationBomb.getHeight() + 10.0f);
+
 		if(!Ouya.runningOnOuya)
 			titleFont.draw(batch, "Summary", -(titleWidth / 2), (Utils.getScreenHeightWithOverscan() / 2) - titleHeight - 10);
 		else

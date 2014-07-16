@@ -1343,7 +1343,7 @@ public class InGameState extends BaseState{
 
 	@Override
 	public boolean axisMoved(Controller controller, int axisCode, float value){
-		GamepadUserInput userInput;
+		GamepadUserInput userInput = null;
 
 		if(Math.abs(value) > Ouya.STICK_DEADZONE){
 			userInput = new GamepadUserInput();
@@ -1357,9 +1357,22 @@ public class InGameState extends BaseState{
 				userInput.axisRightY = value;
 			}
 
+		}else if(Math.abs(value) <= Ouya.STICK_DEADZONE && Math.abs(value) > 0.15f){
+			userInput = new GamepadUserInput();
+			if(axisCode == Ouya.AXIS_LEFT_X){
+				userInput.axisLeftX = 0.0f;
+			}else if(axisCode == Ouya.AXIS_LEFT_Y){
+				userInput.axisLeftY = 0.0f;
+			}else if(axisCode == Ouya.AXIS_RIGHT_X){
+				userInput.axisRightX = 0.0f;
+			}else if(axisCode == Ouya.AXIS_RIGHT_Y){
+				userInput.axisRightY = 0.0f;
+			}
+		}
+
+		if(userInput != null){
 			robotArmPositioningSystem.setUserInput(userInput);
 			robotArmPositioningSystem.process();
-
 			return true;
 		}
 

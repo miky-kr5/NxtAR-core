@@ -1357,7 +1357,7 @@ public class InGameState extends BaseState{
 				userInput.axisRightY = value;
 			}
 
-		}else if(Math.abs(value) <= Ouya.STICK_DEADZONE && Math.abs(value) > 0.15f){
+		}else if(Math.abs(value) <= Ouya.STICK_DEADZONE){
 			userInput = new GamepadUserInput();
 			if(axisCode == Ouya.AXIS_LEFT_X){
 				userInput.axisLeftX = 0.0f;
